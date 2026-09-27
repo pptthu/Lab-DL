@@ -1,0 +1,10 @@
+# Python virtual env & bytecode cache 
+.venv/
+env/
+__pycache__/
+
+#Large datasets & model weights 
+data/*.csb 
+lab1/data/*.csv
+*.pth
+*.pt
