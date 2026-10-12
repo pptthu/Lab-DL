@@ -1,10 +1,24 @@
-# Python virtual env & bytecode cache 
-.venv/
-env/
+# Python
 __pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.vscode/
 
-#Large datasets & model weights 
-data/*.csb 
-lab1/data/*.csv
-*.pth
+# Data and generated outputs (NOT committed) / Dữ liệu và kết quả sinh ra (KHÔNG commit)
+labs/*/raw_data/*
+!labs/*/raw_data/.gitkeep
+labs/*/artifacts/models/*
+!labs/*/artifacts/models/.gitkeep
+labs/*/artifacts/figures/*
+!labs/*/artifacts/figures/.gitkeep
+labs/*/artifacts/logs/*
+!labs/*/artifacts/logs/.gitkeep
+labs/*/artifacts/runs/*
+!labs/*/artifacts/runs/.gitkeep
+*.csv
 *.pt
+*.pth
+*.zip
+.env
