@@ -1,0 +1,9 @@
+# Base dependencies, versions not pinned: pin them after the first successful run.
+# VI: Chưa ghim phiên bản; ghim sau lần chạy thành công đầu tiên.
+numpy
+pandas
+matplotlib
+scikit-learn
+torch
+torchvision
+pytest

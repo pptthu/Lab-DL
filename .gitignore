@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.vscode/
+
+# Data and generated outputs (NOT committed) / Dữ liệu và kết quả sinh ra (KHÔNG commit)
+labs/*/raw_data/*
+!labs/*/raw_data/.gitkeep
+labs/*/artifacts/models/*
+!labs/*/artifacts/models/.gitkeep
+labs/*/artifacts/figures/*
+!labs/*/artifacts/figures/.gitkeep
+labs/*/artifacts/logs/*
+!labs/*/artifacts/logs/.gitkeep
+labs/*/artifacts/runs/*
+!labs/*/artifacts/runs/.gitkeep
+*.csv
+*.pt
+*.pth
+*.zip
+.env
