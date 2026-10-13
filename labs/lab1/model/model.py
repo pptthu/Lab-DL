@@ -8,7 +8,13 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
-class MLP:  # TODO: inherit from the right base class (see docstring)
+import torch
+from torch import nn
+
+INPUT_SIZE = 28 * 28
+
+
+class MLP(nn.Module):
     """Fully connected network (subclass of torch.nn.Module).
 
     Input : __init__(hidden_sizes=(256,128), num_classes=10, dropout=0.0); forward(x: tensor [B,1,28,28])
@@ -18,7 +24,26 @@ class MLP:  # TODO: inherit from the right base class (see docstring)
     Vào : __init__(hidden_sizes=(256,128), num_classes=10, dropout=0.0); forward(x: tensor [B,1,28,28])
     Ra  : forward trả logits [B,10] (KHÔNG softmax: CrossEntropyLoss cần logits)
     """
-    # TODO(Member A): implement MLP
+
+    def __init__(self, hidden_sizes=(256, 128), num_classes: int = 10, dropout: float = 0.0) -> None:
+        super().__init__()
+        layers = [nn.Flatten()]  # [B,1,28,28] -> [B,784]
+        in_features = INPUT_SIZE
+        # One block per hidden layer: Linear -> ReLU (-> Dropout when dropout > 0).
+        # VI: Mỗi tầng ẩn là một khối: Linear -> ReLU (-> Dropout nếu dropout > 0).
+        for hidden in hidden_sizes:
+            layers.append(nn.Linear(in_features, hidden))
+            layers.append(nn.ReLU())
+            if dropout > 0:
+                layers.append(nn.Dropout(dropout))
+            in_features = hidden
+        # Last layer has no activation: it returns raw logits.
+        # VI: Tầng cuối không có hàm kích hoạt: trả về logits thô.
+        layers.append(nn.Linear(in_features, num_classes))
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
 
 
 def count_parameters(model) -> int:
@@ -31,4 +56,4 @@ def count_parameters(model) -> int:
     Vào : model
     Ra  : int
     """
-    raise NotImplementedError("TODO(Member A): implement count_parameters")
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
