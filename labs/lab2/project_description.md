@@ -1,141 +1,229 @@
-# Lab 2: Pre-trained CNNs and fine-tuning on CIFAR-10 (PyTorch): project description (Define + Design)
+# Lab 2: Pre-trained CNNs and Fine-tuning on CIFAR-10 (PyTorch) — Project Description
 
-## Define
-- **Problem:** Reuse pre-trained torchvision networks (VGG, DenseNet, ResNet...) for a new 10-class image task by replacing the final layer, freezing or unfreezing layers, and tuning hyperparameters.
-- **Target users:** the lecturer (grading) and the group (learning).
-- **Input / Output:** Input: CIFAR-10 images. Output: fine-tuned model(s), accuracy per model/setting, TensorBoard logs, comparison table.
-- **Data:** ASSUMPTION (confirm with the lecturer): CIFAR-10 via `torchvision.datasets` (the slide uses it as the example).
-- **Core features:**
-  1. Load pre-trained models from torchvision.models and print their architecture
-  2. Replace the final layer; freeze (transfer learning) or unfreeze last layers (fine-tuning)
-  3. Prepare data with torchvision.transforms and DataLoader
-  4. Train with a loss function, optimizer and training loop
-  5. Evaluate on a test set
-  6. Experiment with different models and hyperparameters
-  7. Monitor training with TensorBoard
-- **Technology constraints:** PyTorch + torchvision + TensorBoard. Pre-trained models at 224x224 are slow on CPU: use a smaller image size or a data subset and document it.
-- **Evaluation criteria:** Deliverables are not stated on the Practice 2 slide: confirm with the lecturer (assumed: code, short report, TensorBoard screenshots). Oral Q&A.
+## ENGLISH
 
-## Design
-- **Data flow:** eda -> preprocessing -> features -> model (backbone + header) -> train (+TensorBoard) -> evaluate ; experiment wraps model + train
-- **Modules and owners** (each module = one sub-folder with one script):
-- Member A: `eda`, `preprocessing`, `features`, `model`
-- Member B: `train`, `evaluate`, `experiment`
-- The team leader owns `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` and PR review.
-- **Module applicability rule:** if a module is not needed in this lab, mark it `N/A` in `progress_status.md` with a one-line reason. Do not delete it silently.
-- **Interfaces** (names and signatures are a contract; the test in `tests/test_smoke.py` checks the names):
+### Problem Definition
 
-| Module | Owner | Function / class | Input | Output |
-|---|---|---|---|---|
-| `eda` | Member A | `run_eda(data_root: str, out_dir: str)` | data_root: dataset folder (downloaded by torchvision); out_dir | dict: n_train, n_test, class_counts, image_size, channel_mean, channel_std; PNG files in out_dir |
-| `preprocessing` | Member A | `load_raw_dataset(data_root: str, download: bool = True)` | data_root, download | (train_set, test_set) |
-| `preprocessing` | Member A | `make_split(n_samples: int, val_ratio: float = 0.1, seed: int = 42)` | n_samples, val_ratio, seed | (train_idx, val_idx) |
-| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | indices + path / path | JSON file / (train_idx, val_idx) |
-| `features` | Member A | `build_transforms(image_size: int = 224, augment: bool = False)` | image_size, augment | (train_transform, eval_transform) |
-| `features` | Member A | `make_loaders(train_set, test_set, train_idx, val_idx, train_tf, eval_tf, batch_size: int = 64)` | datasets, split indices, transforms, batch_size | (train_loader, val_loader, test_loader) |
-| `model` | Member A | `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True)` | name, num_classes, freeze_backbone, pretrained | nn.Module that outputs logits [B,num_classes]; backbone frozen if requested |
-| `model` | Member A | `describe_model(model)` | model | dict: total_params, trainable_params, layer names |
-| `model` | Member A | `unfreeze_last_blocks(model, n_blocks: int)` | model, n_blocks | model updated in place |
-| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, writer=None, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay | history dict: train_loss, val_loss, val_acc; checkpoint at ckpt_path; TensorBoard logs |
-| `train` | Member B | `save_checkpoint(model, path: str)` | model, path (, device) | file / model in eval mode |
-| `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss, accuracy) |
-| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device | array [C,C] (rows = true, columns = predicted) |
-| `evaluate` | Member B | `top_confusions(cm, class_names, k: int = 5)` | cm, class_names, k | list of (true_class, predicted_class, count) |
-| `experiment` | Member B | `run_comparison(model_names: list, hparam_grid: list, loaders: tuple, device, log_root: str)` | model_names (e.g. ['resnet18','vgg16']), hparam_grid (list of dicts: lr, batch_size, freeze...), loaders, device, log_root | list of result dicts: model, hparams, best_val_acc, train_seconds; TensorBoard runs under log_root |
-| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | CSV file |
+**Research question:** How does ImageNet pretraining affect the performance, convergence speed, and computational cost of CNN image classification on CIFAR-10?
 
-- **Folder structure:**
-```text
-labs/lab2/
-├── README.md                # brief report (EN + VI) / báo cáo ngắn
-├── project_description.md   # Define + Design (feed this to the AI agent)
-├── progress_status.md       # progress, audit, dated log / tiến độ
-├── main.py                  # runs the whole pipeline (leader)
-├── requirements.txt
-├── eda/eda.py                  # module: eda
-├── preprocessing/preprocessing.py# module: preprocessing
-├── features/features.py        # module: features
-├── model/model.py              # module: model
-├── train/train.py              # module: train
-├── evaluate/evaluate.py        # module: evaluate
-├── experiment/experiment.py    # module: experiment
-├── raw_data/                # dataset files (NOT committed)
-├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
-├── logbook/                 # bug reports and experiment notes (docs/templates)
-└── tests/test_smoke.py      # interface contract + smoke tests
-```
-- **Milestones:**
-  - M1: loaders return a batch [B,3,H,W] with labels 0-9
-  - M2: build_model returns logits [B,10]; describe_model prints parameter counts
-  - M3: train_model runs 1 epoch and writes TensorBoard logs
-  - M4: evaluate gives accuracy and confusion matrix
-  - M5: comparison of 2 or more models/settings + short report
-- **Technical risks:**
-  - Slow training on CPU: smaller image_size / subset / fewer epochs
-  - Deprecated API: use weights=..., not pretrained=True, in recent torchvision
-  - Forgetting to replace the final layer: output size must be 10
-  - Wrong normalization: use ImageNet mean/std for ImageNet-pretrained models
-  - Dataset download time and disk space: download once, keep raw_data/ ignored
+**Task:** 10-class image classification on CIFAR-10 using three experimental strategies:
+- **Experiment A:** Training from scratch (no pretrained weights).
+- **Experiment B:** Feature extraction (pretrained backbone, frozen; only new head trained).
+- **Experiment C:** Fine-tuning (pretrained backbone; head warmup, then tail blocks unfrozen with smaller LR).
+
+**Scientific distinction:** Experiments B and C both use a pretrained backbone but differ in whether the backbone parameters are updated. This is the central scientific comparison.
 
 ---
 
-**Tiếng Việt**
+### Dataset Assumptions
 
-# Lab 2: CNN pre-trained và fine-tuning trên CIFAR-10 (PyTorch): mô tả dự án (Define + Design)
+**ASSUMPTION (unconfirmed from official lecturer materials):** CIFAR-10 from `torchvision.datasets.CIFAR10`.
 
-## Define
-- **Bài toán:** Tái sử dụng mạng pre-trained của torchvision (VGG, DenseNet, ResNet...) cho bài toán ảnh 10 lớp bằng cách thay lớp cuối, đóng băng/mở khóa lớp và chỉnh siêu tham số.
-- **Người dùng:** cô (chấm bài) và nhóm (học).
-- **Đầu vào / Đầu ra:** Đầu vào: ảnh CIFAR-10. Đầu ra: model đã fine-tune, accuracy theo từng model/cấu hình, log TensorBoard, bảng so sánh.
-- **Dữ liệu:** GIẢ ĐỊNH (cần hỏi lại cô): CIFAR-10 qua `torchvision.datasets` (slide dùng làm ví dụ).
-- **Tính năng chính:**
-  1. Nạp model pre-trained từ torchvision.models và in cấu trúc
-  2. Thay lớp cuối; đóng băng (transfer learning) hoặc mở khóa các lớp cuối (fine-tuning)
-  3. Chuẩn bị dữ liệu bằng torchvision.transforms và DataLoader
-  4. Huấn luyện với hàm loss, optimizer và vòng lặp huấn luyện
-  5. Đánh giá trên tập test
-  6. Thử nhiều model và siêu tham số
-  7. Theo dõi huấn luyện bằng TensorBoard
-- **Ràng buộc công nghệ:** PyTorch + torchvision + TensorBoard. Model pre-trained ở 224x224 chạy chậm trên CPU: dùng kích thước ảnh nhỏ hơn hoặc tập con dữ liệu và ghi rõ.
-- **Tiêu chí đánh giá:** Slide Practice 2 không nêu sản phẩm nộp: hỏi lại cô (giả định: code, báo cáo ngắn, ảnh chụp TensorBoard). Vấn đáp.
+Evidence for assumption: The project description (`project_description.md`) states "CIFAR-10 qua `torchvision.datasets`" and the official slides use it as a worked example. If the lecturer specifies a different dataset, the pipeline can be adapted with minimal changes to `preprocessing.py`.
 
-## Design
-- **Luồng dữ liệu:** eda -> preprocessing -> features -> model (backbone + header) -> train (+TensorBoard) -> evaluate ; experiment wraps model + train
-- **Module và người phụ trách** (mỗi module = một sub-folder + một script):
-- Member A: `eda`, `preprocessing`, `features`, `model`
-- Member B: `train`, `evaluate`, `experiment`
-- Nhóm trưởng phụ trách `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` và duyệt PR.
-- **Quy tắc linh hoạt module:** nếu lab này không cần một module, ghi `N/A` trong `progress_status.md` kèm lý do một dòng. Không xóa im lặng.
-- **Interface** (tên hàm và chữ ký là hợp đồng; `tests/test_smoke.py` kiểm tra tên hàm):
+CIFAR-10 properties:
+- 50,000 training images + 10,000 test images.
+- 10 balanced classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck.
+- Images: 32×32 × 3 channels (RGB), uint8.
+- No class imbalance in the standard split.
 
-| Module | Phụ trách | Hàm / lớp | Đầu vào | Đầu ra |
-|---|---|---|---|---|
-| `eda` | Member A | `run_eda(data_root: str, out_dir: str)` | data_root: thư mục dữ liệu (torchvision tải về); out_dir | dict: n_train, n_test, class_counts, image_size, channel_mean, channel_std; file PNG trong out_dir |
-| `preprocessing` | Member A | `load_raw_dataset(data_root: str, download: bool = True)` | data_root, download | (train_set, test_set) |
-| `preprocessing` | Member A | `make_split(n_samples: int, val_ratio: float = 0.1, seed: int = 42)` | n_samples, val_ratio, seed | (train_idx, val_idx) |
-| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | chỉ số + path / path | file JSON / (train_idx, val_idx) |
-| `features` | Member A | `build_transforms(image_size: int = 224, augment: bool = False)` | image_size, augment | (train_transform, eval_transform) |
-| `features` | Member A | `make_loaders(train_set, test_set, train_idx, val_idx, train_tf, eval_tf, batch_size: int = 64)` | dataset, chỉ số split, transform, batch_size | (train_loader, val_loader, test_loader) |
-| `model` | Member A | `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True)` | name, num_classes, freeze_backbone, pretrained | nn.Module xuất logits [B,num_classes]; backbone bị đóng băng nếu được yêu cầu |
-| `model` | Member A | `describe_model(model)` | model | dict: total_params, trainable_params, tên các lớp |
-| `model` | Member A | `unfreeze_last_blocks(model, n_blocks: int)` | model, n_blocks | model được cập nhật tại chỗ |
-| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, writer=None, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay | dict history: train_loss, val_loss, val_acc; checkpoint tại ckpt_path; log TensorBoard |
-| `train` | Member B | `save_checkpoint(model, path: str)` | model, path (, device) | file / model ở chế độ eval |
-| `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss, accuracy) |
-| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device | mảng [C,C] (hàng = thật, cột = dự đoán) |
-| `evaluate` | Member B | `top_confusions(cm, class_names, k: int = 5)` | cm, class_names, k | danh sách (lớp thật, lớp dự đoán, số lần) |
-| `experiment` | Member B | `run_comparison(model_names: list, hparam_grid: list, loaders: tuple, device, log_root: str)` | model_names (vd ['resnet18','vgg16']), hparam_grid (danh sách dict: lr, batch_size, freeze...), loaders, device, log_root | danh sách dict kết quả: model, hparams, best_val_acc, train_seconds; run TensorBoard trong log_root |
-| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | file CSV |
+---
 
-- **Mốc (milestone):**
-  - M1: loader trả batch [B,3,H,W], nhãn 0-9
-  - M2: build_model trả logits [B,10]; describe_model in số tham số
-  - M3: train_model chạy 1 epoch và ghi log TensorBoard
-  - M4: evaluate cho accuracy và confusion matrix
-  - M5: so sánh từ 2 model/cấu hình + báo cáo ngắn
-- **Rủi ro kỹ thuật:**
-  - Huấn luyện chậm trên CPU: giảm image_size / dùng tập con / ít epoch
-  - API cũ: torchvision mới dùng weights=..., không dùng pretrained=True
-  - Quên thay lớp cuối: đầu ra phải là 10
-  - Chuẩn hóa sai: dùng mean/std ImageNet cho model pre-trained trên ImageNet
-  - Thời gian tải dataset và dung lượng ổ đĩa: tải một lần, giữ raw_data/ trong .gitignore
+### Experimental Design
+
+| Experiment | Model | Pretrained | Backbone | Head | Notes |
+|------------|-------|-----------|----------|------|-------|
+| A — Scratch | Custom CNN | No | Trainable | Trainable | Random init |
+| B — Feature Extraction | ResNet-18 | Yes (ImageNet1K_V1) | **Frozen** | Trainable | BN in eval mode |
+| C — Fine-tuning | ResNet-18 | Yes (ImageNet1K_V1) | Phase 1: Frozen → Phase 2: Tail unfrozen | Trainable | 2-phase: warmup → unfreeze |
+
+All experiments use:
+- The same CIFAR-10 train/val/test split (seed=42).
+- The same evaluation procedure (full test set).
+- The same metrics (accuracy, macro F1, confusion matrix).
+
+---
+
+### Architecture Choices
+
+#### Scratch CNN (`_ScratchCNN`)
+```
+Input [B, 3, H, W]
+  Conv(3→32, 3×3) + BN + ReLU + MaxPool(2)   # H/2 × W/2
+  Conv(32→64, 3×3) + BN + ReLU + MaxPool(2)  # H/4 × W/4
+  Conv(64→128, 3×3) + BN + ReLU + AdaptiveAvgPool(4×4)  # → 2048
+  Flatten → Dropout(0.4) → Linear(2048→256) + ReLU → Linear(256→10)
+```
+Parameters: ~550K trainable. Designed for inputs up to 224×224 via AdaptiveAvgPool.
+
+#### ResNet-18 (Experiments B & C)
+```
+Input [B, 3, H, W]
+  Backbone: conv1 → BN → ReLU → MaxPool → layer1 → layer2 → layer3 → layer4 → AvgPool
+  Head: Linear(512 → 10)   [replacement for original 1000-class head]
+```
+Total parameters: ~11.18M. Trainable (feature extraction): 5,130 (fc only).
+
+**BatchNorm handling:** When `freeze_backbone=True`, the `_FrozenBNModel` wrapper ensures the backbone stays in eval mode during training, preventing CIFAR-10 batch statistics from corrupting ImageNet running statistics.
+
+---
+
+### Data Preprocessing
+
+#### Training transform (with augmentation):
+1. `Resize(image_size)` — default 64×64 for CPU efficiency.
+2. `RandomCrop(image_size, padding=4)` — light spatial augmentation.
+3. `RandomHorizontalFlip()` — domain-appropriate augmentation.
+4. `ToTensor()` — [0,255] uint8 → [0,1] float32.
+5. `Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])` — ImageNet statistics.
+
+#### Evaluation transform (deterministic):
+1–2. `Resize(image_size)` + `ToTensor()` + `Normalize(...)` — same statistics, no augmentation.
+
+**Important:** The eval transform is applied to validation samples even though they come from the training dataset. The `_TransformSubset` wrapper in `features.py` ensures this is done correctly without augmentation bleeding.
+
+**Resolution trade-off:** Using 64×64 instead of 224×224 is a documented deviation. At 64×64, downsampling in ResNet-18 leaves a 2×2 spatial map before AvgPool (rather than 7×7 at 224×224). This affects the pretrained features and should be reported honestly. A full 224×224 run is scientifically more correct but is computationally prohibitive on CPU (each epoch ~2–4× slower).
+
+---
+
+### Train/Validation/Test Split
+
+- Method: Random shuffle with fixed seed (seed=42), reproducible via `make_split`.
+- Validation fraction: 10% of training set → 5,000 validation, 45,000 training.
+- Split saved to: `artifacts/splits/split_seed42.json` (indices only, not data).
+- Test set: Official CIFAR-10 test set (10,000 images), never used for selection.
+
+---
+
+### Optimizer and Scheduler
+
+| Setting | Default |
+|---------|---------|
+| Optimizer | Adam |
+| Learning rate | 1e-3 (head), 1e-4 (backbone in fine-tuning) |
+| Weight decay | 1e-4 (full training) |
+| Scheduler | StepLR (step_size=7, gamma=0.1) |
+| Early stopping | val_acc patience=10 epochs |
+
+---
+
+### Metrics
+
+| Metric | Description |
+|--------|-------------|
+| Test Accuracy | Top-1 accuracy on full 10,000-sample test set |
+| Macro Precision | Mean precision across all 10 classes |
+| Macro Recall | Mean recall across all 10 classes |
+| Macro F1-score | Harmonic mean of precision and recall, averaged |
+| Per-class Accuracy | Accuracy for each of the 10 CIFAR-10 classes |
+| Confusion Matrix | 10×10 count matrix (rows=true, cols=predicted) |
+| Inference Throughput | Images/second on evaluation hardware |
+
+Model selection uses **validation accuracy** only (never test accuracy).
+
+---
+
+### Reproducibility
+
+- All experiments use `set_seed(42)` from `shared/seed.py` (Python, NumPy, PyTorch).
+- Split indices saved in JSON; loading from JSON on subsequent runs.
+- Checkpoints saved at best validation epoch.
+- Configurations saved as `config.json` in each run directory.
+
+---
+
+### Limitations
+
+1. **CPU-only:** No CUDA on this machine. ResNet-18 at 224×224 is impractical; we use 64×64.
+2. **CIFAR-10 assumption:** Dataset choice confirmed from project docs but not official lecture slide text.
+3. **Single pretrained architecture:** Only ResNet-18 tested; VGG-16, DenseNet-121 are supported by the model module but not benchmarked.
+4. **Network bandwidth:** Dataset download at ~30kB/s makes initial setup slow.
+
+---
+
+### Commands
+
+```bash
+# From repo root:
+
+# Run all smoke tests (no real data required):
+pytest labs/lab2/tests -v
+
+# Run EDA (requires CIFAR-10 in raw_data/):
+python -m labs.lab2.main --eda
+
+# Smoke pipeline (fast, small subset):
+python -m labs.lab2.main --mode smoke
+
+# Full experiments:
+python -m labs.lab2.main --mode full --experiments scratch,feature_extraction,fine_tuning
+
+# Compare results:
+python -m labs.lab2.main --compare
+
+# Custom settings:
+python -m labs.lab2.main --mode full --image-size 32 --batch-size 128 --seed 123
+```
+
+---
+
+### Expected Artifact Structure
+
+```
+labs/lab2/
+├── artifacts/
+│   ├── splits/
+│   │   └── split_seed42.json
+│   ├── figures/
+│   │   ├── eda/
+│   │   │   ├── class_distribution.png
+│   │   │   ├── sample_grid.png
+│   │   │   ├── pixel_histogram.png
+│   │   │   └── eda_summary.json
+│   │   ├── training_curves.png
+│   │   └── comparison_bar.png
+│   └── runs/
+│       ├── scratch_sc_rnd_lr1e-03_ep20_<ts>/
+│       │   ├── config.json
+│       │   ├── history.csv
+│       │   ├── summary.json
+│       │   └── checkpoint_best.pt
+│       ├── resnet18_fe_pt_lr1e-03_ep10_<ts>/
+│       │   └── (same structure)
+│       └── resnet18_fe_pt_lr1e-03_ep15_<ts>/
+│           └── (same structure)
+└── logbook/
+    └── (bug reports and experiment notes)
+```
+
+---
+
+## TIẾNG VIỆT
+
+### Định nghĩa bài toán
+
+**Câu hỏi nghiên cứu:** ImageNet pretraining ảnh hưởng như thế nào đến hiệu suất, tốc độ hội tụ và chi phí tính toán khi phân loại ảnh CIFAR-10?
+
+**GIẢ ĐỊNH (chưa xác nhận từ giảng viên):** Dataset là CIFAR-10 qua `torchvision.datasets`. Bằng chứng: slide môn học và file `project_description.md` đều nhắc đến CIFAR-10.
+
+### Ba thí nghiệm chính
+
+| Thí nghiệm | Mô hình | Pre-trained | Backbone | Head |
+|------------|---------|-----------|----------|------|
+| A — Scratch | CNN tự thiết kế | Không | Trainable | Trainable |
+| B — Feature Extraction | ResNet-18 | Có (ImageNet) | **Đóng băng** | Trainable |
+| C — Fine-tuning | ResNet-18 | Có (ImageNet) | Pha 1: Đóng → Pha 2: Mở một phần | Trainable |
+
+### Lựa chọn kỹ thuật và lý do
+
+1. **image_size=64** (thay vì 224): CPU-only, 224×224 quá chậm. Ghi rõ trong báo cáo.
+2. **Adam optimizer**: Thích nghi learning rate, phù hợp cho bài toán với ít epoch.
+3. **StepLR**: Giảm lr sau mỗi 7 epoch để tinh chỉnh.
+4. **seed=42**: Tái lập được mọi kết quả.
+5. **`_FrozenBNModel`**: Wrapper giữ BatchNorm của backbone ở eval mode khi freeze.
+
+### Ràng buộc đã biết
+
+- Không có GPU (CUDA=False). Tất cả chạy trên CPU Intel i5-1135G7.
+- Tốc độ download dataset chậm (~30kB/s) → lần đầu mất nhiều thời gian.
+- image_size=64 là trade-off thực tế, không phải điều kiện lý tưởng khoa học.

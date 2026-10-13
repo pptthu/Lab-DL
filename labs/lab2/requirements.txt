@@ -1,2 +1,16 @@
+# Lab 2 dependencies
+# Base:
 -r ../../requirements.txt
+
+# Experiment tracking (TensorBoard):
 tensorboard
+
+# Additional evaluation metrics:
+# scikit-learn is already in the root requirements.txt
+
+# Notes:
+# - torch, torchvision, numpy, pandas, matplotlib, scikit-learn, pytest
+#   are already covered by ../../requirements.txt
+# - seaborn is used for heatmap confusion matrix; check root requirements.txt
+seaborn
+tqdm
