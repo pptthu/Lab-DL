@@ -8,6 +8,13 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, Dataset
+
+PIXEL_MAX = 255.0
+
+
 def compute_mean_std(train_images) -> tuple:
     """Compute normalization statistics from the TRAIN split only.
 
@@ -18,7 +25,14 @@ def compute_mean_std(train_images) -> tuple:
     Vào : train_images: mảng uint8 [N,28,28] (chỉ chỉ số train)
     Ra  : (mean, std) dạng số thực trên thang pixel 0-1
     """
-    raise NotImplementedError("TODO(Member A): implement compute_mean_std")
+    images = np.asarray(train_images)
+    # One mean/std for the whole split (grayscale = 1 channel). Dividing by 255
+    # afterwards gives the same result as scaling every pixel to 0-1 first.
+    # VI: Một mean/std cho cả tập (ảnh xám = 1 kênh). Chia 255 sau cùng cho kết quả
+    # giống như đưa từng pixel về 0-1 trước rồi mới tính.
+    mean = float(images.mean(dtype=np.float64) / PIXEL_MAX)
+    std = float(images.std(dtype=np.float64) / PIXEL_MAX)
+    return mean, std
 
 
 def build_transform(mean: float, std: float):
@@ -31,10 +45,19 @@ def build_transform(mean: float, std: float):
     Vào : mean, std
     Ra  : hàm: uint8 [28,28] -> tensor float32 [1,28,28] đã chuẩn hóa
     """
-    raise NotImplementedError("TODO(Member A): implement build_transform")
+    if std <= 0:
+        raise ValueError(f"std must be positive, got {std}")
+
+    def transform(image) -> torch.Tensor:
+        # uint8 [28,28] in 0-255 -> float32 [28,28] in 0-1 -> add channel dim -> normalize.
+        # VI: uint8 [28,28] thang 0-255 -> float32 [28,28] thang 0-1 -> thêm chiều kênh -> chuẩn hóa.
+        x = torch.as_tensor(np.asarray(image), dtype=torch.float32) / PIXEL_MAX
+        return (x.unsqueeze(0) - mean) / std
+
+    return transform
 
 
-class FashionDataset:  # TODO: inherit from the right base class (see docstring)
+class FashionDataset(Dataset):
     """Dataset wrapper (__init__, __len__, __getitem__).
 
     Input : __init__(images, labels, indices, transform)
@@ -44,7 +67,26 @@ class FashionDataset:  # TODO: inherit from the right base class (see docstring)
     Vào : __init__(images, labels, indices, transform)
     Ra  : __getitem__(i) -> (tensor [1,28,28], nhãn int); __len__() -> số mẫu
     """
-    # TODO(Member A): implement FashionDataset
+
+    def __init__(self, images, labels, indices=None, transform=None) -> None:
+        # `indices` selects the rows of this split (train or val). None = use every
+        # row (test set). The image array is shared, not copied.
+        # VI: `indices` chọn các dòng thuộc split này (train hoặc val). None = dùng hết
+        # (tập test). Mảng ảnh được dùng chung, không sao chép.
+        self.images = images
+        self.labels = labels
+        self.indices = np.arange(len(labels)) if indices is None else np.asarray(indices)
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return len(self.indices)
+
+    def __getitem__(self, i: int) -> tuple:
+        row = self.indices[i]
+        image = self.images[row]
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, int(self.labels[row])
 
 
 def make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64) -> tuple:
@@ -57,4 +99,11 @@ def make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64) -> tuple:
     Vào : ba đối tượng Dataset; batch_size
     Ra  : (train_loader, val_loader, test_loader)
     """
-    raise NotImplementedError("TODO(Member A): implement make_loaders")
+    # Shuffle train only: a new batch order every epoch helps SGD; val/test order
+    # does not change the metrics, so keep it fixed.
+    # VI: Chỉ shuffle train: thứ tự batch mới mỗi epoch giúp SGD; thứ tự val/test
+    # không đổi kết quả đo nên giữ cố định.
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False)
+    return train_loader, val_loader, test_loader
