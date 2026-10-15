@@ -1,5 +1,5 @@
-# Lab 1: Fashion-MNIST classification with an MLP (PyTorch): progress status
-_Last updated: 2026-10-13 by Toàn (Member A)_
+﻿# Lab 1: Fashion-MNIST classification with an MLP (PyTorch): progress status
+_Last updated: 2026-10-15 by Thư (Member B)_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
@@ -7,10 +7,10 @@ _Last updated: 2026-10-13 by Toàn (Member A)_
 | `preprocessing` | Member A (Toàn) | done | pass (6 tests) | pass (train 60,000 / test 10,000) | split 54,000 / 6,000, stratified (600 per class in val), seed 42 |
 | `features` | Member A (Toàn) | done | pass (6 tests) | pass (real batch [64,1,28,28]) | train-only mean 0.2860, std 0.3527 (0-1 scale) |
 | `model` | Member A (Toàn) | done | pass (6 tests, overfits 1 batch) | pass (real batch -> logits [64,10]) | default MLP 784-256-128-10 = 235,146 parameters |
-| `train` | Member B (name TBD) | todo | - | - | |
-| `evaluate` | Member B (name TBD) | todo | - | - | |
-| `visualize` | Member B (name TBD) | todo | - | - | |
-| `experiment` | Member B (name TBD) | todo | - | - | |
+| `train` | Member B (Thư) | done | pass (fake data, 4 tests; smoke 1 batch 1 epoch) | pass (5 epochs, val_loss 0.3031, val_acc 0.8905) | Adam lr=1e-3, CrossEntropyLoss, best ckpt saved to artifacts/models/mlp_baseline.pt |
+| `evaluate` | Member B (Thư) | todo | - | - | |
+| `visualize` | Member B (Thư) | todo | - | - | |
+| `experiment` | Member B (Thư) | todo | - | - | |
 | `main.py`, README, integration | Team leader | todo | - | - | |
 
 ## Handoff A -> B (sequential, no interleaving)
@@ -19,17 +19,26 @@ Member B starts coding only after ALL of the following are true:
 - [x] make_loaders returns a batch of shape [B,1,28,28] with labels 0-9
 - [x] MLP forward on a dummy batch returns logits [B,10]
 - [x] all Member A modules are `done` in this file and `pytest labs/lab1/tests` passes
-- [ ] Member A's PRs are merged into `main`; Member B branches from the updated `main`
-- [ ] Member A posts the handoff message (what was done, exact run commands, known problems)
+- [x] Member A's PRs are merged into `main`; Member B branches from the updated `main`
+- [x] Member A posts the handoff message (what was done, exact run commands, known problems)
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
-- `pytest labs/lab1/tests tests` -> pass, 34 passed (Python 3.11.9, torch 2.14.1+cpu, 2026-10-13)
+- `pytest labs/lab1/tests tests` -> pass, 34 passed (Python 3.11.9 / 3.13.7, torch 2.x, 2026-10-15)
 - `run_eda(raw_data/fashion-mnist_train.csv, artifacts/figures)` -> pass: n_rows 60000, 6000 per class, pixel 0-255, n_missing 0, n_duplicates 43; wrote `class_counts.png`, `sample_grid.png`
 - `python -m labs.lab1.preprocessing.preprocessing` -> pass: images (60000, 28, 28) uint8 0-255, labels int64 0-9, train 54000 / val 6000, wrote `artifacts/splits/train_val_split.json`
 - load_csv on `fashion-mnist_test.csv` -> pass: (10000, 28, 28) uint8, 1000 per class
 - loaders on real data -> pass: train 54000 / val 6000 / test 10000; batch x [64,1,28,28] float32, y int64 in 0-9
 - `MLP()` forward on a real train batch -> pass: logits [64,10], untrained CrossEntropyLoss 2.2931 (ln 10 = 2.3026)
+- `pytest labs/lab1/tests/test_train.py` -> pass: 4 passed in 3.64s (test_bad_optimizer_raises_value_error, test_history_lengths_and_finite_metrics, test_save_and_load_checkpoint, test_train_overfits_tiny_set)
+- `train_model` smoke run on 1 batch / 1 epoch -> pass: train_loss 2.3132, val_loss 2.2116, val_acc 0.3281 in 2.80s
+- `train_model` normal run (5 epochs, Adam lr=1e-3, 54k train / 6k val) -> pass in 21.26s on CPU:
+  - Epoch 1: train_loss=0.4752, val_loss=0.3826, val_acc=0.8632
+  - Epoch 2: train_loss=0.3550, val_loss=0.3502, val_acc=0.8727
+  - Epoch 3: train_loss=0.3178, val_loss=0.3240, val_acc=0.8823
+  - Epoch 4: train_loss=0.2912, val_loss=0.3311, val_acc=0.8853
+  - Epoch 5: train_loss=0.2714, val_loss=0.3031, val_acc=0.8905
+  - Best model checkpoint saved to `artifacts/models/mlp_baseline.pt` (943,697 bytes)
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab1/tests`
@@ -37,6 +46,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-13 Toàn: `preprocessing`: implemented `load_csv`, `make_split`, `save_split`, `load_split` + tests; generated the shared split JSON -> pytest pass; real run on train/test CSV
 - 2026-10-13 Toàn: `features`: implemented `compute_mean_std`, `build_transform`, `FashionDataset`, `make_loaders` + tests -> pytest pass; real batch checked
 - 2026-10-13 Toàn: `model`: implemented `MLP`, `count_parameters` + tests -> pytest pass; forward on a real batch
+- 2026-10-15 Thư: `train`: implemented `train_model`, `save_checkpoint`, `load_checkpoint` + `tests/test_train.py` -> 4 tests passed; smoke run (1 batch) and 5-epoch baseline run finished (val_acc 0.8905, saved `mlp_baseline.pt`)
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
