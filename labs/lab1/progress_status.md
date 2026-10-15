@@ -1,5 +1,5 @@
 ﻿# Lab 1: Fashion-MNIST classification with an MLP (PyTorch): progress status
-_Last updated: 2026-10-15 by Thư (Member B)_
+_Last updated: 2026-10-15 by Thư (Team leader / Member B)_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
@@ -11,7 +11,7 @@ _Last updated: 2026-10-15 by Thư (Member B)_
 | `evaluate` | Member B (Thư) | done | pass (fake data, 4 tests) | pass (VAL 6,000: loss 0.3031, acc 89.05%) | Trouser highest 98.0%, Shirt lowest 68.33%, CM sum 6000 |
 | `visualize` | Member B (Thư) | done | pass (fake data, 3 tests) | pass (saved 3 figures in artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png checked visually |
 | `experiment` | Member B (Thư) | done | pass (fake data, 1 test with 2 configs) | pass (4 configs, saved to artifacts/runs/experiment_results.csv) | Baseline best (val 89.05%, test 88.99%), larger network 567k params slower |
-| `main.py`, README, integration | Team leader | todo | - | - | |
+| `main.py`, README, integration | Team leader (Thư) | done | pass (smoke run 1 epoch) | pass (full pipeline end-to-end) | README technical report (EN+VI), lab1_presentation.ipynb, all 42 tests passing |
 
 ## Handoff A -> B (sequential, no interleaving)
 Member B starts coding only after ALL of the following are true:
@@ -57,6 +57,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
   - Dropout reg (256-128, Adam 1e-3, drop 0.2, wd 1e-4): val_acc 88.47%, 235k params, 24.4s
   - Results saved to `artifacts/runs/experiment_results.csv`
   - Best config evaluated ONCE on TEST set (10,000 samples): Test Loss: 0.3013, Test Accuracy: 88.99% (8899/10000)
+- `main.py` pipeline execution -> pass: all 8 stages ran end-to-end seamlessly.
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab1/tests`
@@ -68,6 +69,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-15 Thư: `evaluate`: implemented `evaluate`, `confusion_matrix`, `per_class_accuracy` + `tests/test_evaluate.py` -> 4 tests passed; evaluated saved checkpoint on VAL (6,000 samples: loss 0.3031, acc 89.05%)
 - 2026-10-15 Thư: `visualize`: implemented `plot_loss_curves`, `show_predictions`, `plot_confusion_matrix` + `tests/test_visualize.py` -> 3 tests passed; generated & visually verified 3 figures in artifacts/figures/
 - 2026-10-15 Thư: `experiment`: implemented `run_experiments`, `save_results` + `tests/test_experiment.py` -> test passed; ran 4 configs on real data (baseline best: val 89.05%, test 88.99% once); saved table to `artifacts/runs/experiment_results.csv`
+- 2026-10-15 Thư: `integration`: implemented `main.py` pipeline, presentation notebook `lab1_presentation.ipynb`, technical report in `README.md`, verified 42 unit tests passing
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
