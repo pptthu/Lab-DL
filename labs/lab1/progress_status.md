@@ -10,7 +10,7 @@ _Last updated: 2026-10-15 by Thư (Member B)_
 | `train` | Member B (Thư) | done | pass (fake data, 4 tests; smoke 1 batch 1 epoch) | pass (5 epochs, val_loss 0.3031, val_acc 0.8905) | Adam lr=1e-3, CrossEntropyLoss, best ckpt saved to artifacts/models/mlp_baseline.pt |
 | `evaluate` | Member B (Thư) | done | pass (fake data, 4 tests) | pass (VAL 6,000: loss 0.3031, acc 89.05%) | Trouser highest 98.0%, Shirt lowest 68.33%, CM sum 6000 |
 | `visualize` | Member B (Thư) | done | pass (fake data, 3 tests) | pass (saved 3 figures in artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png checked visually |
-| `experiment` | Member B (Thư) | todo | - | - | |
+| `experiment` | Member B (Thư) | done | pass (fake data, 1 test with 2 configs) | pass (4 configs, saved to artifacts/runs/experiment_results.csv) | Baseline best (val 89.05%, test 88.99%), larger network 567k params slower |
 | `main.py`, README, integration | Team leader | todo | - | - | |
 
 ## Handoff A -> B (sequential, no interleaving)
@@ -24,7 +24,7 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
-- `pytest labs/lab1/tests tests` -> pass, 41 passed (Python 3.13.7, torch 2.x, 2026-10-15)
+- `pytest labs/lab1/tests tests` -> pass, 42 passed (Python 3.13.7, torch 2.x, 2026-10-15)
 - `run_eda(raw_data/fashion-mnist_train.csv, artifacts/figures)` -> pass: n_rows 60000, 6000 per class, pixel 0-255, n_missing 0, n_duplicates 43; wrote `class_counts.png`, `sample_grid.png`
 - `python -m labs.lab1.preprocessing.preprocessing` -> pass: images (60000, 28, 28) uint8 0-255, labels int64 0-9, train 54000 / val 6000, wrote `artifacts/splits/train_val_split.json`
 - load_csv on `fashion-mnist_test.csv` -> pass: (10000, 28, 28) uint8, 1000 per class
@@ -49,6 +49,14 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
   - `loss_curves.png` (47,711 bytes): train vs val loss over 5 epochs
   - `predictions_grid.png` (64,104 bytes): 4x4 image grid with pred/true titles, wrong predictions in red
   - `confusion_matrix.png` (48,473 bytes): 10x10 annotated heatmap with class names
+- `pytest labs/lab1/tests/test_experiment.py` -> pass: 1 passed in 4.28s
+- `run_experiments` real run (4 configs, 5 epochs each) -> pass:
+  - Baseline (256-128, Adam 1e-3, drop 0.0): val_acc 89.05%, 235k params, 22.7s
+  - SGD (256-128, SGD 0.01, mom 0.9): val_acc 88.57%, 235k params, 19.3s
+  - Larger network (512-256-128, Adam 1e-3): val_acc 88.10%, 567k params, 34.5s
+  - Dropout reg (256-128, Adam 1e-3, drop 0.2, wd 1e-4): val_acc 88.47%, 235k params, 24.4s
+  - Results saved to `artifacts/runs/experiment_results.csv`
+  - Best config evaluated ONCE on TEST set (10,000 samples): Test Loss: 0.3013, Test Accuracy: 88.99% (8899/10000)
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab1/tests`
@@ -59,6 +67,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-15 Thư: `train`: implemented `train_model`, `save_checkpoint`, `load_checkpoint` + `tests/test_train.py` -> 4 tests passed; smoke run (1 batch) and 5-epoch baseline run finished (val_acc 0.8905, saved `mlp_baseline.pt`)
 - 2026-10-15 Thư: `evaluate`: implemented `evaluate`, `confusion_matrix`, `per_class_accuracy` + `tests/test_evaluate.py` -> 4 tests passed; evaluated saved checkpoint on VAL (6,000 samples: loss 0.3031, acc 89.05%)
 - 2026-10-15 Thư: `visualize`: implemented `plot_loss_curves`, `show_predictions`, `plot_confusion_matrix` + `tests/test_visualize.py` -> 3 tests passed; generated & visually verified 3 figures in artifacts/figures/
+- 2026-10-15 Thư: `experiment`: implemented `run_experiments`, `save_results` + `tests/test_experiment.py` -> test passed; ran 4 configs on real data (baseline best: val 89.05%, test 88.99% once); saved table to `artifacts/runs/experiment_results.csv`
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
