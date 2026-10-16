@@ -65,7 +65,7 @@ def main(seed: int = 42, epochs: int = 5) -> dict:
     if split_file.is_file():
         train_idx, val_idx = load_split(str(split_file))
     else:
-        train_idx, val_idx = make_split(labels, val_fraction=0.1, seed=seed)
+        train_idx, val_idx = make_split(labels, val_ratio=0.1, seed=seed)
         save_split(train_idx, val_idx, str(split_file))
     print(f"Split loaded: train={len(train_idx)}, val={len(val_idx)}, test={len(test_labels)}")
 
@@ -82,6 +82,7 @@ def main(seed: int = 42, epochs: int = 5) -> dict:
 
     # 5. Model
     print("\n--- 4. Model Instantiation ---")
+    set_seed(seed)
     model = MLP(hidden_sizes=(256, 128), num_classes=10, dropout=0.0)
     n_params = count_parameters(model)
     print(f"Baseline MLP instantiated: 784 -> 256 -> 128 -> 10 ({n_params:,} trainable parameters)")
