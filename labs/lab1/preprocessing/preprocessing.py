@@ -47,9 +47,7 @@ def load_csv(csv_path: str) -> tuple:
     return images, labels
 
 
-def make_split(labels, val_ratio: float = 0.1, seed: int = 42, val_fraction: float | None = None) -> tuple:
-    if val_fraction is not None:
-        val_ratio = val_fraction
+def make_split(labels, val_ratio: float = 0.1, seed: int = 42) -> tuple:
     """Split training indices into train/validation (stratified, reproducible).
 
     Input : labels: int64 array [N]; val_ratio; seed
