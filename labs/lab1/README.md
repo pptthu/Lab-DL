@@ -1,43 +1,90 @@
-# Lab 1: Fashion-MNIST Classification with PyTorch MLP
+# Lab 1: Fashion-MNIST classification with an MLP (PyTorch)
 
-## Technical Report
+## Brief report
+**Task.** Classify 28x28 grayscale clothing images into 10 classes with a multilayer perceptron (MLP).
 
-### Problem & Data Split
-Multi-class image classification on Fashion-MNIST (10 categories) using a PyTorch Multi-Layer Perceptron (MLP). The dataset consists of Kaggle CSVs (60,000 train, 10,000 test; 28x28 grayscale). A stratified 90/10 split (seed 42) created 54,000 train and 6,000 validation samples (600/class). Normalization ($\mu = 0.2860, \sigma = 0.3527$) was computed strictly on training data.
+**Data.** Kaggle Fashion-MNIST CSVs: 60,000 train, 10,000 test. Stratified 90/10 split of the training file (seed 42):
+54,000 train / 6,000 validation (600 per class). Normalization (mean 0.2860, std 0.3527) is computed on the training split only.
 
-### Architecture & Training
-The model is an MLP ( \to 256 \to 128 \to 10$, ,146$ parameters) with ReLU activations and unscaled logits. It was trained for 5 epochs using Adam ($	ext{lr} = 10^{-3}$, batch size 64) with sample-weighted CrossEntropyLoss. The checkpoint was saved at lowest validation loss.
+**Model and training.** MLP 784 -> 256 -> 128 -> 10 (235,146 parameters), ReLU, outputs logits for CrossEntropyLoss.
+Adam (lr 1e-3), batch size 64, 5 epochs; the checkpoint with the lowest validation loss is kept (epoch 4).
 
-### Empirical Results & Visualizations
-- **Performance**: Baseline achieved .77\%$ validation accuracy (loss .3194$) and .32\%$ test accuracy (loss .3212$, 8,832/10,000 correct).
-- **Ablations**: A 4-configuration ablation (baseline .05\%$, SGD .57\%$, larger network .10\%$, dropout .47\%$) showed that variations under $\approx 0.5-1.0$ points reflect run-to-run noise rather than proven superiority.
-- **Artifacts**: Loss curves are saved at rtifacts/figures/loss_curves.png, prediction samples at rtifacts/figures/predictions_grid.png, and the confusion matrix at rtifacts/figures/confusion_matrix.png.
+**Results.** Validation accuracy 88.77% (loss 0.3194); test accuracy 88.32% (loss 0.3212, 8,832/10,000).
+Shirt is the hardest class (recall 71.00%); its errors go mostly to Pullover, Coat and T-shirt/top.
 
-### How to Run
-`ash
-python -m labs.lab1.main                              # Run end-to-end pipeline
-jupyter notebook labs/lab1/notebook/lab1_presentation.ipynb  # Interactive presentation
-`
+**Experiments.** Four configurations (baseline, SGD, larger network, dropout) reached 88.10-89.05% best validation accuracy,
+one seed each. The same baseline gave 88.87% and 89.05% in two runs, so these differences are within run-to-run noise:
+no configuration is shown to be better.
+
+**Figures.** Loss curves, predicted-vs-actual grid and confusion matrix: shown in the notebook and saved by `main.py` to
+`artifacts/figures/` (not committed).
+
+## Data
+Kaggle `zalando-research/fashionmnist`: `fashion-mnist_train.csv` and `fashion-mnist_test.csv` (`label` + 784 pixel columns).
+Put them in `labs/lab1/raw_data/` (this folder is not committed).
+
+## Folder structure
+```text
+labs/lab1/
+├── README.md                # brief report (EN + VI) / báo cáo ngắn
+├── project_description.md   # Define + Design (feed this to the AI agent)
+├── progress_status.md       # progress, audit, dated log / tiến độ
+├── main.py                  # runs the whole pipeline (leader)
+├── requirements.txt
+├── eda/eda.py                  # module: eda
+├── preprocessing/preprocessing.py# module: preprocessing
+├── features/features.py        # module: features
+├── model/model.py              # module: model
+├── train/train.py              # module: train
+├── evaluate/evaluate.py        # module: evaluate
+├── visualize/visualize.py      # module: visualize
+├── experiment/experiment.py    # module: experiment
+├── notebook/lab1_presentation.ipynb # presentation notebook
+├── raw_data/                # dataset files (NOT committed)
+├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
+├── logbook/                 # bug reports and experiment notes (docs/templates)
+└── tests/                   # interface contract + module tests (fake data)
+```
+
+## How to run
+```bash
+pip install -r labs/lab1/requirements.txt
+python -m pytest labs/lab1/tests        # tests on fake data
+python -m labs.lab1.main                # full pipeline (needs the CSVs in raw_data/)
+```
+Presentation: open `labs/lab1/notebook/lab1_presentation.ipynb` and run all cells.
 
 ---
 
 **Tiếng Việt**
 
-# Báo cáo Kỹ thuật: Phân loại Fashion-MNIST bằng MLP (PyTorch)
+# Lab 1: Phân loại Fashion-MNIST bằng MLP (PyTorch)
 
-### Bài toán & Phân chia Dữ liệu
-Phân loại ảnh 10 lớp trang phục Fashion-MNIST bằng mạng MLP trong PyTorch. Dữ liệu gồm các file CSV từ Kaggle (60.000 train, 10.000 test; 28x28). Phân chia phân tầng 90/10 (seed 42) tạo ra 54.000 mẫu train và 6.000 mẫu validation (600 mẫu/lớp). Tham số chuẩn hóa ($\mu = 0.2860, \sigma = 0.3527$) được tính riêng trên tập train.
+## Báo cáo ngắn
+**Bài toán.** Phân loại ảnh quần áo xám 28x28 thành 10 lớp bằng mạng nơ-ron nhiều lớp (MLP).
 
-### Kiến trúc & Huấn luyện
-Mạng MLP ( \to 256 \to 128 \to 10$, .146$ tham số) dùng kích hoạt ReLU và logits thô. Huấn luyện 5 epochs bằng Adam ($	ext{lr} = 10^{-3}$, batch size 64) với CrossEntropyLoss theo trọng số mẫu. Checkpoint tối ưu lưu theo validation loss thấp nhất.
+**Dữ liệu.** File CSV Fashion-MNIST trên Kaggle: 60.000 train, 10.000 test. Chia phân tầng 90/10 file train (seed 42):
+54.000 train / 6.000 validation (600 mẫu mỗi lớp). Chuẩn hóa (mean 0,2860, std 0,3527) chỉ tính trên tập train.
 
-### Kết quả Thực nghiệm & Đồ thị
-- **Hiệu năng**: Baseline đạt độ chính xác validation .77\%$ (loss .3194$) và test .32\%$ (loss .3212$, 8.832/10.000 ảnh đúng).
-- **Đối sánh**: Thử nghiệm 4 cấu hình (baseline .05\%$, SGD .57\%$, mạng lớn .10\%$, dropout .47\%$) cho thấy dao động dưới $\approx 0.5-1.0$ điểm phản ánh sai số ngẫu nhiên giữa các lần chạy.
-- **Đồ thị**: Lưu tại rtifacts/figures/loss_curves.png, rtifacts/figures/predictions_grid.png, và rtifacts/figures/confusion_matrix.png.
+**Mô hình và huấn luyện.** MLP 784 -> 256 -> 128 -> 10 (235.146 tham số), ReLU, xuất logits cho CrossEntropyLoss.
+Adam (lr 1e-3), batch 64, 5 epoch; giữ checkpoint có validation loss thấp nhất (epoch 4).
 
-### Cách chạy
-`ash
-python -m labs.lab1.main                              # Chạy toàn bộ pipeline
-jupyter notebook labs/lab1/notebook/lab1_presentation.ipynb  # Mở notebook trình bày
-`
+**Kết quả.** Accuracy validation 88,77% (loss 0,3194); test 88,32% (loss 0,3212, 8.832/10.000).
+Shirt là lớp khó nhất (recall 71,00%); lỗi chủ yếu bị nhầm sang Pullover, Coat và T-shirt/top.
+
+**Thí nghiệm.** Bốn cấu hình (baseline, SGD, mạng lớn hơn, dropout) đạt accuracy validation tốt nhất 88,10-89,05%,
+mỗi cấu hình một seed. Cùng cấu hình baseline cho 88,87% và 89,05% ở hai lần chạy, nên các chênh lệch này nằm trong
+sai số giữa các lần chạy: chưa cấu hình nào được chứng minh là tốt hơn.
+
+**Hình.** Đường loss, lưới ảnh dự đoán so với thực tế và ma trận nhầm lẫn: hiển thị trong notebook và được `main.py` lưu vào
+`artifacts/figures/` (không commit).
+
+## Dữ liệu
+Kaggle `zalando-research/fashionmnist`: `fashion-mnist_train.csv` và `fashion-mnist_test.csv` (cột `label` + 784 cột pixel).
+Đặt vào `labs/lab1/raw_data/` (thư mục này không được commit).
+
+## Cấu trúc thư mục
+Xem cây thư mục ở phần tiếng Anh phía trên (tên module giống nhau).
+
+## Cách chạy
+Các lệnh giống phần tiếng Anh. Notebook trình bày: mở `labs/lab1/notebook/lab1_presentation.ipynb` và chạy tất cả các ô.
