@@ -34,7 +34,7 @@ Do not skip a gate. At each gate, show the result and wait for the student's OK.
 | Implement | one module at a time: describe → generate → review → run | Module smoke test passes |
 | Test | smoke run → normal run → tests | Results recorded, not paraphrased |
 | Refactor | cleanup only after tests pass; no behavior change | Same results as before |
-| Commit | small commit per working step | Message: `module: what changed` |
+| Commit | small commit per working step | Message: `<type>(<lab>/<module>): <what changed>` (Conventional Commits, see CONTRIBUTING.md) |
 | Document | `README.md`, `AI_usage.md` | Matches the real code and folders |
 
 Details and fill-in forms are in `templates.md`. Read it when you need a template.
