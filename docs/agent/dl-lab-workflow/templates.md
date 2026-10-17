@@ -99,7 +99,7 @@ Help me find the cause by asking me questions first.
 ## Risks / follow-up
 <...>
 ```
-Commit message: `<module>: <what changed>`
+Commit message and PR title: `<type>(<lab>/<module>): <what changed>` (types: feat, fix, test, docs, refactor, chore; see CONTRIBUTING.md)
 
 ## 5. README.md skeleton
 

@@ -1,5 +1,6 @@
 ## What / Việc đã làm
 <lab and module, what changed>
+<!-- PR title format: <type>(<lab>/<module>): <what changed>, e.g. feat(lab2/model): add build_model with frozen backbone -->
 
 Closes #<issue number>
 
