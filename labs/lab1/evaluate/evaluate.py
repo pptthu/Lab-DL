@@ -1,4 +1,4 @@
-"""Module `evaluate` (Evaluation) of Lab 1: Fashion-MNIST classification with an MLP (PyTorch).
+﻿"""Module `evaluate` (Evaluation) of Lab 1: Fashion-MNIST classification with an MLP (PyTorch).
 
 Owner: Member B (see progress_status.md). Do not rename functions or change signatures
 without telling the team leader: other modules depend on them.
@@ -8,7 +8,13 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
-def evaluate(model, loader, device) -> tuple:
+from typing import Dict, Tuple
+import numpy as np
+import torch
+from torch import nn
+
+
+def evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[float, float]:
     """Evaluate without gradients (model.eval + torch.no_grad).
 
     Input : model, loader, device
@@ -18,23 +24,63 @@ def evaluate(model, loader, device) -> tuple:
     Vào : model, loader, device
     Ra  : (avg_loss: float, accuracy: float trong 0-1)
     """
-    raise NotImplementedError("TODO(Member B): implement evaluate")
+    model.to(device)
+    model.eval()
+    criterion = nn.CrossEntropyLoss()
+
+    running_loss = 0.0
+    running_correct = 0
+    total_samples = 0
+
+    with torch.no_grad():
+        for x_batch, y_batch in loader:
+            x_batch = x_batch.to(device)
+            y_batch = y_batch.to(device)
+            batch_size = x_batch.size(0)
+
+            logits = model(x_batch)
+            loss = criterion(logits, y_batch)
+
+            running_loss += loss.item() * batch_size
+            preds = torch.argmax(logits, dim=1)
+            running_correct += (preds == y_batch).sum().item()
+            total_samples += batch_size
+
+    avg_loss = float(running_loss / total_samples) if total_samples > 0 else 0.0
+    accuracy = float(running_correct / total_samples) if total_samples > 0 else 0.0
+    return avg_loss, accuracy
 
 
-def confusion_matrix(model, loader, device, num_classes: int = 10):
+def confusion_matrix(
+    model: nn.Module, loader, device: str | torch.device, num_classes: int = 10
+) -> np.ndarray:
     """Build the confusion matrix.
 
     Input : model, loader, device, num_classes
-    Output: array [10,10]; rows = true class, columns = predicted class
+    Output: array [num_classes, num_classes]; rows = true class, columns = predicted class
 
     VI: Tạo ma trận nhầm lẫn.
     Vào : model, loader, device, num_classes
-    Ra  : mảng [10,10]; hàng = lớp thật, cột = lớp dự đoán
+    Ra  : mảng [num_classes, num_classes]; hàng = lớp thật, cột = lớp dự đoán
     """
-    raise NotImplementedError("TODO(Member B): implement confusion_matrix")
+    model.to(device)
+    model.eval()
+
+    cm = np.zeros((num_classes, num_classes), dtype=np.int64)
+
+    with torch.no_grad():
+        for x_batch, y_batch in loader:
+            x_batch = x_batch.to(device)
+            logits = model(x_batch)
+            preds = torch.argmax(logits, dim=1).cpu().numpy()
+            targets = y_batch.numpy() if isinstance(y_batch, np.ndarray) else y_batch.cpu().numpy()
+
+            np.add.at(cm, (targets, preds), 1)
+
+    return cm
 
 
-def per_class_accuracy(cm) -> dict:
+def per_class_accuracy(cm: np.ndarray) -> Dict[int, float]:
     """Accuracy of each class.
 
     Input : cm: confusion matrix
@@ -44,4 +90,15 @@ def per_class_accuracy(cm) -> dict:
     Vào : cm: ma trận nhầm lẫn
     Ra  : dict: chỉ số lớp -> độ chính xác
     """
-    raise NotImplementedError("TODO(Member B): implement per_class_accuracy")
+    cm_arr = np.asarray(cm)
+    num_classes = cm_arr.shape[0]
+    accs: Dict[int, float] = {}
+
+    for i in range(num_classes):
+        row_sum = cm_arr[i].sum()
+        if row_sum > 0:
+            accs[i] = float(cm_arr[i, i] / row_sum)
+        else:
+            accs[i] = 0.0
+
+    return accs
