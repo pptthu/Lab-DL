@@ -12,8 +12,8 @@ The table below is the single source of truth for who is doing what.
 | `train` | Member B (Thư) | done | pass (fake data, 4 tests) | pass (VAL 6,000: loss 0.3194, acc 88.77%) | 5 epochs, Adam lr=1e-3, best checkpoint saved to artifacts/models/mlp_baseline.pt |
 | `evaluate` | Member B (Thư) | done | pass (fake data, 4 tests) | pass (VAL 6,000: loss 0.3194, acc 88.77%) | Trouser highest 98.5%, Shirt lowest 71.0%, CM sum 6000, ROC-AUC 0.9913 |
 | `visualize` | Member B (Thư) | done | pass (fake data, 3 tests) | pass (saved 3 figures in artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png checked visually |
-| `experiment` | Member B (Thư) | done | pass (fake data, 1 test with 2 configs) | pass (4 configs, saved to artifacts/runs/experiment_results.csv) | Baseline best (val 89.05%, test 88.32%), larger network 567k params slower (0.43ms) |
-| `main.py`, README, integration | Team leader (Thư) | done | pass (smoke run 1 epoch) | pass (full pipeline end-to-end) | README technical report (<200 words EN+VI), lab1_presentation.ipynb (25 cells), all 42 tests passing |
+| `experiment` | Member B (Thư) | done | pass (fake data, 1 test with 2 configs) | pass (4 configs, saved to artifacts/runs/experiment_results.csv) | Ablation 4 configs (val max: baseline 89.05%, sgd 88.57%, larger 88.10%, dropout 88.47%), test 88.32% |
+| `main.py`, README, integration | Team leader (Thư) | done | pass (smoke run 1 epoch) | pass (full pipeline end-to-end) | README technical report (<200 words EN+VI), lab1_presentation.ipynb (25 cells), all 46 tests passing (python -m pytest labs/lab1/tests tests -q -> 46 passed) |
 
 ## Handoff A -> B (sequential, no interleaving)
 Member B starts coding only after ALL of the following are true:
@@ -26,7 +26,7 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
-- `pytest labs/lab1/tests tests` -> pass, 42 passed (Python 3.13.7, torch 2.x)
+- `python -m pytest labs/lab1/tests tests -q` -> pass, 46 passed in 16.72s (42 lab1 tests + 4 shared tests; Python 3.13.7, torch 2.x, 2026-10-17)
 - `run_eda(raw_data/fashion-mnist_train.csv, artifacts/figures)` -> pass: n_rows 60000, 6000 per class, pixel 0-255, n_missing 0, n_duplicates 43; wrote `class_counts.png`, `sample_grid.png`
 - `python -m labs.lab1.preprocessing.preprocessing` -> pass: images (60000, 28, 28) uint8 0-255, labels int64 0-9, train 54000 / val 6000, wrote `artifacts/splits/train_val_split.json`
 - load_csv on `fashion-mnist_test.csv` -> pass: (10000, 28, 28) uint8, 1000 per class
@@ -58,7 +58,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
   - Larger network (512-256-128, Adam 1e-3): val_acc 88.10%, 567k params, 0.43ms latency
   - Dropout reg (256-128, Adam 1e-3, drop 0.2, wd 1e-4): val_acc 88.47%, 235k params, 0.22ms latency
   - Results saved to `artifacts/runs/experiment_results.csv`
-  - Best config evaluated ONCE on TEST set (10,000 samples): Test Loss: 0.3212, Test Accuracy: 88.32% (8832/10000)
+  - Baseline model evaluated on TEST set (10,000 samples; final report, not chosen by ablation): Test Loss: 0.3212, Test Accuracy: 88.32% (8832/10000)
 - `main.py` pipeline execution -> pass: all stages ran end-to-end seamlessly.
 - `lab1_presentation.ipynb` -> 25 cells executed end-to-end with pre-rendered visuals, error analysis, and bilingual explanations.
 
@@ -73,8 +73,10 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-15 Thư: `visualize`: implemented `plot_loss_curves`, `show_predictions`, `plot_confusion_matrix` + `tests/test_visualize.py` -> 3 tests passed; generated & visually verified 3 figures in artifacts/figures/
 - 2026-10-15 Thư: `experiment`: implemented `run_experiments`, `save_results` + `tests/test_experiment.py` -> test passed; ran 4 configs on real data; saved table to `artifacts/runs/experiment_results.csv`
 - 2026-10-16 Thư: `integration`: aligned numbers to canonical run (val 88.77%, test 88.32%), refined presentation notebook with Shirt error analysis, ROC/PR curves, latency profiling, condensed README (<200 words), updated honest AI usage declaration.
+- 2026-10-17 Thư: `integration`: audited docs and notebook against real outputs; updated notebook to English 3-tier scope (cut latency, ROC/PR in appendix); documented 46 tests, RNG/randn order effect, and metric differences.
 
 ## Open issues
-- Resolved: `val_ratio` vs `val_fraction` parameter compatibility added to `make_split`.
-- Resolved: All reported metrics aligned across notebook, README, and progress_status.
+- Resolved: `val_fraction` parameter was mistakenly added to Member A's `preprocessing.py` and then removed in commit `e14d58e`; callers (`main.py`, notebook) use `val_ratio=0.1` directly to keep Member A's module and docstring intact.
+- Resolved: Metric definition difference documented: `experiment.run_experiments` reports `best_val_acc` as the maximum across 5 epochs (optimistic, 89.05%), whereas `train_model` checkpoints at lowest validation loss (giving 88.77% at epoch 4, even though epoch 3 reached 88.87%).
+- RNG state / torch.randn finding: Notebook cell 9 executes `torch.randn(4, 1, 28, 28)` for a dummy forward pass after `set_seed(42)` and before training. This consumes random numbers, altering the training DataLoader shuffle sequence. Without `randn`, epoch 1 val_acc is 86.32%; with `randn`, it is 87.10%. Consequently, the standalone baseline in cell 11 (max 88.87%) and the ablation baseline in cell 19 (89.05%) represent the identical configuration and seed, differing only by RNG order. This confirms that differences below ~0.5-1.0 percentage points represent run-to-run noise.
 - 43 duplicate rows in the Kaggle train CSV kept intentionally to preserve index mapping.

@@ -32,10 +32,10 @@ CLASS_NAMES = [
 def main(seed: int = 42, epochs: int = 5) -> dict:
     """Run full Lab 1 pipeline:
     set_seed -> EDA -> preprocessing -> features -> model -> train ->
-    load best checkpoint -> evaluate on test once -> visualize -> experiments.
+    load best checkpoint -> final test evaluation (not used for selection) -> visualize -> experiments.
 
     VI: Chạy toàn bộ pipeline Lab 1: cố định seed, EDA, tiền xử lý, trích xuất đặc trưng,
-    tạo model, huấn luyện, nạp checkpoint tốt nhất, đánh giá test đúng 1 lần, trực quan hóa và thí nghiệm.
+    tạo model, huấn luyện, nạp checkpoint tốt nhất, đánh giá tập test cuối cùng (không dùng để chọn mô hình), trực quan hóa và thí nghiệm.
     """
     sys.stdout.reconfigure(encoding="utf-8")
     set_seed(seed)
@@ -114,7 +114,7 @@ def main(seed: int = 42, epochs: int = 5) -> dict:
     print(f"Validation Performance: loss={val_loss:.4f}, accuracy={val_acc*100:.2f}%")
 
     test_loss, test_acc = evaluate(best_model, test_loader, device=device)
-    print(f"Test Performance (evaluated ONCE): loss={test_loss:.4f}, accuracy={test_acc*100:.2f}%")
+    print(f"Test Performance (final test evaluation; not used for selection): loss={test_loss:.4f}, accuracy={test_acc*100:.2f}%")
 
     # 8. Visualize
     print("\n--- 7. Visualization ---")
