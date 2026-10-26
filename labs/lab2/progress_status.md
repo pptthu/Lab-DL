@@ -1,16 +1,16 @@
 # Lab 2: Pre-trained CNNs and fine-tuning on CIFAR-10 (PyTorch): progress status
-_Last updated: <date> by <name>_
+_Last updated: 2026-10-26 by Bảo (Member B)_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
-| `eda` | Member A (name TBD) | todo | - | - | |
-| `preprocessing` | Member A (name TBD) | todo | - | - | |
-| `features` | Member A (name TBD) | todo | - | - | |
-| `model` | Member A (name TBD) | todo | - | - | |
-| `train` | Member B (name TBD) | todo | - | - | |
-| `evaluate` | Member B (name TBD) | todo | - | - | |
-| `experiment` | Member B (name TBD) | todo | - | - | |
-| `main.py`, README, integration | Team leader | todo | - | - | |
+| `eda` | Member A (Đại) | doing | - | - | PR #21 open; awaiting merge to main |
+| `preprocessing` | Member A (Đại) | doing | - | - | PR #22 open; split artifact pending merge |
+| `features` | Member A (Đại) | doing | - | - | PR #23 open; awaiting merge to main |
+| `model` | Member A (Đại) | doing | - | - | PR #24 open; awaiting merge to main |
+| `train` | Member B (Bảo) | done | pass | - | Implemented in train.py; verified with test_train.py |
+| `evaluate` | Member B (Bảo) | done | pass | - | Implemented in evaluate.py; verified with test_evaluate.py |
+| `experiment` | Member B (Bảo) | done | pass | - | Implemented in experiment.py; verified with test_experiment.py |
+| `main.py`, README, integration | Team leader (Thư) | todo | - | - | Integration pending Member A PR merges |
 
 ## Handoff A -> B (sequential, no interleaving)
 Member B starts coding only after ALL of the following are true:
@@ -23,13 +23,17 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
-- (command) -> (result: pass/fail + key output)
+- `pytest labs/lab2/tests/test_train.py` -> 4 passed in 0.8s
+- `pytest labs/lab2/tests/test_evaluate.py` -> 4 passed in 0.5s
+- `pytest labs/lab2/tests/test_experiment.py` -> 2 passed in 0.6s
+- `pytest labs/lab2/tests/` -> 18 passed in 2.14s
 
 ## Log (dated, one line per step)
-- <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab2/tests`
+- 2026-10-17 pptthu: scaffold created; interfaces agreed -> verified with `pytest labs/lab2/tests`
+- 2026-10-26 Bảo (Member B): implemented train, evaluate, experiment modules on `feat/lab2-member-b`, added synthetic unit tests and updated presentation notebook sections -> verified with `pytest labs/lab2/tests` (18 passed).
 
 ## Open issues
-- (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
+- Blocker: Member A PRs (#21, #22, #23, #24) remain unmerged on main; full pipeline integration run depends on Member A's dataset and pre-trained backbone implementation being merged.
 
 ---
 
