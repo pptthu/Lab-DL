@@ -1,5 +1,5 @@
 # Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
-_Last updated: <date> by <name>_
+_Last updated: 2026-10-27 by Muội_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
@@ -23,13 +23,16 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 
 ## Audit: what actually runs
 - pytest labs/lab3/tests/test_features.py -v -> PASS: 3 tests passed.
+- pytest labs/lab3/tests/test_features.py labs/lab3/tests/test_smoke.py -v -> 11 tests passed in 0.46s.
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
+- 2026-10-26 Muội: implemented `features.tokenize_dataset`; verified with fake-tokenizer tests and the real tokenizer.
+- 2026-10-27 Muội: verified `features.tokenize_dataset` with 3 unit tests and 8 smoke tests; all 11 tests passed.
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
-
+- None reported for the `features` module.
 ---
 
 **Tiếng Việt**
