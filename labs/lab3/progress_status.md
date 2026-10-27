@@ -32,7 +32,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
-- None reported for the `features` module.
+- None reported for the `features` module
 ---
 
 **Tiếng Việt**
