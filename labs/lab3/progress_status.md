@@ -1,9 +1,9 @@
-# Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
+﻿# Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
 _Last updated: <date> by <name>_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
-| `sentiment_demo` | Member A (name TBD) | todo | - | - | |
+| `sentiment_demo` | Member A (Muội) | done | `pytest labs/lab3/tests/test_sentiment_demo.py -v`: 4 passed | `show_tokens` + `analyze_sentences`: 3 samples OK (POSITIVE / NEGATIVE / POSITIVE) | `model_name=None` = DistilBERT SST-2 for BOTH functions. Needs internet for the first model download. |
 | `eda` | Member A (name TBD) | todo | - | - | |
 | `preprocessing` | Member A (name TBD) | todo | - | - | |
 | `features` | Member A (name TBD) | todo | - | - | |
@@ -25,6 +25,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - (command) -> (result: pass/fail + key output)
 
 ## Log (dated, one line per step)
+- 2026-10-27 Muội: implemented sentiment_demo; verified 4 unit tests and 12 tests with smoke tests passed.
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
 
 ## Open issues
@@ -32,14 +33,16 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 
 ---
 
-**Tiếng Việt**
+**Tiáº¿ng Viá»‡t**
 
-## Tiếng Việt (cách dùng)
-- **Bàn giao A -> B (tuần tự, không xen kẽ):** Member B chỉ bắt đầu code khi Member A đã xong HẾT:
-  - dataset đã tokenize có input_ids, attention_mask, label
-  - Bài 1 (sentiment_demo) in token và cảm xúc của 3 câu mẫu
-  - mọi module của A ở trạng thái `done`, `pytest` qua, PR đã merge vào `main`, A đã nhắn tin bàn giao. Sau đó A chỉ trả lời câu hỏi và duyệt PR, không sửa module của B.
-- Cập nhật file này sau MỖI bước: đổi trạng thái, ghi kết quả chạy thật (không ghi "chạy được" nếu chưa chạy).
-- Mỗi dòng log gồm: ngày, người làm, module, đã thay đổi gì, kiểm chứng bằng cách nào.
-- Nếu một module không cần cho lab này, ghi `N/A` kèm lý do.
-- Lỗi cần ghi đủ 6 mục: mong đợi, thực tế, thông báo lỗi, môi trường, code liên quan, thay đổi gần đây.
+## Tiáº¿ng Viá»‡t (cÃ¡ch dÃ¹ng)
+- **BÃ n giao A -> B (tuáº§n tá»±, khÃ´ng xen káº½):** Member B chá»‰ báº¯t Ä‘áº§u code khi Member A Ä‘Ã£ xong Háº¾T:
+  - dataset Ä‘Ã£ tokenize cÃ³ input_ids, attention_mask, label
+  - BÃ i 1 (sentiment_demo) in token vÃ  cáº£m xÃºc cá»§a 3 cÃ¢u máº«u
+  - má»i module cá»§a A á»Ÿ tráº¡ng thÃ¡i `done`, `pytest` qua, PR Ä‘Ã£ merge vÃ o `main`, A Ä‘Ã£ nháº¯n tin bÃ n giao. Sau Ä‘Ã³ A chá»‰ tráº£ lá»i cÃ¢u há»i vÃ  duyá»‡t PR, khÃ´ng sá»­a module cá»§a B.
+- Cáº­p nháº­t file nÃ y sau Má»–I bÆ°á»›c: Ä‘á»•i tráº¡ng thÃ¡i, ghi káº¿t quáº£ cháº¡y tháº­t (khÃ´ng ghi "cháº¡y Ä‘Æ°á»£c" náº¿u chÆ°a cháº¡y).
+- Má»—i dÃ²ng log gá»“m: ngÃ y, ngÆ°á»i lÃ m, module, Ä‘Ã£ thay Ä‘á»•i gÃ¬, kiá»ƒm chá»©ng báº±ng cÃ¡ch nÃ o.
+- Náº¿u má»™t module khÃ´ng cáº§n cho lab nÃ y, ghi `N/A` kÃ¨m lÃ½ do.
+- Lá»—i cáº§n ghi Ä‘á»§ 6 má»¥c: mong Ä‘á»£i, thá»±c táº¿, thÃ´ng bÃ¡o lá»—i, mÃ´i trÆ°á»ng, code liÃªn quan, thay Ä‘á»•i gáº§n Ä‘Ã¢y.
+
+
