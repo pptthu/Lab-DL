@@ -6,7 +6,7 @@ _Last updated: <date> by <name>_
 | `sentiment_demo` | Member A (name TBD) | todo | - | - | |
 | `eda` | Member A (name TBD) | todo | - | - | |
 | `preprocessing` | Member A (name TBD) | todo | - | - | |
-| `features` | Member A (name TBD) | todo | - | - | |
+| `features` | Member A (Muội) | done | `pytest labs/lab3/tests/test_features.py`: 3 passed | `tokenize_dataset`: columns label, input_ids, attention_mask | Truncation only (max_length=256), NO fixed padding: Member B must use DataCollatorWithPadding. |
 | `model` | Member B (name TBD) | todo | - | - | |
 | `train` | Member B (name TBD) | todo | - | - | |
 | `evaluate` | Member B (name TBD) | todo | - | - | |
@@ -22,7 +22,7 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
-- (command) -> (result: pass/fail + key output)
+- pytest labs/lab3/tests/test_features.py -v -> PASS: 3 tests passed.
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
