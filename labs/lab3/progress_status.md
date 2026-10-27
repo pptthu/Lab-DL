@@ -1,10 +1,10 @@
-# Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
-_Last updated: <date> by <name>_
+﻿# Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
+_Last updated: 2026-10-27 by Muội_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
 | `sentiment_demo` | Member A (name TBD) | todo | - | - | |
-| `eda` | Member A (name TBD) | todo | - | - | |
+| `eda` | Member A (Muội) | done | `pytest labs/lab3/tests/test_eda.py`: 3 passed | `run_eda`: n=2000, 3 PNG saved | Figures go to `artifacts/figures/` (not committed) |
 | `preprocessing` | Member A (name TBD) | todo | - | - | |
 | `features` | Member A (name TBD) | todo | - | - | |
 | `model` | Member B (name TBD) | todo | - | - | |
