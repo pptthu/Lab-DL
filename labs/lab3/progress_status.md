@@ -5,8 +5,8 @@ _Last updated: 2026-10-27 by Muội_
 |---|---|---|---|---|---|
 | `sentiment_demo` | Member A (name TBD) | todo | - | - | |
 | `eda` | Member A (Muội) | done | `pytest labs/lab3/tests/test_eda.py`: 3 passed | `run_eda`: n=2000, 3 PNG saved | Figures go to `artifacts/figures/` (not committed) |
-| `preprocessing` | Member A (name TBD) | todo | - | - | |
-| `features` | Member A (name TBD) | todo | - | - | |
+| `preprocessing` | Member A (Muội) | done | `pytest labs/lab3/tests`: 24 passed | real IMDB run: 2000/500/500, both labels in each split, no `<br` left | Shuffle(seed) before select; val cut from train, test from test. |
+| `features` | Member A (Muội) | todo | - | - | |
 | `model` | Member B (name TBD) | todo | - | - | |
 | `train` | Member B (name TBD) | todo | - | - | |
 | `evaluate` | Member B (name TBD) | todo | - | - | |
@@ -22,10 +22,13 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
-- (command) -> (result: pass/fail + key output)
+- `pytest labs/lab3/tests` -> 24 passed (16 Member A tests + 8 `test_smoke.py`)
+- `python -c "from labs.lab3.preprocessing.preprocessing import load_text_dataset, label_counts; tr, va, te = load_text_dataset(); print(len(tr), label_counts(tr), len(va), label_counts(va), len(te), label_counts(te), '<br' in ' '.join(tr['text']))"` -> 2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False
+- Environment: Python 3.12.6, transformers 5.20.2, torch 2.14.1+cpu, matplotlib 3.11.2, datasets 5.1.0, pytest 9.1.1
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
+- 2026-10-25 Muội: preprocessing implemented (load_text_dataset, clean_text), verified with real IMDB and 24 tests passing
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
