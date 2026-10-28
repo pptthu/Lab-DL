@@ -24,6 +24,12 @@ def mock_build_model(name: str, num_classes: int = 10, freeze_backbone: bool = T
     return DummyNet(name=name, num_classes=num_classes)
 
 
+def mock_train_model(model, train_loader, val_loader, epochs, lr, device, ckpt_path, writer=None, optimizer_name="adam", weight_decay=0.0):
+    os.makedirs(os.path.dirname(os.path.abspath(ckpt_path)), exist_ok=True)
+    torch.save(model.state_dict(), ckpt_path)
+    return {"train_loss": [0.5], "val_loss": [0.4], "val_acc": [0.85]}
+
+
 def test_run_comparison_records_results_and_logs():
     x = torch.randn(8, 3, 8, 8)
     y = torch.randint(0, 10, (8,))
@@ -47,6 +53,7 @@ def test_run_comparison_records_results_and_logs():
             device="cpu",
             log_root=tmp_dir,
             build_model_fn=mock_build_model,
+            train_model_fn=mock_train_model,
         )
 
         assert len(results) == 2

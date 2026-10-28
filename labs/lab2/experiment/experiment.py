@@ -27,6 +27,7 @@ def run_comparison(
     log_root: str,
     build_model_fn: Optional[Any] = None,
     unfreeze_fn: Optional[Any] = None,
+    train_model_fn: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
     """Train/fine-tune several pre-trained models and hyperparameter settings; one TensorBoard run per setting.
 
@@ -51,6 +52,14 @@ def run_comparison(
             unfreeze_fn = imported_unfreeze
         except Exception:
             unfreeze_fn = None
+
+    if train_model_fn is None:
+        try:
+            from labs.lab2.train.train import train_model as imported_train_model
+            train_model_fn = imported_train_model
+        except Exception:
+            from labs.lab2.train.train import train_model as imported_train_model
+            train_model_fn = imported_train_model
 
     train_loader, val_loader, _ = loaders
 
@@ -87,7 +96,7 @@ def run_comparison(
                 unfreeze_fn(model, unfreeze_blocks)
 
             start_time = time.perf_counter()
-            history = train_model(
+            history = train_model_fn(
                 model=model,
                 train_loader=train_loader,
                 val_loader=val_loader,
