@@ -22,19 +22,22 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
+- pytest labs/lab3/tests/test_features.py -v -> PASS: 3 tests passed.
+- pytest labs/lab3/tests/test_features.py labs/lab3/tests/test_smoke.py -v -> 11 tests passed in 0.46s.
 - `pytest labs/lab3/tests` -> 24 passed (16 Member A tests + 8 `test_smoke.py`)
 - `python -c "from labs.lab3.preprocessing.preprocessing import load_text_dataset, label_counts; tr, va, te = load_text_dataset(); print(len(tr), label_counts(tr), len(va), label_counts(va), len(te), label_counts(te), '<br' in ' '.join(tr['text']))"` -> 2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False
 - `python -c "from labs.lab3.sentiment_demo.sentiment_demo import show_tokens, analyze_sentences; s = ['I love this movie', 'The plot was boring', 'Not bad at all']; [print(show_tokens(x)) for x in s]; print(analyze_sentences(s))"` -> tokens start with `[CLS]` (101) and end with `[SEP]` (102); POSITIVE 0.9999 / NEGATIVE 0.9998 / POSITIVE 0.9991 (positive, negative, sentence with negation).
 - Environment: Python 3.12.6, transformers 5.20.2, torch 2.14.1+cpu, matplotlib 3.11.2, datasets 5.1.0, pytest 9.1.1
-
 ## Log (dated, one line per step)
 - 2026-10-27 Muội: implemented sentiment_demo; verified 4 unit tests and 12 tests with smoke tests passed.
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
 - 2026-10-25 Muội: preprocessing implemented (load_text_dataset, clean_text), verified with real IMDB and 24 tests passing
+- 2026-10-26 Muội: implemented `features.tokenize_dataset`; verified with fake-tokenizer tests and the real tokenizer.
+- 2026-10-27 Muội: verified `features.tokenize_dataset` with 3 unit tests and 8 smoke tests; all 11 tests passed.
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
-
+- None reported for the `features` module
 ---
 
 **Tiáº¿ng Viá»‡t**
