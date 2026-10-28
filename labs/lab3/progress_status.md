@@ -1,12 +1,12 @@
 # Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
-_Last updated: 2026-10-25 by Muội_
+_Last updated: 2026-10-27 by Muội_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
 | `sentiment_demo` | Member A (Muội) | todo | - | - | |
 | `eda` | Member A (Muội) | todo | - | - | |
-| `preprocessing` | Member A (Muội) | done | `pytest labs/lab3/tests`: 24 passed | real IMDB run: 2000/500/500, both labels in each split, no `<br` left | Shuffle(seed) before select; val cut from train, test from test. |
-| `features` | Member A (Muội) | todo | - | - | |
+| `preprocessing` | Member A (Muội) | done | `pytest labs/lab3/tests`: 24 passed | `load_text_dataset`: 2000/500/500, no `<br` left | Shuffle(seed) before select; val cut from train, test from test. |
+| `features` | Member A (Muội) | done | `pytest labs/lab3/tests/test_features.py`: 3 passed | `tokenize_dataset`: columns label, input_ids, attention_mask | Truncation only (max_length=256), NO fixed padding: Member B must use DataCollatorWithPadding. |
 | `model` | Member B (name TBD) | todo | - | - | |
 | `train` | Member B (name TBD) | todo | - | - | |
 | `evaluate` | Member B (name TBD) | todo | - | - | |
@@ -22,17 +22,20 @@ Member B starts coding only after ALL of the following are true:
 After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
 
 ## Audit: what actually runs
+- pytest labs/lab3/tests/test_features.py -v -> PASS: 3 tests passed.
+- pytest labs/lab3/tests/test_features.py labs/lab3/tests/test_smoke.py -v -> 11 tests passed in 0.46s.
 - `pytest labs/lab3/tests` -> 24 passed (16 Member A tests + 8 `test_smoke.py`)
 - `python -c "from labs.lab3.preprocessing.preprocessing import load_text_dataset, label_counts; tr, va, te = load_text_dataset(); print(len(tr), label_counts(tr), len(va), label_counts(va), len(te), label_counts(te), '<br' in ' '.join(tr['text']))"` -> 2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False
 - Environment: Python 3.12.6, transformers 5.20.2, torch 2.14.1+cpu, matplotlib 3.11.2, datasets 5.1.0, pytest 9.1.1
-
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
 - 2026-10-25 Muội: preprocessing implemented (load_text_dataset, clean_text), verified with real IMDB and 24 tests passing
+- 2026-10-26 Muội: implemented `features.tokenize_dataset`; verified with fake-tokenizer tests and the real tokenizer.
+- 2026-10-27 Muội: verified `features.tokenize_dataset` with 3 unit tests and 8 smoke tests; all 11 tests passed.
 
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
-
+- None reported for the `features` module
 ---
 
 **Tiếng Việt**
