@@ -13,7 +13,7 @@ The table below is the single source of truth for who is doing what.
 | `evaluate` | Member B (Thư) | done | pass (fake data, 4 tests) | pass (VAL 6,000: loss 0.3194, acc 88.77%) | Trouser highest 98.5%, Shirt lowest 71.0%, CM sum 6000, ROC-AUC 0.9913 |
 | `visualize` | Member B (Thư) | done | pass (fake data, 3 tests) | pass (saved 3 figures in artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png checked visually |
 | `experiment` | Member B (Thư) | done | pass (fake data, 1 test with 2 configs) | pass (4 configs, saved to artifacts/runs/experiment_results.csv) | Ablation 4 configs (val max: baseline 89.05%, sgd 88.57%, larger 88.10%, dropout 88.47%), test 88.32% |
-| `main.py`, README, integration | Team leader (Thư) | done | pass (smoke run 1 epoch) | pass (full pipeline end-to-end) | README brief report (176 words EN / 208 VI, counted 2026-10-17), lab1_presentation.ipynb (25 cells), all 46 tests passing (python -m pytest labs/lab1/tests tests -q -> 46 passed) |
+| `main.py`, README, integration | Team leader (Thư) | done | pass (smoke run 1 epoch) | pass (full pipeline end-to-end) | README brief report (176 words EN / 208 VI, counted 2026-10-17), lab1_presentation.ipynb (26 cells), all 46 tests passing (python -m pytest labs/lab1/tests tests -q -> 46 passed) |
 
 ## Handoff A -> B (sequential, no interleaving)
 Member B starts coding only after ALL of the following are true:
@@ -61,7 +61,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
   - Results saved to `artifacts/runs/experiment_results.csv`
   - Baseline model evaluated on TEST set (10,000 samples; final report, not chosen by ablation): Test Loss: 0.3212, Test Accuracy: 88.32% (8832/10000)
 - `main.py` pipeline execution -> pass: all stages ran end-to-end seamlessly.
-- `lab1_presentation.ipynb` -> 25 cells executed end-to-end with pre-rendered visuals, error analysis, and bilingual explanations.
+- `lab1_presentation.ipynb` -> 26 cells (12 code) executed end-to-end, 0 errors, 2026-10-30; explanations are in English, only the Data Source cell is bilingual.
 
 ## Log (dated, one line per step)
 - <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab1/tests`
@@ -76,9 +76,10 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-16 Thư: `integration`: aligned numbers to canonical run (val 88.77%, test 88.32%), refined presentation notebook with Shirt error analysis, ROC/PR curves, latency profiling, condensed README (<200 words), updated honest AI usage declaration.
 - 2026-10-17 Thư: `integration`: audited docs and notebook against real outputs; updated notebook to English 3-tier scope (cut latency, ROC/PR in appendix); documented 46 tests, RNG/randn order effect, and metric differences.
 - 2026-10-17 Thư: `notebook` + `README`: Shirt error breakdown now excludes correct predictions (Pullover 63, Coat 48, T-shirt/top 42); notebook re-executed with all other outputs unchanged; README rewritten after PowerShell corruption ($ numbers, `a/`b escapes) -> verified by re-running the notebook and `pytest` (46 passed).
+- 2026-10-30 Thư: `notebook`: added Stage 0 Data Source cell; corrected overclaims (configurations are not one-factor-at-a-time, `torch.no_grad` wording, checkpoint claim, Sandal recall is exactly 95.00%, test-set note, overfitting wording) -> notebook re-executed, code outputs compared with the previous version: only the renamed ablation table title differs.
 
 ## Open issues
 - Resolved: `val_fraction` parameter was mistakenly added to Member A's `preprocessing.py` and then removed in commit `e14d58e`; callers (`main.py`, notebook) use `val_ratio=0.1` directly to keep Member A's module and docstring intact.
 - Resolved: Metric definition difference documented: `experiment.run_experiments` reports `best_val_acc` as the maximum across 5 epochs (optimistic, 89.05%), whereas `train_model` checkpoints at lowest validation loss (giving 88.77% at epoch 4, even though epoch 3 reached 88.87%).
-- RNG state / torch.randn finding: Notebook cell 9 executes `torch.randn(4, 1, 28, 28)` for a dummy forward pass after `set_seed(42)` and before training. This consumes random numbers, altering the training DataLoader shuffle sequence. Without `randn`, epoch 1 val_acc is 86.32%; with `randn`, it is 87.10%. Consequently, the standalone baseline in cell 11 (max 88.87%) and the ablation baseline in cell 19 (89.05%) represent the identical configuration and seed, differing only by RNG order. This is consistent with differences below ~0.5-1.0 percentage points being run-to-run noise (one seed per configuration, so not proven).
+- RNG state / torch.randn finding: The notebook's Stage 4 code cell executes `torch.randn(4, 1, 28, 28)` for a dummy forward pass after `set_seed(42)` and before training. This consumes random numbers, altering the training DataLoader shuffle sequence. Without `randn`, epoch 1 val_acc is 86.32%; with `randn`, it is 87.10%. Consequently, the standalone baseline in Stage 5 (max 88.87%) and the ablation baseline in Stage 9 (89.05%) represent the identical configuration and seed, differing only by RNG order. This is consistent with differences below ~0.5-1.0 percentage points being run-to-run noise (one seed per configuration, so not proven).
 - 43 duplicate rows in the Kaggle train CSV kept intentionally to preserve index mapping.
