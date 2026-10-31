@@ -317,7 +317,7 @@ The baseline experiment employs ResNet-18 with ImageNet pre-trained weights, a f
   - Device: CPU
   - Image Resolution: $128 \times 128$
   - Mini-batch Size: 64
-  - Optimizer: Adam ($\text{lr} = 0.001, \text{weight\_decay} = 10^{-4}$)
+  - Optimizer: Adam (`lr=0.001`, `weight_decay=1e-4`)
   - Epochs: 3
 
 **Training & Validation Progression:**
@@ -612,7 +612,7 @@ Thử nghiệm với kiến trúc ResNet-18 pre-trained từ ImageNet, đóng b�
   - Thiết bị: CPU
   - Kích thước ảnh: $128 \times 128$
   - Kích thước batch: 64
-  - Optimizer: Adam ($\text{lr} = 0.001, \text{weight\_decay} = 10^{-4}$)
+  - Optimizer: Adam (`lr=0.001`, `weight_decay=1e-4`)
   - Số epoch: 3
 
 **Tiến trình qua từng Epoch:**
