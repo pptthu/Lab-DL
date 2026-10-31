@@ -77,6 +77,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-17 Thư: `integration`: audited docs and notebook against real outputs; updated notebook to English 3-tier scope (cut latency, ROC/PR in appendix); documented 46 tests, RNG/randn order effect, and metric differences.
 - 2026-10-17 Thư: `notebook` + `README`: Shirt error breakdown now excludes correct predictions (Pullover 63, Coat 48, T-shirt/top 42); notebook re-executed with all other outputs unchanged; README rewritten after PowerShell corruption ($ numbers, `a/`b escapes) -> verified by re-running the notebook and `pytest` (46 passed).
 - 2026-10-30 Thư: `notebook`: added Stage 0 Data Source cell; corrected overclaims (configurations are not one-factor-at-a-time, `torch.no_grad` wording, checkpoint claim, Sandal recall is exactly 95.00%, test-set note, overfitting wording) -> notebook re-executed, code outputs compared with the previous version: only the renamed ablation table title differs.
+- 2026-10-31 Thư: `project_description`: Design updated with system architecture, current folder tree and two technical risks (RNG order, identical images across splits); Vietnamese section now points to the folder tree; interfaces unchanged -> documentation only, no code run.
 
 ## Open issues
 - Resolved: `val_fraction` parameter was mistakenly added to Member A's `preprocessing.py` and then removed in commit `e14d58e`; callers (`main.py`, notebook) use `val_ratio=0.1` directly to keep Member A's module and docstring intact.

@@ -17,6 +17,11 @@
 - **Evaluation criteria:** Practice 1 deliverables: Python code, brief report (README-style, about 200 words or fewer), loss graphs, image displays. Oral Q&A.
 
 ## Design
+- **System architecture** (three layers, two entry points):
+  - Data layer: `eda`, `preprocessing`, `features` (CSV -> checked arrays -> shared split -> normalized DataLoaders)
+  - Model and training layer: `model`, `train`, `experiment` (network, training loop, best checkpoint, comparison of configurations)
+  - Analysis layer: `evaluate`, `visualize` (metrics, confusion matrix, figures)
+  - Entry points: `main.py` runs the whole pipeline; `notebook/lab1_presentation.ipynb` calls the same modules for the presentation. Outputs go to `artifacts/` (splits, models, figures, runs).
 - **Data flow:** eda -> preprocessing -> features -> model -> train -> evaluate -> visualize ; experiment wraps model + train
 - **Modules and owners** (each module = one sub-folder with one script):
 - Member A: `eda`, `preprocessing`, `features`, `model`
@@ -66,10 +71,11 @@ labs/lab1/
 ├── evaluate/evaluate.py        # module: evaluate
 ├── visualize/visualize.py      # module: visualize
 ├── experiment/experiment.py    # module: experiment
+├── notebook/lab1_presentation.ipynb # presentation notebook
 ├── raw_data/                # dataset files (NOT committed)
 ├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
 ├── logbook/                 # bug reports and experiment notes (docs/templates)
-└── tests/test_smoke.py      # interface contract + smoke tests
+└── tests/                   # interface contract (test_smoke.py) + one test file per module
 ```
 - **Milestones:**
   - M1: loaders return a batch of shape [B,1,28,28] with labels 0-9
@@ -83,6 +89,8 @@ labs/lab1/
   - Normalization stats computed on all data: compute on train only
   - Wrong reshape/dtype when reading the CSV: print shapes and value range
   - Large CSV committed to git: keep raw_data/ ignored
+  - Extra random numbers change the shuffle order, so the same seed and configuration can give different results: state which run each reported number comes from
+  - Identical images in different splits (train-val 9, train-test 9, val-test 1): kept by team decision, disclose as a limitation
 
 ---
 
@@ -107,6 +115,11 @@ labs/lab1/
 - **Tiêu chí đánh giá:** Sản phẩm Practice 1: code Python, báo cáo ngắn (kiểu README, khoảng 200 từ trở xuống), đồ thị loss, ảnh hiển thị. Vấn đáp.
 
 ## Design
+- **Cấu trúc hệ thống** (ba lớp, hai điểm chạy):
+  - Lớp dữ liệu: `eda`, `preprocessing`, `features` (CSV -> mảng đã kiểm tra -> split dùng chung -> DataLoader đã chuẩn hóa)
+  - Lớp mô hình và huấn luyện: `model`, `train`, `experiment` (mạng, vòng lặp huấn luyện, checkpoint tốt nhất, so sánh cấu hình)
+  - Lớp phân tích: `evaluate`, `visualize` (chỉ số, ma trận nhầm lẫn, hình)
+  - Điểm chạy: `main.py` chạy toàn bộ pipeline; `notebook/lab1_presentation.ipynb` gọi cùng các module để trình bày. Kết quả lưu vào `artifacts/` (splits, models, figures, runs).
 - **Luồng dữ liệu:** eda -> preprocessing -> features -> model -> train -> evaluate -> visualize ; experiment wraps model + train
 - **Module và người phụ trách** (mỗi module = một sub-folder + một script):
 - Member A: `eda`, `preprocessing`, `features`, `model`
@@ -140,6 +153,7 @@ labs/lab1/
 | `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device)` | configs: danh sách dict; loaders: (train, val, test); device | danh sách dict kết quả: config, best_val_acc, n_params, train_seconds |
 | `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | file CSV |
 
+- **Cấu trúc thư mục:** xem cây thư mục ở phần tiếng Anh phía trên (tên file và thư mục giống nhau).
 - **Mốc (milestone):**
   - M1: loader trả batch shape [B,1,28,28], nhãn 0-9
   - M2: forward model trên batch giả trả [B,10]
@@ -152,3 +166,5 @@ labs/lab1/
   - Tính mean/std trên toàn bộ dữ liệu: chỉ tính trên train
   - Reshape/dtype sai khi đọc CSV: in shape và khoảng giá trị
   - Commit CSV lớn lên git: giữ raw_data/ trong .gitignore
+  - Số ngẫu nhiên phát sinh thêm làm đổi thứ tự xáo, nên cùng seed và cấu hình vẫn có thể ra kết quả khác: ghi rõ mỗi số báo cáo đến từ lần chạy nào
+  - Ảnh giống hệt nhau nằm ở các tập khác nhau (train-val 9, train-test 9, val-test 1): nhóm quyết định giữ nguyên, ghi rõ là giới hạn
