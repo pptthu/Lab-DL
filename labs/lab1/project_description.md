@@ -17,6 +17,11 @@
 - **Evaluation criteria:** Practice 1 deliverables: Python code, brief report (README-style, about 200 words or fewer), loss graphs, image displays. Oral Q&A.
 
 ## Design
+- **System architecture** (three layers, two entry points):
+  - Data layer: `eda`, `preprocessing`, `features` (CSV -> checked arrays -> shared split -> normalized DataLoaders)
+  - Model and training layer: `model`, `train`, `experiment` (network, training loop, best checkpoint, comparison of configurations)
+  - Analysis layer: `evaluate`, `visualize` (metrics, confusion matrix, figures)
+  - Entry points: `main.py` runs the whole pipeline; `notebook/lab1_presentation.ipynb` calls the same modules for the presentation. Outputs go to `artifacts/` (splits, models, figures, runs).
 - **Data flow:** eda -> preprocessing -> features -> model -> train -> evaluate -> visualize ; experiment wraps model + train
 - **Modules and owners** (each module = one sub-folder with one script):
 - Member A: `eda`, `preprocessing`, `features`, `model`
@@ -44,11 +49,15 @@
 | `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss: float, accuracy: float in 0-1) |
 | `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device, num_classes | array [10,10]; rows = true class, columns = predicted class |
 | `evaluate` | Member B | `per_class_accuracy(cm)` | cm: confusion matrix | dict: class index -> accuracy |
+| `evaluate` | Member B | `save_classification_report(cm, class_names, csv_path: str)` | cm, class_names, csv_path | DataFrame of precision, recall, specificity, F1 per class; CSV file |
 | `visualize` | Member B | `plot_loss_curves(history: dict, out_path: str)` | history from train_model; out_path (.png) | PNG file |
 | `visualize` | Member B | `show_predictions(model, loader, class_names, device, out_path: str, n: int = 16)` | model, loader, class_names (10 names), device, out_path, n | PNG file |
 | `visualize` | Member B | `plot_confusion_matrix(cm, class_names, out_path: str)` | cm, class_names, out_path | PNG file |
-| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device)` | configs: list of dicts; loaders: (train, val, test); device | list of result dicts: config, best_val_acc, n_params, train_seconds |
+| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device, ckpt_prefix: str = 'exp_run')` | configs: list of dicts; loaders: (train, val, test); device; ckpt_prefix | list of result dicts: config, best_val_acc, best_val_loss, best_epoch (all from the kept checkpoint), final_val_loss, n_params, train_seconds, ckpt_path |
 | `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | CSV file |
+| `experiment` | Member B | `analyze_seed_runs(runs: list, loaders: tuple, class_names, device, out_dir: str, top_k: int = 10, prefix: str = '', use_test: bool = True)` | results of one fixed configuration, one per seed; loaders; class_names; device; out_dir; top_k; prefix; use_test | dict: train_acc_mean, val_acc_mean, and test_acc_mean, test_acc_std when use_test; seed_results.csv, recall_by_class.csv, top_confusions.csv in out_dir |
+| `experiment` | Member B | `build_model(cfg: dict, num_classes: int = 10)` | cfg, num_classes | new, untrained MLP |
+| `experiment` | Member B | `compare_pairs(values, pairs)` | values: table seed x configuration; pairs: (variant, reference, factor) | DataFrame: mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm |
 
 - **Folder structure:**
 ```text
@@ -57,6 +66,7 @@ labs/lab1/
 ├── project_description.md   # Define + Design (feed this to the AI agent)
 ├── progress_status.md       # progress, audit, dated log / tiến độ
 ├── main.py                  # runs the whole pipeline (leader)
+├── extended_study.py        # 20-epoch study (leader)
 ├── requirements.txt
 ├── eda/eda.py                  # module: eda
 ├── preprocessing/preprocessing.py# module: preprocessing
@@ -66,10 +76,11 @@ labs/lab1/
 ├── evaluate/evaluate.py        # module: evaluate
 ├── visualize/visualize.py      # module: visualize
 ├── experiment/experiment.py    # module: experiment
+├── notebook/lab1_presentation.ipynb # presentation notebook
 ├── raw_data/                # dataset files (NOT committed)
 ├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
 ├── logbook/                 # bug reports and experiment notes (docs/templates)
-└── tests/test_smoke.py      # interface contract + smoke tests
+└── tests/                   # interface contract (test_smoke.py) + one test file per module
 ```
 - **Milestones:**
   - M1: loaders return a batch of shape [B,1,28,28] with labels 0-9
@@ -83,6 +94,8 @@ labs/lab1/
   - Normalization stats computed on all data: compute on train only
   - Wrong reshape/dtype when reading the CSV: print shapes and value range
   - Large CSV committed to git: keep raw_data/ ignored
+  - Extra random numbers or a different CPU thread count change the results of the same seed: use `torch.zeros` for shape checks, fix the thread count, report mean and std across seeds
+  - Identical images in different splits (train-val 9, train-test 9, val-test 1) and Kaggle CSVs that differ from the official split: keep the CSVs, disclose as a limitation, do not compare with published results
 
 ---
 
@@ -107,6 +120,11 @@ labs/lab1/
 - **Tiêu chí đánh giá:** Sản phẩm Practice 1: code Python, báo cáo ngắn (kiểu README, khoảng 200 từ trở xuống), đồ thị loss, ảnh hiển thị. Vấn đáp.
 
 ## Design
+- **Cấu trúc hệ thống** (ba lớp, hai điểm chạy):
+  - Lớp dữ liệu: `eda`, `preprocessing`, `features` (CSV -> mảng đã kiểm tra -> split dùng chung -> DataLoader đã chuẩn hóa)
+  - Lớp mô hình và huấn luyện: `model`, `train`, `experiment` (mạng, vòng lặp huấn luyện, checkpoint tốt nhất, so sánh cấu hình)
+  - Lớp phân tích: `evaluate`, `visualize` (chỉ số, ma trận nhầm lẫn, hình)
+  - Điểm chạy: `main.py` chạy toàn bộ pipeline; `notebook/lab1_presentation.ipynb` gọi cùng các module để trình bày. Kết quả lưu vào `artifacts/` (splits, models, figures, runs).
 - **Luồng dữ liệu:** eda -> preprocessing -> features -> model -> train -> evaluate -> visualize ; experiment wraps model + train
 - **Module và người phụ trách** (mỗi module = một sub-folder + một script):
 - Member A: `eda`, `preprocessing`, `features`, `model`
@@ -134,12 +152,17 @@ labs/lab1/
 | `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss: float, accuracy: float trong 0-1) |
 | `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device, num_classes | mảng [10,10]; hàng = lớp thật, cột = lớp dự đoán |
 | `evaluate` | Member B | `per_class_accuracy(cm)` | cm: ma trận nhầm lẫn | dict: chỉ số lớp -> độ chính xác |
+| `evaluate` | Member B | `save_classification_report(cm, class_names, csv_path: str)` | cm, class_names, csv_path | DataFrame precision, recall, specificity, F1 từng lớp; file CSV |
 | `visualize` | Member B | `plot_loss_curves(history: dict, out_path: str)` | history từ train_model; out_path (.png) | file PNG |
 | `visualize` | Member B | `show_predictions(model, loader, class_names, device, out_path: str, n: int = 16)` | model, loader, class_names (10 tên), device, out_path, n | file PNG |
 | `visualize` | Member B | `plot_confusion_matrix(cm, class_names, out_path: str)` | cm, class_names, out_path | file PNG |
-| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device)` | configs: danh sách dict; loaders: (train, val, test); device | danh sách dict kết quả: config, best_val_acc, n_params, train_seconds |
+| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device, ckpt_prefix: str = 'exp_run')` | configs: danh sách dict; loaders: (train, val, test); device; ckpt_prefix | danh sách dict kết quả: config, best_val_acc, best_val_loss, best_epoch (đều của checkpoint được giữ), final_val_loss, n_params, train_seconds, ckpt_path |
 | `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | file CSV |
+| `experiment` | Member B | `analyze_seed_runs(runs: list, loaders: tuple, class_names, device, out_dir: str, top_k: int = 10, prefix: str = '', use_test: bool = True)` | kết quả của một cấu hình cố định, mỗi seed một dòng; loaders; class_names; device; out_dir; top_k; prefix; use_test | dict: train_acc_mean, val_acc_mean, và test_acc_mean, test_acc_std khi use_test; seed_results.csv, recall_by_class.csv, top_confusions.csv trong out_dir |
+| `experiment` | Member B | `build_model(cfg: dict, num_classes: int = 10)` | cfg, num_classes | MLP mới, chưa huấn luyện |
+| `experiment` | Member B | `compare_pairs(values, pairs)` | values: bảng seed x cấu hình; pairs: (biến thể, mốc, yếu tố) | DataFrame: mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm |
 
+- **Cấu trúc thư mục:** xem cây thư mục ở phần tiếng Anh phía trên (tên file và thư mục giống nhau).
 - **Mốc (milestone):**
   - M1: loader trả batch shape [B,1,28,28], nhãn 0-9
   - M2: forward model trên batch giả trả [B,10]
@@ -152,3 +175,5 @@ labs/lab1/
   - Tính mean/std trên toàn bộ dữ liệu: chỉ tính trên train
   - Reshape/dtype sai khi đọc CSV: in shape và khoảng giá trị
   - Commit CSV lớn lên git: giữ raw_data/ trong .gitignore
+  - Số ngẫu nhiên phát sinh thêm hoặc số thread CPU khác làm đổi kết quả của cùng seed: dùng `torch.zeros` khi kiểm tra shape, cố định số thread, báo mean và std qua nhiều seed
+  - Ảnh giống hệt nhau nằm ở các tập khác nhau (train-val 9, train-test 9, val-test 1) và CSV Kaggle khác cách chia chính thức: giữ nguyên CSV, ghi rõ là giới hạn, không so với kết quả đã công bố

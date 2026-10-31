@@ -1,4 +1,4 @@
-﻿"""Module `visualize` (Visualization) of Lab 1: Fashion-MNIST classification with an MLP (PyTorch).
+"""Module `visualize` (Visualization) of Lab 1: Fashion-MNIST classification with an MLP (PyTorch).
 
 Owner: Member B (see progress_status.md). Do not rename functions or change signatures
 without telling the team leader: other modules depend on them.
