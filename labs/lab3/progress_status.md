@@ -1,5 +1,5 @@
 ﻿# Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
-_Last updated: 2026-10-30 by Member B (ngohongphuc2805ag-hash)_
+_Last updated: 2026-10-31 by Member B (ngohongphuc2805ag-hash)_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
@@ -9,7 +9,7 @@ _Last updated: 2026-10-30 by Member B (ngohongphuc2805ag-hash)_
 | `features` | Member A (Muội) | done | `pytest labs/lab3/tests/test_features.py -v`: 3 passed | `tokenize_dataset`: columns label, input_ids, attention_mask | Truncation only (max_length=256), NO fixed padding: Member B must use DataCollatorWithPadding. |
 | `model` | Member B (ngohongphuc2805ag-hash) | done | `pytest labs/lab3/tests/test_model.py`: 8 passed | real load of `distilbert-base-uncased`: see the `evaluate` row (same run) | Merged in PR #38. Tokenizer and model from the SAME checkpoint; `id2label` {0: NEGATIVE, 1: POSITIVE}. The warning about a new classifier head is expected. |
 | `train` | Member B (ngohongphuc2805ag-hash) | done | `pytest labs/lab3/tests/test_train.py`: 8 passed | tiny fine-tune + small full run: see the `evaluate` row (same run) | Merged in PR #39. Padding per batch (DataCollatorWithPadding); extra OPTIONAL argument `tokenizer`; `eval_strategy` / `processing_class` names are detected for the installed transformers. |
-| `evaluate` | Member B (ngohongphuc2805ag-hash) | doing (set to done after the TODO(B) below) | `pytest labs/lab3/tests/test_evaluate.py`: 16 passed | TODO(B): run the notebook locally (sections 5.2 to 10.2) and paste here the line printed at the end of section 10.2, plus the result of the tiny fine-tune (4 steps, command in the PR description) | Metrics are NumPy only (no network). `predict_texts` has 2 extra keyword-only optional arguments (`max_length`, `batch_size`); helpers `classification_metrics` and `zero_shot_labels` added. Test set is used only in `evaluate_on_test` and section 10. |
+| `evaluate` | Member B (ngohongphuc2805ag-hash) | done | `pytest labs/lab3/tests/test_evaluate.py`: 16 passed | full small run on CPU (2026-10-31): test n=500, zero-shot acc/F1 = 0.8920/0.8889, fine-tuned acc/F1 = 0.8220/0.8195 (MAX_LEN=128, EPOCHS=1, seed=42); tiny fine-tune (4 steps, 64 train / 32 test reviews, only checks that the code runs): accuracy 0.4688, F1 0.3200; details in notebook sections 6.2, 7, 10 | Metrics are NumPy only (no network). `predict_texts` has 2 extra keyword-only optional arguments (`max_length`, `batch_size`); helpers `classification_metrics` and `zero_shot_labels` added. Test set is used only in `evaluate_on_test` and section 10. |
 | `main.py`, README, integration | Team leader | todo | - | - | |
 
 ## Handoff A -> B (sequential, no interleaving)
@@ -30,8 +30,9 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - Environment: Python 3.12.6, transformers 5.20.2, torch 2.14.1+cpu, matplotlib 3.11.2, datasets 5.1.0, pytest 9.1.1
 - Member B (2026-10-30): `pytest labs/lab3/tests` -> 56 passed (8 model + 8 train + 16 evaluate + 24 from Member A and `test_smoke.py`); with `tests/` of the repo root: 60 passed.
 - Member B: `compute_metrics` accuracy and F1 compared with scikit-learn on 300 random cases (random sizes 1 to 599) -> maximum absolute difference 0.
-- Member B: the code of the notebook cells of sections 5.2, 6.2, 7, 8, 9, 10 was executed against fake objects only (both branches: train and load the saved model). A real model run (no Hugging Face access in the drafting environment) is still to be recorded in the `evaluate` row above.
+- Member B: the code of the notebook cells of sections 5.2, 6.2, 7, 8, 9, 10 was executed against fake objects only (both branches: train and load the saved model). The real model run (tiny fine-tune and full small run) is recorded in the `evaluate` row above.
 ## Log (dated, one line per step)
+- 2026-10-31 Member B: ran the tiny fine-tune and the full small run (notebook top to bottom); results recorded in the `evaluate` row, README and notebook outputs.
 - 2026-10-29 Member B: `model` (PR #38) and `train` (PR #39) merged into main; fake-`transformers` tests pass (8 + 8).
 - 2026-10-30 Member B: implemented `evaluate` (`compute_metrics`, `evaluate_on_test`, `predict_texts`, helpers `classification_metrics`, `zero_shot_labels`); 16 tests; `pytest labs/lab3/tests` -> 56 passed.
 - 2026-10-30 Member B: wrote notebook sections 5.2, 6.2, 7, 8, 9 (optional, off by default), 10.1, 10.2; only Member B's cells were changed.
@@ -44,7 +45,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 ## Open issues
 - (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
 - None reported for the `features` module
-- Member B: real-model run (tiny fine-tune, full small run, notebook top-to-bottom with saved outputs) not yet recorded: see the `evaluate` row.
+- None reported for the Member B modules (`model`, `train`, `evaluate`).
 ---
 
 **Tiáº¿ng Viá»‡t**
