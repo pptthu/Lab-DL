@@ -109,6 +109,7 @@ Các số này thay thế mọi kết quả trong phần kiểm chứng cũ bên
 - 2026-11-01 Thư: `train`, `evaluate`, `experiment`, `main`, notebook: notebook khớp `main.py` (`torch.zeros`, cố định số thread); `best_val_acc` báo đúng checkpoint được giữ; test không còn ghi đè checkpoint thật; thêm `save_classification_report`, `analyze_seed_runs`; thiết kế lại thí nghiệm thành 7 cấu hình, 5 seed; xóa BOM; cập nhật tài liệu từ một lần chạy -> 50 passed, đã đối chiếu notebook và `main.py`.
 - 2026-11-01 Thư: `progress_status`: chuyển toàn bộ file sang tiếng Việt theo quyết định của nhóm trưởng, giữ nguyên nội dung -> chỉ sửa tài liệu, không chạy code.
 - 2026-11-02 Toàn: `preprocessing`, `eda`: đổi sang dữ liệu chính thức của Zalando bằng `download_official.py` (torchvision, kiểm MD5), cùng tên file và định dạng CSV; đổi tên CSV Kaggle thành `*_kaggle.csv`; tạo lại split; sửa chữ Kaggle trong docstring `eda.py` và `project_description.md` -> 50 passed; 0 dòng trùng, 0 ảnh chung giữa các tập
+- 2026-11-02 Toàn: notebook: chạy lại Phần A (cell 0-10: EDA, split, features, model) trên dữ liệu chính thức; cell 11-25 và phần chữ giữ nguyên, chờ Thư chạy lại -> 0 lỗi; Duplicate rows 0, mean 0,2859, std 0,3530
 - 2026-11-01 Thư: `experiment`, `extended_study`, notebook, README: thêm train accuracy, kiểm định t có hiệu chỉnh Holm, khoảng tin cậy 95%, nghiên cứu 20 epoch; đối chiếu CSV Kaggle với file chính thức; viết báo cáo chi tiết trong README; bỏ CNN vì thiếu thời gian -> 54 passed, chạy `main.py` hai lần ra kết quả y hệt.
 
 ## Vấn đề mở
