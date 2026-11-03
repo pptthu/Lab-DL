@@ -19,7 +19,7 @@ import torchvision.datasets as datasets
 
 
 CIFAR10_CLASSES = (
-    "airplane", "automobile", "bird", "cat", "deer",
+    "airplane", "automobile", "bird", "cat", "deer", 
     "dog", "frog", "horse", "ship", "truck"
 )
 
@@ -49,7 +49,7 @@ def run_eda(data_root: str, out_dir: str) -> dict:
     class_counts = {CIFAR10_CLASSES[i]: int((targets == i).sum()) for i in range(10)}
 
     sample_img = train_raw.data[0]
-    image_size = tuple(sample_img.shape)  # (32, 32, 3)
+    image_size = tuple(sample_img.shape)  
 
     # 2. Compute channel mean and std on train data normalized to [0, 1]
     # Reshape to [-1, 3] to calculate statistics per channel
