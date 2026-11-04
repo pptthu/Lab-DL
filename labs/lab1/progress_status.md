@@ -39,6 +39,7 @@ Dữ liệu và split dưới đây thay thế CSV Kaggle. Kết quả huấn lu
 Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook và `docs/` dùng đúng các số này.
 - CSV tạo lại trên máy nhóm trưởng bằng `python -m labs.lab1.preprocessing.download_official`: MD5 train `8ff2cced1c624159b21dac4f735b4215`, test `78e18be2098f1256a07ce6f91a4d436e`; `make_split(labels, 0.1, 42)` ra đúng y `train_val_split.json` đã commit (54.000 / 6.000); mean 0,2859, std 0,3530
 - `python -m labs.lab1.main` -> đạt, 35 lần chạy thí nghiệm, 7.401 giây; seed 42: val 89,05% (loss 0,3018), test 88,36% (loss 0,3338, 8.836/10.000), epoch tốt nhất là 5
+- Chạy `main.py` lần hai (2026-11-04, 1.145 giây) -> cả 5 file kết quả (`experiment_results`, `seed_results`, `recall_by_class`, `top_confusions`, `classification_report`) y hệt lần một (bỏ cột thời gian), MD5 của 35 checkpoint thí nghiệm và `mlp_baseline.pt` y hệt
 - Thời gian: phần lớn mỗi lần chạy 55-140 giây; riêng `softmax_regression` seed 3407 mất 5.445 giây và seed 42 mất 388 giây (máy không vào sleep, chưa rõ nguyên nhân); accuracy không phụ thuộc thời gian chạy
 - Notebook chạy lại toàn bộ bằng `jupyter nbconvert --execute` sau `main.py` và `extended_study.py` -> 0 lỗi, cùng val 89,05% và test 88,36% với `main.py`; ROC-AUC macro 0,9925, PR-AUC macro 0,9479 (validation)
 - Baseline qua 5 seed: test 88,00 +/- 0,39%; val 88,62 +/- 0,36%; train 90,92%
@@ -139,5 +140,5 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - Đã xử lý 2026-11-04: chạy lại `main.py`, notebook, `extended_study.py` trên dữ liệu mới và cập nhật README.
 - Chưa xong: mỗi thành viên tự điền phần của mình trong `AI_usage.md`.
 - Chưa kiểm chứng: giả thuyết về nguyên nhân lỗi của Shirt, và nguyên nhân CSV Kaggle khác file chính thức.
-- Chưa làm: chạy trên máy khác; chạy `main.py` hai lần trên data chính thức để kiểm tra tái lập (lần 2026-11-01 trên Kaggle cho kết quả y hệt).
+- Chưa làm: chạy trên máy khác. Trên cùng máy, `main.py` chạy hai lần cho kết quả y hệt (2026-11-04).
 - Ngoài phạm vi (quyết định của nhóm, 2026-11-04): CNN; Lab 1 chỉ làm MLP.
