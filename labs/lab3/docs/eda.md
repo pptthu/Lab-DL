@@ -7,6 +7,7 @@
 | Module | `labs/lab3/eda/eda.py` |
 | Owner | Member A (Muội), assigned by the team leader |
 | Status | done in `progress_status.md` (Reported only) |
+| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
 | Files you may edit | `labs/lab3/eda/eda.py`, `labs/lab3/tests/test_eda.py`, this guide |
 | Files you must not edit | other modules, raw data, saved figures of real runs, other owners' notebook cells |
 | Agreed signatures | `run_eda(dataset, out_dir: str, text_col: str = 'text', label_col: str = 'label') -> dict` (same as `project_description.md`) |
@@ -14,12 +15,6 @@
 | Prohibited | modifying the dataset; running EDA on validation or test to make decisions; writing figures to a real folder from tests (use `tmp_path`) |
 | Checks | Unit: `python -m pytest labs/lab3/tests/test_eda.py -q`. Smoke: `run_eda` on the real train subset into a temporary folder |
 | Done when | unit tests pass; smoke output recorded in `progress_status.md`; this guide updated |
-
-## Current task (edited ONLY by the team leader)
-
-- None.
-
-Module owners and agents never assign work to themselves here; they ask the team leader.
 
 ## What the brief requires
 
@@ -55,8 +50,8 @@ Recorded (Reported only): n=2000, 3 PNG saved.
 
 **Tiếng Việt**
 
+- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
 - **Dành cho AI:** người phụ trách Member A (Muội), do nhóm trưởng giao. Được sửa `eda.py`, `tests/test_eda.py`, file này; cấm sửa module khác, data, hình của lần chạy thật. Chữ ký `run_eda(dataset, out_dir, text_col='text', label_col='label') -> dict`, khớp `project_description.md`. Cấm sửa dataset, cấm dùng val/test để ra quyết định, test phải ghi hình vào `tmp_path`.
-- **Task hiện tại:** chỉ nhóm trưởng ghi ở mục "Current task".
 - **Đề:** slide Practice 3 không nêu bước EDA (chưa xác nhận là bắt buộc); nhóm chọn làm để chọn `max_length` và kiểm tra cân bằng nhãn.
 - **Cách hoạt động:** đếm nhãn, đo độ dài theo **số từ**, trả về thống kê, lưu 3 hình.
 - **Lưu ý:** số từ khác số token; dataset rỗng báo `ValueError`; chỉ dùng tập train.
