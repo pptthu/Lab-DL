@@ -1,11 +1,19 @@
 """Unit tests for Lab 2 Member B: evaluate module."""
+import sys
+from pathlib import Path
+
 import pytest
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from labs.lab2.evaluate.evaluate import evaluate, confusion_matrix, top_confusions
+# Allow running this file directly: python labs/lab2/tests/test_evaluate.py
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from labs.lab2.evaluate.evaluate import evaluate, confusion_matrix, top_confusions  # noqa: E402
 
 
 class SimpleLinear(nn.Module):
@@ -83,3 +91,7 @@ def test_top_confusions_orders_descending_and_skips_diagonal():
     assert len(top) == 2
     assert top[0] == ("B", "C", 10)
     assert top[1] == ("A", "B", 5)
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-v"]))

@@ -82,43 +82,102 @@ def describe_model(model: nn.Module) -> dict:
     }
 
 
+def _unfreeze(module: nn.Module) -> None:
+    """Set requires_grad=True on every parameter of a module (in place).
+
+    VI: Đặt requires_grad=True cho mọi tham số của một module (tại chỗ).
+    """
+    for param in module.parameters():
+        param.requires_grad = True
+
+
+def _split_vgg_conv_blocks(features: nn.Sequential) -> list[nn.Sequential]:
+    """Group a VGG feature extractor into its convolutional blocks.
+
+    VGG keeps every layer in one flat ``nn.Sequential``, so "the last two
+    modules" are usually ReLU and MaxPool (which have no parameters at all).
+    In VGG each convolutional block ends with a ``MaxPool2d``, so the pooling
+    layers are a reliable separator. VGG-16 yields exactly 5 blocks.
+
+    VI: Gom phần trích xuất đặc trưng của VGG thành các khối tích chập.
+    Mỗi khối trong VGG kết thúc bằng MaxPool2d nên lớp pooling là mốc tách đáng tin cậy.
+    """
+    blocks: list[nn.Sequential] = []
+    current: list[nn.Module] = []
+    for layer in features.children():
+        current.append(layer)
+        if isinstance(layer, nn.MaxPool2d):
+            blocks.append(nn.Sequential(*current))
+            current = []
+    if current:  # trailing layers without a final MaxPool (not the case in VGG-16)
+        blocks.append(nn.Sequential(*current))
+    return blocks
+
+
 def unfreeze_last_blocks(model: nn.Module, n_blocks: int) -> None:
-    """Unfreeze the last blocks to fine-tune.
+    """Unfreeze the last n_blocks semantic blocks, keeping the head trainable.
+
+    Supported layouts:
+      * ResNet-18: layer1 .. layer4 (n_blocks=1 unfreezes layer4).
+      * VGG-16: 5 convolutional blocks, each ending with MaxPool2d.
+        n_blocks=1 unfreezes the last conv block (features[24:31]):
+        Conv, ReLU, Conv, ReLU, Conv, ReLU, MaxPool.
+      * DenseNet-121: dense blocks inside ``model.features`` (existing heuristic).
+      * Other models: their last n_blocks top-level children.
+
+    The replacement classification head is always left trainable. Values of
+    n_blocks larger than the number of available blocks unfreeze everything.
 
     Input : model, n_blocks
     Output: model updated in place
 
-    VI: Mở khóa vài block cuối để fine-tune.
-    Vào : model, n_blocks
+    Raises
+    ------
+    TypeError
+        If n_blocks is not an integer.
+    ValueError
+        If n_blocks < 1.
+
+    VI: Mở khóa n_blocks khối ngữ nghĩa cuối để fine-tune, luôn giữ lớp phân loại được huấn luyện.
+    Với VGG-16, mỗi khối tích chập kết thúc bằng MaxPool2d; n_blocks=1 mở khối tích chập cuối (features[24:31]).
+    Vào : model, n_blocks (phải >= 1)
     Ra  : model được cập nhật tại chỗ
     """
-    if n_blocks <= 0:
-        return
+    if isinstance(n_blocks, bool) or not isinstance(n_blocks, int):
+        raise TypeError(f"n_blocks must be an int, got {type(n_blocks).__name__}.")
+    if n_blocks < 1:
+        raise ValueError(f"n_blocks must be >= 1, got {n_blocks}.")
 
     # Case ResNet: blocks are layer4, layer3, layer2, layer1 (Slide Chapter 3, page 21)
     if hasattr(model, "layer4"):
-        resnet_blocks = [model.layer4, model.layer3, model.layer2, model.layer1]
-        for block in resnet_blocks[:n_blocks]:
-            for param in block.parameters():
-                param.requires_grad = True
+        stage_blocks = [model.layer1, model.layer2, model.layer3, model.layer4]
+        for block in stage_blocks[-min(n_blocks, len(stage_blocks)):]:
+            _unfreeze(block)
+        _unfreeze(model.fc)
+        return
+
+    # Case VGG: model.features is a flat Sequential, not a list of semantic blocks.
+    if isinstance(model, models.VGG):
+        conv_blocks = _split_vgg_conv_blocks(model.features)
+        for block in conv_blocks[-min(n_blocks, len(conv_blocks)):]:
+            _unfreeze(block)
+        _unfreeze(model.classifier)
         return
 
     # Case DenseNet: features has denseblock4, denseblock3, etc.
     if hasattr(model, "features"):
         # Unfreeze classifier always
         if hasattr(model, "classifier"):
-            for param in model.classifier.parameters():
-                param.requires_grad = True
-        
-        # DenseNet specific blocks in features
-        feature_blocks = [m for name, m in model.features.named_children()]
-        for block in reversed(feature_blocks[- (n_blocks * 2):]):
-            for param in block.parameters():
-                param.requires_grad = True
+            _unfreeze(model.classifier)
+
+        # DenseNet specific blocks in features: each dense block is paired with
+        # the transition block that follows it, hence n_blocks * 2 modules.
+        feature_blocks = [m for _name, m in model.features.named_children()]
+        for block in reversed(feature_blocks[-(n_blocks * 2):]):
+            _unfreeze(block)
         return
 
     # General fallback for Sequential or other models
     children = list(model.children())
-    for child in children[-n_blocks:]:
-        for param in child.parameters():
-            param.requires_grad = True
+    for child in children[-min(n_blocks, len(children)):]:
+        _unfreeze(child)

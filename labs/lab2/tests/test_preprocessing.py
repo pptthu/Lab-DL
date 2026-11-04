@@ -1,13 +1,12 @@
 """Test suite cho Module Preprocessing (CIFAR-10 thật)."""
 from pathlib import Path
-import pytest
 import sys
 repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
-from shared.paths import raw_data_dir, artifact_dir
-from shared.seed import set_seed
-from labs.lab2.preprocessing.preprocessing import (
+from shared.paths import raw_data_dir, artifact_dir  # noqa: E402
+from shared.seed import set_seed  # noqa: E402
+from labs.lab2.preprocessing.preprocessing import (  # noqa: E402
     load_raw_dataset,
     make_split,
     save_split,

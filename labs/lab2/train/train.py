@@ -9,7 +9,6 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from typing import Any, Dict, Optional
 import torch
 import torch.nn as nn
@@ -27,15 +26,25 @@ def train_model(
     writer: Optional[Any] = None,
     optimizer_name: str = "adam",
     weight_decay: float = 0.0,
-) -> Dict[str, list]:
+) -> Dict[str, Any]:
     """Training loop with validation each epoch; log scalars to TensorBoard when writer is given; keep the best checkpoint.
 
+    Checkpoint selection criterion: LOWEST validation loss. The returned history
+    also records ``best_epoch``, ``best_val_loss`` and ``best_val_acc`` so that
+    callers report the metrics of the epoch that was actually saved, instead of
+    recomputing ``max(val_acc)`` (which may belong to a different epoch).
+
     Input : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay
-    Output: history dict: train_loss, val_loss, val_acc; checkpoint at ckpt_path; TensorBoard logs
+    Output: history dict: train_loss, val_loss, val_acc (per epoch) plus best_epoch,
+            best_val_loss, best_val_acc (metrics of the saved checkpoint);
+            checkpoint at ckpt_path; TensorBoard logs
 
     VI: Vòng lặp huấn luyện có validation mỗi epoch; ghi scalar lên TensorBoard nếu có writer; lưu checkpoint tốt nhất.
+    Tiêu chí chọn checkpoint: validation loss NHỎ NHẤT. History trả thêm best_epoch,
+    best_val_loss, best_val_acc để báo cáo đúng epoch đã lưu.
     Vào : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay
-    Ra  : dict history: train_loss, val_loss, val_acc; checkpoint tại ckpt_path; log TensorBoard
+    Ra  : dict history: train_loss, val_loss, val_acc (từng epoch) và best_epoch,
+          best_val_loss, best_val_acc; checkpoint tại ckpt_path; log TensorBoard
     """
     if epochs <= 0:
         raise ValueError(f"epochs must be positive, got {epochs}")
@@ -59,13 +68,19 @@ def train_model(
     else:
         raise ValueError(f"Unsupported optimizer_name: {optimizer_name}. Expected 'adam' or 'sgd'.")
 
-    history: Dict[str, list] = {
+    history: Dict[str, Any] = {
         "train_loss": [],
         "val_loss": [],
         "val_acc": [],
+        # Metrics of the epoch whose weights were saved as the checkpoint.
+        "best_epoch": None,
+        "best_val_loss": None,
+        "best_val_acc": None,
     }
 
     best_val_loss = float("inf")
+    best_epoch = 0
+    best_val_acc = 0.0
 
     # 2. Training and validation loops
     for epoch in range(1, epochs + 1):
@@ -128,10 +143,19 @@ def train_model(
             writer.add_scalar("Loss/val", val_epoch_loss, epoch)
             writer.add_scalar("Accuracy/val", val_epoch_acc, epoch)
 
-        # Checkpoint selection: based on best validation loss
-        if val_epoch_loss < best_val_loss:
+        # Checkpoint selection: based on best validation loss (single documented criterion).
+        # Keep the accuracy of this same epoch so reporting and checkpoint agree.
+        # `best_epoch == 0` guarantees a checkpoint exists even if the first loss is NaN.
+        if best_epoch == 0 or val_epoch_loss < best_val_loss:
             best_val_loss = val_epoch_loss
+            best_epoch = epoch
+            best_val_acc = val_epoch_acc
             save_checkpoint(model, ckpt_path)
+
+    if best_epoch > 0:
+        history["best_epoch"] = best_epoch
+        history["best_val_loss"] = float(best_val_loss)
+        history["best_val_acc"] = float(best_val_acc)
 
     return history
 

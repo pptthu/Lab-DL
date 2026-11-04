@@ -1,14 +1,13 @@
 """Test suite cho Module Model (CIFAR-10 thật)."""
 from pathlib import Path
-import pytest
 import torch
 import sys
 import torch.nn as nn
 repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
-from shared.seed import set_seed
-from labs.lab2.model.model import (
+from shared.seed import set_seed  # noqa: E402
+from labs.lab2.model.model import (  # noqa: E402
     build_model,
     describe_model,
     unfreeze_last_blocks,
