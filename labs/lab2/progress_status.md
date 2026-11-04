@@ -1,5 +1,5 @@
 # Lab 2: Pre-trained CNNs and fine-tuning on CIFAR-10 (PyTorch): progress status
-_Last updated: 2026-10-31 by Team Leader (Thư)_
+_Last updated: 2026-11-04 by Team Leader (Thư)_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
@@ -10,7 +10,7 @@ _Last updated: 2026-10-31 by Team Leader (Thư)_
 | `train` | Member B (Bảo) | done | pass | pass | Merged to main via PR #25; verified with test_train.py |
 | `evaluate` | Member B (Bảo) | done | pass | pass | Merged to main via PR #25; verified with test_evaluate.py |
 | `experiment` | Member B (Bảo) | done | pass | pass | Merged to main via PR #25; verified with test_experiment.py |
-| `main.py`, README, integration | Team leader (Thư) | doing | pass | - | README completed; main.py end-to-end wiring pending |
+| `main.py`, README, integration | Team leader (Thư) | done | pass | - | README completed; main.py wired end-to-end (EDA -> ... -> results); CLI flags in `python -m labs.lab2.main --help`; verified with test_main_pipeline.py (mocked stages, no CIFAR-10 run) |
 
 ## Handoff A -> B (sequential, no interleaving)
 Member B starts coding only after ALL of the following are true:
@@ -31,15 +31,21 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - `pytest labs/lab2/tests/test_train.py` -> 4 passed
 - `pytest labs/lab2/tests/test_evaluate.py` -> 4 passed
 - `pytest labs/lab2/tests/test_experiment.py` -> 2 passed
-- `pytest labs/lab2/tests/` -> 23 passed in 12.20s
+- `pytest labs/lab2/tests/test_tensorboard_optional.py` -> 6 passed
+- `pytest labs/lab2/tests/test_model_unfreezing.py` -> 9 passed
+- `pytest labs/lab2/tests/test_checkpoint_consistency.py` -> 8 passed
+- `pytest labs/lab2/tests/test_main_pipeline.py` -> 6 passed
+- `pytest labs/lab2/tests/` -> 52 passed in 9.74s
+- `ruff check` on the four modified modules + four new test files -> All checks passed
 
 ## Log (dated, one line per step)
 - 2026-10-17 pptthu: scaffold created; interfaces agreed -> verified with `pytest labs/lab2/tests`
 - 2026-10-26 Bảo (Member B): implemented train, evaluate, experiment modules on `feat/lab2-member-b`, added synthetic unit tests and updated presentation notebook sections -> verified with `pytest labs/lab2/tests` (18 passed).
 - 2026-10-31 Thư (Leader): verified all 23 tests passing (Member A + Member B modules merged on main); audited baseline ResNet-18 training run and evaluation metrics; authored comprehensive bilingual README.md -> verified with `pytest labs/lab2/tests/` (23 passed).
+- 2026-11-04 Thư (Leader): fixed four integration issues: (1) TensorBoard import is now lazy/optional in `experiment`; (2) `unfreeze_last_blocks` detects VGG-16's five MaxPool-terminated conv blocks instead of taking the last two modules; (3) `train_model` records `best_epoch`/`best_val_loss`/`best_val_acc` and `run_comparison` reports the checkpoint epoch instead of `max(val_acc)`; (4) `main.py` wired end-to-end with stage validation and a JSON/CSV summary -> verified with `pytest labs/lab2/tests/` (52 passed) and `ruff check` on changed files.
 
 ## Open issues
-- `labs/lab2/main.py`: end-to-end CLI orchestration pipeline remains to be wired by the team leader (currently raises NotImplementedError).
+- Full pipeline run on the complete CIFAR-10 dataset (default `python -m labs.lab2.main`) has not been executed yet: it is slow on CPU. Unit/integration tests mock the stages; run the real pipeline (or the documented `--epochs 1 --image-size 64 --no-experiments` quick run) before submission.
 - Multi-model hyperparameter grid comparison CSV export: partial runs logged on CPU in `artifacts/runs/`; full grid completion ongoing.
 
 ---

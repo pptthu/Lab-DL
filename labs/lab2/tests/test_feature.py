@@ -1,15 +1,14 @@
 """Test suite cho Module Features (CIFAR-10 thật)."""
 from pathlib import Path
-import pytest
 import sys
 import torch
 repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
-from shared.paths import raw_data_dir, artifact_dir
-from shared.seed import set_seed
-from labs.lab2.preprocessing.preprocessing import load_raw_dataset, load_split
-from labs.lab2.features.features import build_transforms, make_loaders
+from shared.paths import raw_data_dir, artifact_dir  # noqa: E402
+from shared.seed import set_seed  # noqa: E402
+from labs.lab2.preprocessing.preprocessing import load_raw_dataset, load_split  # noqa: E402
+from labs.lab2.features.features import build_transforms, make_loaders  # noqa: E402
 
 
 def test_features_pipeline():
