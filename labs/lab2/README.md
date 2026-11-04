@@ -96,7 +96,7 @@ labs/lab2/
 ├── README.md                           # Comprehensive bilingual lab documentation and report
 ├── project_description.md              # Formal Define & Design specification (contracts)
 ├── progress_status.md                  # Milestone progress tracking, audit logs, and blocker notes
-├── main.py                             # Pipeline entrypoint (orchestrator; pending wiring)
+├── main.py                             # Pipeline entrypoint (orchestrator, wired in PR #48)
 ├── requirements.txt                    # Project-level dependencies
 ├── eda/
 │   ├── __init__.py
@@ -128,6 +128,7 @@ labs/lab2/
 │   ├── models/                         # Trained PyTorch checkpoint state dicts (.pt)
 │   ├── runs/                           # TensorBoard runs for hyperparameter comparison
 │   └── splits/                         # Committed train/val split indices (train_val_split.json)
+├── docs/                               # Per-module guides for AI agents (eda.md ... experiment.md, demo.md)
 ├── logbook/                            # Bug reports and post-mortem notes
 └── tests/                              # PyTest test suite
     ├── __init__.py
@@ -173,7 +174,7 @@ labs/lab2/
   - `save_results(results: list[dict], csv_path: str) -> None`: Flattens hyperparameter dictionaries and exports the comparison matrix into a structured CSV file.
 
 ### Team Leader Files
-- **`main.py` (`labs/lab2/main.py`):** Scaffolded pipeline orchestrator. Note: stages are currently un-wired and will raise `NotImplementedError` until integration is completed by the team leader.
+- **`main.py` (`labs/lab2/main.py`):** Pipeline orchestrator, wired end to end in PR #48 (EDA -> split -> loaders -> model -> train -> evaluate -> comparison -> JSON summary). Options: `python -m labs.lab2.main --help`.
 
 ## 10. Data Processing Pipeline
 1. **Raw Loading:** CIFAR-10 batches are loaded into memory without transforms via `load_raw_dataset`.
@@ -261,7 +262,7 @@ Running the pipeline CLI:
 python -m labs.lab2.main
 ```
 > [!NOTE]
-> `labs/lab2/main.py` is currently a scaffold with stubbed stages. Executing `python -m labs.lab2.main` will output stage statuses and raise `NotImplementedError("TODO(leader): wire the stages in main()")` until the team leader completes pipeline integration.
+> Without options, `main.py` trains the ResNet-18 baseline and then runs the comparison stage (several more trainings), which takes hours on a CPU. Use `--no-experiments` for the baseline only, and `--help` for the other options. Per-module guides and run times: `labs/lab2/docs/` (`demo.md`).
 
 ### Launching TensorBoard
 To inspect real-time training telemetry and comparison runs:
@@ -495,7 +496,7 @@ Các thư mục quan trọng:
   - `save_results(results, csv_path)`: Làm phẳng dict siêu tham số và xuất bảng kết quả so sánh ra file CSV.
 
 ### File của Nhóm trưởng
-- **`main.py`:** Khung chạy toàn bộ pipeline. *Lưu ý:* Hiện tại các bước chưa được nối và sẽ báo `NotImplementedError` khi chạy trực tiếp.
+- **`main.py`:** Chạy toàn bộ pipeline, đã nối xong ở PR #48 (EDA -> chia dữ liệu -> loader -> model -> train -> đánh giá -> so sánh -> file JSON tổng hợp). Xem tùy chọn bằng `python -m labs.lab2.main --help`.
 
 ## 10. Pipeline xử lý dữ liệu
 1. **Nạp dữ liệu thô:** CIFAR-10 được tải hoặc đọc từ thư mục `labs/lab2/raw_data/` mà không áp dụng transform trước.
@@ -564,7 +565,7 @@ Chạy tuần tự các ô trong notebook để xem toàn bộ quy trình: phân
 python -m labs.lab2.main
 ```
 > [!NOTE]
-> File `labs/lab2/main.py` hiện là khung chờ tích hợp. Khi chạy lệnh trên, hệ thống sẽ in trạng thái các bước và báo lỗi `NotImplementedError` do nhóm trưởng đang trong quá trình nối các module.
+> Chạy không kèm tùy chọn, `main.py` train baseline ResNet-18 rồi chạy phần so sánh (thêm nhiều lần train), mất vài giờ trên CPU. Dùng `--no-experiments` để chỉ chạy baseline, `--help` để xem các tùy chọn khác. Hướng dẫn từng module và thời gian chạy: `labs/lab2/docs/` (`demo.md`).
 
 ### Khởi chạy TensorBoard
 Xem biểu đồ huấn luyện và các lần chạy thử nghiệm:
