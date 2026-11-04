@@ -7,6 +7,7 @@
 | Module | `labs/lab3/train/train.py` |
 | Owner | Member B (ngohongphuc2805ag-hash), assigned by the team leader |
 | Status | done in `progress_status.md`, merged in PR #39 (Reported only) |
+| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
 | Files you may edit | `labs/lab3/train/train.py`, `labs/lab3/tests/test_train.py`, this guide |
 | Files you must not edit | Member A's modules, `main.py` (team leader), saved checkpoints, other owners' notebook cells |
 | Agreed signatures | `build_training_args(output_dir: str, epochs: int = 2, lr: float = 2e-5, batch_size: int = 16)`; `train_with_trainer(model, tokenized_train, tokenized_val, args, compute_metrics)` (`project_description.md`). The code adds **optional** arguments only: `build_training_args(..., *, max_steps=-1, seed=42, logging_steps=10)` and `train_with_trainer(..., tokenizer=None)` |
@@ -14,12 +15,6 @@
 | Prohibited | passing the test set to the Trainer; selecting the best epoch on test; starting a full fine-tune without the team leader (cost on CPU); reporting to external services; removing the version detection |
 | Checks | Unit: `python -m pytest labs/lab3/tests/test_train.py -q` (fake `transformers`). Smoke: tiny fine-tune with `max_steps` > 0 on a few rows. Real run: only at an approved milestone |
 | Done when | unit tests pass; smoke or approved real run recorded in `progress_status.md`; this guide updated |
-
-## Current task (edited ONLY by the team leader)
-
-- None.
-
-Module owners and agents never assign work to themselves here; they ask the team leader.
 
 ## What the brief requires
 
@@ -55,8 +50,8 @@ Module owners and agents never assign work to themselves here; they ask the team
 
 **Tiếng Việt**
 
+- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
 - **Dành cho AI:** người phụ trách Member B (ngohongphuc2805ag-hash), do nhóm trưởng giao. Được sửa `train.py`, `tests/test_train.py`, file này. Chữ ký theo `project_description.md`; code chỉ thêm tham số **tùy chọn** (`max_steps`, `seed`, `logging_steps`, `tokenizer`). Cấm đưa tập test vào Trainer, cấm chọn epoch theo test, cấm tự chạy fine-tune đầy đủ khi chưa hỏi nhóm trưởng, cấm báo cáo ra dịch vụ ngoài, cấm bỏ phần tự dò phiên bản.
-- **Task hiện tại:** chỉ nhóm trưởng ghi ở mục "Current task".
 - **Đề:** định nghĩa training arguments, tạo Trainer, fine-tune. Nhóm chọn đánh giá và lưu mỗi epoch, giữ epoch tốt nhất theo **F1 trên validation**.
 - **Cách hoạt động:** tự dò tên tham số theo phiên bản `transformers`; padding theo batch bằng `DataCollatorWithPadding`; lưu model vào `args.output_dir` (không commit).
 - **Kiểm chứng:** fine-tune rất ngắn (`max_steps=4`) chỉ để chứng minh code chạy; lần chạy đầy đủ đã ghi 0,8220/0,8195 (1 epoch, MAX_LEN=128; chỉ có trong báo cáo).

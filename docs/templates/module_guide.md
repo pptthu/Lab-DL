@@ -13,6 +13,7 @@ Reported only, Pending. -->
 | Module | `labs/<lab>/<module>/<module>.py` |
 | Owner | <name, Member A/B>, assigned by the team leader |
 | Status | <from progress_status.md> (<evidence label>) |
+| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
 | Files you may edit | `labs/<lab>/<module>/<module>.py`, `labs/<lab>/tests/test_<module>.py`, this guide |
 | Files you must not edit | other modules, committed split files, raw data, checkpoints, other owners' notebook cells |
 | Agreed signatures | <copied from project_description.md; note any extra optional argument in the code> |
@@ -20,12 +21,6 @@ Reported only, Pending. -->
 | Prohibited | <e.g. statistics from val/test, tests writing to real artifacts, long runs or downloads without asking, out-of-scope models, changing a signature without the team leader> |
 | Checks | Unit: <pytest command>. Smoke: <smallest real call and expected output>. Real integration run: only at a milestone the team has approved |
 | Done when | the checks of the right type pass; command and output recorded in progress_status.md; this guide updated |
-
-## Current task (edited ONLY by the team leader)
-
-- None.
-
-Module owners and agents never assign work to themselves here; they ask the team leader.
 
 ## What the brief requires
 
@@ -55,13 +50,11 @@ Module owners and agents never assign work to themselves here; they ask the team
 
 **Tiếng Việt**
 
+Việc được giao: xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
+
 ## Dành cho AI (đọc trước)
 
 <Tóm tắt các dòng của bảng trên: người phụ trách, file được sửa và file cấm sửa, chữ ký hàm, điều cấm, lệnh kiểm tra, tiêu chí xong.>
-
-## Task hiện tại
-
-Chỉ nhóm trưởng ghi vào mục "Current task" ở trên. Người phụ trách và agent không tự giao việc cho mình.
 
 ## Yêu cầu, cách hoạt động, lỗi hay gặp, cách kiểm chứng, câu hỏi mở
 

@@ -9,6 +9,7 @@ This guide has two parts: (A) the module `sentiment_demo` (Exercise 1), and (B) 
 | Module | `labs/lab3/sentiment_demo/sentiment_demo.py` |
 | Owner | Member A (Muội), assigned by the team leader |
 | Status | done in `progress_status.md` (Reported only, 2026-10-27) |
+| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
 | Files you may edit | `labs/lab3/sentiment_demo/sentiment_demo.py`, `labs/lab3/tests/test_sentiment_demo.py`, this guide |
 | Files you must not edit | other modules, `main.py` (team leader), raw data, saved models, other owners' notebook cells |
 | Agreed signatures | `show_tokens(sentence: str, model_name: str = None) -> dict`; `analyze_sentences(sentences: list, model_name: str = None) -> list` (same as `project_description.md`) |
@@ -16,12 +17,6 @@ This guide has two parts: (A) the module `sentiment_demo` (Exercise 1), and (B) 
 | Prohibited | changing the default checkpoint without the team leader (the zero-shot numbers depend on it); loading the pipeline at import time; fine-tuning in this module |
 | Checks | Unit: `python -m pytest labs/lab3/tests/test_sentiment_demo.py -q` (fake objects, no network). Smoke: the 3-sentence call in "How to verify" (needs internet the first time) |
 | Done when | unit tests pass; smoke output recorded in `progress_status.md`; this guide updated |
-
-## Current task (edited ONLY by the team leader)
-
-- None.
-
-Module owners and agents never assign work to themselves here; they ask the team leader.
 
 ## A. Module `sentiment_demo`
 
@@ -60,7 +55,7 @@ Recorded results (Reported only, `progress_status.md`, 2026-10-31, CPU): test n=
 
 - `main.py` runs Exercise 1 (`sentiment_demo`) and Exercise 2 in the order `eda -> preprocessing -> model (load) -> features (tokenize) -> train (Trainer) -> evaluate` (`STAGES` in `main.py`). It must not start a long training run or a download without an explicit option.
 - Notebook: Run All works from a fresh kernel, and its numbers match `progress_status.md`.
-- Deliverables are not stated on the Practice 3 slide (not yet confirmed: code and a short report are assumed; whether `.py` or notebooks are accepted is open).
+- Deliverables (team leader, 2026-11-04): the full source code of the three labs and one written report (PDF, written later).
 
 ### What to show in the oral exam
 
@@ -85,6 +80,8 @@ Recorded results (Reported only, `progress_status.md`, 2026-10-31, CPU): test n=
 
 **Tiếng Việt**
 
+Việc được giao: xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
+
 ## Dành cho AI (đọc trước): module `sentiment_demo`
 
 - Người phụ trách: Member A (Muội), do nhóm trưởng giao. Trạng thái: xong (chỉ có trong báo cáo, 27/10).
@@ -92,10 +89,6 @@ Recorded results (Reported only, `progress_status.md`, 2026-10-31, CPU): test n=
 - Chữ ký: `show_tokens(sentence, model_name=None) -> dict`, `analyze_sentences(sentences, model_name=None) -> list`, khớp `project_description.md`.
 - Cấm: đổi checkpoint mặc định khi chưa hỏi nhóm trưởng (số zero-shot phụ thuộc vào nó), nạp pipeline lúc import, fine-tune trong module này.
 - Kiểm tra: unit test `pytest labs/lab3/tests/test_sentiment_demo.py` (không cần mạng); smoke test với 3 câu mẫu (lần đầu cần mạng).
-
-## Task hiện tại
-
-Chỉ nhóm trưởng ghi vào mục "Current task". Người phụ trách và agent không tự giao việc.
 
 ## A. Module `sentiment_demo`
 
@@ -105,7 +98,7 @@ Chỉ nhóm trưởng ghi vào mục "Current task". Người phụ trách và a
 
 - **Hiện tại:** test chạy bằng `pytest labs/lab3/tests` (phần lớn dùng object giả, không chứng minh thư viện thật chạy đúng). Notebook có kết quả đã chạy; bản phân tích 02/11 thấy notebook không Run All được từ kernel mới, PR #47 đã sửa notebook sau đó nên cần kiểm tra lại. **`main.py` đang là stub** (in `[todo]` rồi báo `NotImplementedError`): đây là blocker, không được mô tả như pipeline đã chạy.
 - **Số đã ghi** (chỉ có trong báo cáo, 31/10): test 500 mẫu; zero-shot 0,8920/0,8889; fine-tune 0,8220/0,8195 (MAX_LEN=128, 1 epoch, seed 42).
-- **Dự kiến:** `main.py` chạy Bài 1 và Bài 2 theo thứ tự `STAGES`, không tự train dài hay tự tải; notebook Run All được; sản phẩm nộp chưa được cô xác nhận.
+- **Dự kiến:** `main.py` chạy Bài 1 và Bài 2 theo thứ tự `STAGES`, không tự train dài hay tự tải; notebook Run All được; bài nộp gồm toàn bộ source của 3 lab và một bài báo cáo (PDF, viết sau).
 - **Khi vấn đáp:** token của một câu, 3 câu dự đoán (có câu phủ định), tập con, tokenize, `TrainingArguments`, chọn epoch theo F1 trên validation, đánh giá test một lần, so sánh zero-shot và fine-tune.
 
 ## Câu hỏi mở

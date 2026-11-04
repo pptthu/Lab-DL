@@ -7,6 +7,7 @@
 | Module | `labs/lab3/model/model.py` |
 | Owner | Member B (ngohongphuc2805ag-hash), assigned by the team leader |
 | Status | done in `progress_status.md`, merged in PR #38 (Reported only) |
+| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
 | Files you may edit | `labs/lab3/model/model.py`, `labs/lab3/tests/test_model.py`, this guide |
 | Files you must not edit | Member A's modules, `main.py` (team leader), saved models, other owners' notebook cells |
 | Agreed signatures | `load_model_and_tokenizer(model_name: str = 'distilbert-base-uncased', num_labels: int = 2)` (same as `project_description.md`) |
@@ -14,12 +15,6 @@
 | Prohibited | loading the tokenizer and the model from different checkpoints; changing the label mapping; adding other model families (out of scope); downloads inside unit tests |
 | Checks | Unit: `python -m pytest labs/lab3/tests/test_model.py -q` (fake `transformers`). Smoke: one real load of `distilbert-base-uncased` |
 | Done when | unit tests pass; smoke output recorded in `progress_status.md`; this guide updated |
-
-## Current task (edited ONLY by the team leader)
-
-- None.
-
-Module owners and agents never assign work to themselves here; they ask the team leader.
 
 ## What the brief requires
 
@@ -54,8 +49,8 @@ Module owners and agents never assign work to themselves here; they ask the team
 
 **Tiếng Việt**
 
+- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
 - **Dành cho AI:** người phụ trách Member B (ngohongphuc2805ag-hash), do nhóm trưởng giao. Được sửa `model.py`, `tests/test_model.py`, file này. Chữ ký `load_model_and_tokenizer(model_name='distilbert-base-uncased', num_labels=2)`, khớp `project_description.md`. Cấm lấy tokenizer và model từ hai checkpoint khác nhau, cấm đổi cách gán nhãn, cấm thêm họ model khác (ngoài phạm vi), cấm tải trong unit test.
-- **Task hiện tại:** chỉ nhóm trưởng ghi ở mục "Current task".
 - **Đề:** nạp model pre-trained và tokenizer. DistilBERT là lựa chọn của nhóm, chưa được cô xác nhận.
 - **Cách hoạt động:** tokenizer và model cùng checkpoint; 2 nhãn có `id2label {0: NEGATIVE, 1: POSITIVE}`; đầu phân loại khởi tạo mới nên có cảnh báo, đó là bình thường.
 - **Kiểm chứng:** unit test như bảng trên; smoke test in ra `id2label`.

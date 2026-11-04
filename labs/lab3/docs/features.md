@@ -7,6 +7,7 @@
 | Module | `labs/lab3/features/features.py` |
 | Owner | Member A (Muội), assigned by the team leader |
 | Status | done in `progress_status.md` (Reported only, 2026-10-26) |
+| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
 | Files you may edit | `labs/lab3/features/features.py`, `labs/lab3/tests/test_features.py`, this guide |
 | Files you must not edit | other modules (in particular `train.py`, which does the padding), other owners' notebook cells |
 | Agreed signatures | `tokenize_dataset(dataset, tokenizer, max_length: int = 256, text_col: str = 'text')` (same as `project_description.md`) |
@@ -14,12 +15,6 @@
 | Prohibited | padding to a fixed length here (decision: padding per batch in `train`); using a tokenizer from a different checkpoint than the model; dropping the `label` column |
 | Checks | Unit: `python -m pytest labs/lab3/tests/test_features.py -q` (fake tokenizer). Smoke: tokenize a few real rows with the real tokenizer |
 | Done when | unit tests pass; smoke output recorded in `progress_status.md`; this guide updated |
-
-## Current task (edited ONLY by the team leader)
-
-- None.
-
-Module owners and agents never assign work to themselves here; they ask the team leader.
 
 ## What the brief requires
 
@@ -53,8 +48,8 @@ Module owners and agents never assign work to themselves here; they ask the team
 
 **Tiếng Việt**
 
+- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
 - **Dành cho AI:** người phụ trách Member A (Muội), do nhóm trưởng giao. Được sửa `features.py`, `tests/test_features.py`, file này. Chữ ký `tokenize_dataset(dataset, tokenizer, max_length=256, text_col='text')`, khớp `project_description.md`. Cấm padding cố định ở đây (đã chốt padding theo batch ở `train`), cấm dùng tokenizer khác checkpoint với model, cấm bỏ cột `label`.
-- **Task hiện tại:** chỉ nhóm trưởng ghi ở mục "Current task".
 - **Đề:** tiền xử lý dataset cho model. Nhóm chọn cắt tới `max_length` (mặc định 256, lần chạy đã ghi dùng 128), không padding.
 - **Cách hoạt động:** `map` theo batch, bỏ cột text, giữ `label`; thiếu cột text báo `KeyError`.
 - **Kiểm chứng:** cột sau khi tokenize là `label`, `input_ids`, `attention_mask` (chỉ có trong báo cáo).
