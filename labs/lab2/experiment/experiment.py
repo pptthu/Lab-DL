@@ -11,12 +11,66 @@ from __future__ import annotations
 import csv
 import os
 import time
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
-from labs.lab2.train.train import train_model
+
+def make_summary_writer(log_dir: str) -> Optional[Any]:
+    """Create a TensorBoard SummaryWriter, or return None if TensorBoard is unavailable.
+
+    TensorBoard is an optional dependency here: importing this module and running
+    the experiment tests must work on machines where it is not installed. The
+    import is therefore performed lazily, inside this function. Only ImportError
+    is caught, so unrelated errors are never hidden.
+
+    Input : log_dir
+    Output: SummaryWriter instance, or None when TensorBoard is not installed
+
+    VI: Tạo SummaryWriter của TensorBoard, hoặc trả về None nếu chưa cài TensorBoard.
+    Việc import được thực hiện trễ để module vẫn dùng được khi thiếu TensorBoard;
+    chỉ bắt ImportError nên không che giấu lỗi khác.
+    Vào : log_dir
+    Ra  : SummaryWriter hoặc None nếu chưa cài TensorBoard
+    """
+    try:
+        from torch.utils.tensorboard import SummaryWriter
+    except ImportError:
+        return None
+    return SummaryWriter(log_dir=log_dir)
+
+
+def _resolve_best_metrics(history: Dict[str, Any]) -> Tuple[float, Optional[float], Optional[int]]:
+    """Return (val_acc, val_loss, epoch) belonging to the saved checkpoint.
+
+    ``train_model`` saves the checkpoint at the epoch with the LOWEST validation
+    loss. Reporting must therefore read accuracy from that same epoch;
+    ``max(history["val_acc"])`` can come from a different epoch and is misleading.
+
+    Resolution order:
+      1. ``history["best_epoch"]`` recorded by ``train_model``;
+      2. otherwise the index of minimum ``val_loss``;
+      3. if ``val_loss`` is missing, the index of maximum ``val_acc``;
+      4. empty accuracy history -> (0.0, None, None).
+
+    VI: Trả về (val_acc, val_loss, epoch) ứng với checkpoint đã lưu (chọn theo val loss nhỏ nhất).
+    """
+    val_acc = list(history.get("val_acc") or [])
+    val_loss = list(history.get("val_loss") or [])
+
+    if not val_acc:
+        return 0.0, None, None
+
+    best_epoch = history.get("best_epoch")
+    if isinstance(best_epoch, int) and 1 <= best_epoch <= len(val_acc):
+        idx = best_epoch - 1
+    elif val_loss and len(val_loss) == len(val_acc):
+        idx = min(range(len(val_loss)), key=lambda i: val_loss[i])
+    else:
+        idx = max(range(len(val_acc)), key=lambda i: val_acc[i])
+
+    best_val_acc = float(val_acc[idx])
+    best_val_loss = float(val_loss[idx]) if len(val_loss) == len(val_acc) else None
+    return best_val_acc, best_val_loss, idx + 1
 
 
 def run_comparison(
@@ -28,15 +82,24 @@ def run_comparison(
     build_model_fn: Optional[Any] = None,
     unfreeze_fn: Optional[Any] = None,
     train_model_fn: Optional[Any] = None,
+    enable_tensorboard: bool = True,
 ) -> List[Dict[str, Any]]:
     """Train/fine-tune several pre-trained models and hyperparameter settings; one TensorBoard run per setting.
 
-    Input : model_names (e.g. ['resnet18','vgg16']), hparam_grid (list of dicts: lr, batch_size, freeze...), loaders, device, log_root
-    Output: list of result dicts: model, hparams, best_val_acc, train_seconds; TensorBoard runs under log_root
+    The reported ``best_val_acc`` is the accuracy of the epoch whose weights were
+    saved (checkpoint criterion: lowest validation loss), so the table and the
+    checkpoint always describe the same model.
+
+    Input : model_names (e.g. ['resnet18','vgg16']), hparam_grid (list of dicts: lr, batch_size, freeze...), loaders, device, log_root,
+            enable_tensorboard (False skips TensorBoard even if it is installed)
+    Output: list of result dicts: model, hparams, best_val_acc, best_val_loss, best_epoch,
+            train_seconds, checkpoint, tensorboard_logged; TensorBoard runs under log_root
 
     VI: Huấn luyện/fine-tune nhiều model pre-trained và nhiều bộ siêu tham số; mỗi bộ một run TensorBoard.
-    Vào : model_names (vd ['resnet18','vgg16']), hparam_grid (danh sách dict: lr, batch_size, freeze...), loaders, device, log_root
-    Ra  : danh sách dict kết quả: model, hparams, best_val_acc, train_seconds; run TensorBoard trong log_root
+    best_val_acc là độ chính xác của đúng epoch đã lưu checkpoint (tiêu chí: validation loss nhỏ nhất).
+    Vào : model_names, hparam_grid, loaders, device, log_root, enable_tensorboard
+    Ra  : danh sách dict kết quả: model, hparams, best_val_acc, best_val_loss, best_epoch,
+          train_seconds, checkpoint, tensorboard_logged; run TensorBoard trong log_root
     """
     # Dynamic import of Member A model builder if not provided
     if build_model_fn is None:
@@ -79,7 +142,8 @@ def run_comparison(
 
             run_name = f"{model_name}_run{idx}_lr{lr}_freeze{freeze_backbone}"
             run_log_dir = os.path.join(log_root, run_name)
-            writer = SummaryWriter(log_dir=run_log_dir)
+            # Optional logging: None when TensorBoard is not installed.
+            writer = make_summary_writer(run_log_dir) if enable_tensorboard else None
 
             ckpt_path = os.path.join(log_root, f"{run_name}_best.pt")
 
@@ -96,30 +160,37 @@ def run_comparison(
                 unfreeze_fn(model, unfreeze_blocks)
 
             start_time = time.perf_counter()
-            history = train_model_fn(
-                model=model,
-                train_loader=train_loader,
-                val_loader=val_loader,
-                epochs=epochs,
-                lr=lr,
-                device=device,
-                ckpt_path=ckpt_path,
-                writer=writer,
-                optimizer_name=optimizer_name,
-                weight_decay=weight_decay,
-            )
+            try:
+                history = train_model_fn(
+                    model=model,
+                    train_loader=train_loader,
+                    val_loader=val_loader,
+                    epochs=epochs,
+                    lr=lr,
+                    device=device,
+                    ckpt_path=ckpt_path,
+                    writer=writer,
+                    optimizer_name=optimizer_name,
+                    weight_decay=weight_decay,
+                )
+            finally:
+                # Release TensorBoard file handles even if training raises.
+                if writer is not None:
+                    writer.close()
             elapsed_seconds = time.perf_counter() - start_time
-            writer.close()
 
-            val_acc_list = history.get("val_acc", [0.0])
-            best_val_acc = max(val_acc_list) if val_acc_list else 0.0
+            # Report the metrics of the epoch that produced the saved checkpoint.
+            best_val_acc, best_val_loss, best_epoch = _resolve_best_metrics(history or {})
 
             run_result: Dict[str, Any] = {
                 "model": model_name,
                 "hparams": dict(hparams),
-                "best_val_acc": float(best_val_acc),
+                "best_val_acc": best_val_acc,
+                "best_val_loss": best_val_loss,
+                "best_epoch": best_epoch,
                 "train_seconds": float(elapsed_seconds),
                 "checkpoint": str(ckpt_path),
+                "tensorboard_logged": writer is not None,
             }
             results.append(run_result)
 
@@ -144,7 +215,10 @@ def save_results(results: List[Dict[str, Any]], csv_path: str) -> None:
         # Write empty CSV with standard headers
         with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["model", "best_val_acc", "train_seconds", "checkpoint"])
+            writer.writerow([
+                "model", "best_val_acc", "best_val_loss", "best_epoch",
+                "train_seconds", "checkpoint",
+            ])
         return
 
     # Extract all unique hyperparameter keys to flatten them
@@ -155,7 +229,9 @@ def save_results(results: List[Dict[str, Any]], csv_path: str) -> None:
             hparam_keys.update(hp.keys())
     sorted_hp_keys = sorted(list(hparam_keys))
 
-    headers = ["model"] + [f"hp_{k}" for k in sorted_hp_keys] + ["best_val_acc", "train_seconds", "checkpoint"]
+    headers = ["model"] + [f"hp_{k}" for k in sorted_hp_keys] + [
+        "best_val_acc", "best_val_loss", "best_epoch", "train_seconds", "checkpoint",
+    ]
 
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -165,7 +241,13 @@ def save_results(results: List[Dict[str, Any]], csv_path: str) -> None:
             row = [r.get("model", "")]
             for k in sorted_hp_keys:
                 row.append(hp.get(k, ""))
+
+            best_val_loss = r.get("best_val_loss")
+            best_epoch = r.get("best_epoch")
+
             row.append(f"{r.get('best_val_acc', 0.0):.4f}")
+            row.append("" if best_val_loss is None else f"{float(best_val_loss):.4f}")
+            row.append("" if best_epoch is None else str(int(best_epoch)))
             row.append(f"{r.get('train_seconds', 0.0):.2f}")
             row.append(r.get("checkpoint", ""))
             writer.writerow(row)
