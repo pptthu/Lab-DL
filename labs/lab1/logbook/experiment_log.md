@@ -2,6 +2,11 @@
 
 One entry per experiment: what changed, why, and the result. Numbers come from `artifacts/runs/`.
 
+## 2026-11-04: rerun on the official Zalando data
+- **Why:** the Kaggle CSVs differ from the official files (see README); the 2026-11-01 entries below were measured on them.
+- **Change:** data only (official files, same CSV format, same split rule and seed). Code, configurations, seeds and the rule are unchanged.
+- **Result:** clear effects stay the same: no hidden layer -3.80, SGD vs Adam at lr 1e-3 -3.45, SGD lr 0.01 vs 1e-3 +3.14 points. Larger network -0.52, dropout -0.46, weight decay -0.29: not clear (rule fails; p (Holm) 0.084, 0.084, 0.059). Baseline test 88.00 +/- 0.39%. 20 epochs: baseline overfits (val loss 0.2988 at best, 0.3972 at the end), test 88.62 +/- 0.19%; dropout keeps the final val loss lower (0.3095, all 5 seeds) without a clear accuracy gain (+0.36, p (Holm) 0.15).
+
 ## 2026-11-01: seven configurations, five seeds
 - **Why:** the earlier table had one seed per configuration, and two configurations changed two factors at once.
 - **Change:** each pair differs in one factor. Seeds: 42, 7, 123, 2024, 3407. Epochs: 5. Same split. 4 CPU threads.
@@ -33,6 +38,11 @@ One entry per experiment: what changed, why, and the result. Numbers come from `
 # Sổ ghi thí nghiệm
 
 Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `artifacts/runs/`.
+
+## 04/11/2026: chạy lại trên data chính thức của Zalando
+- **Vì sao:** CSV Kaggle khác file chính thức (xem README); các mục ngày 01/11 bên dưới đo trên CSV đó.
+- **Thay đổi:** chỉ đổi data (file chính thức, cùng định dạng CSV, cùng quy tắc chia và seed). Code, cấu hình, seed và quy tắc giữ nguyên.
+- **Kết quả:** các tác động rõ giữ nguyên: bỏ lớp ẩn -3,80, SGD so với Adam -3,45, SGD lr 0,01 +3,14 điểm. Mạng lớn hơn -0,52, dropout -0,46, weight decay -0,29: chưa rõ. Baseline test 88,00 +/- 0,39%. 20 epoch: baseline overfit, test 88,62 +/- 0,19%; dropout giữ val loss cuối thấp hơn nhưng chưa tăng accuracy rõ.
 
 ## 2026-11-01: bảy cấu hình, năm seed
 - **Vì sao:** bảng cũ mỗi cấu hình chỉ một seed, và hai cấu hình đổi cùng lúc hai yếu tố.

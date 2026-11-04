@@ -9,11 +9,11 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 | `preprocessing` | Member A (Toàn) | xong | đạt (6 test) | đạt | Chia phân tầng 90/10, lưu tại artifacts/splits/train_val_split.json |
 | `features` | Member A (Toàn) | xong | đạt (6 test) | đạt | Train mean 0,2859, std 0,3530 (dữ liệu chính thức); loader trả [64,1,28,28] float32 |
 | `model` | Member A (Toàn) | xong | đạt (6 test) | đạt | MLP 784->256->128->10: 235.146 tham số huấn luyện được |
-| `train` | Member B (Thư) | xong | đạt (dữ liệu giả, 4 test) | đạt (VAL 6.000: loss 0,3031, acc 89,38%) | 5 epoch, Adam lr=1e-3, checkpoint tốt nhất lưu tại artifacts/models/mlp_baseline.pt |
-| `evaluate` | Member B (Thư) | xong | đạt (dữ liệu giả, 5 test) | đạt (VAL 6.000: loss 0,3031, acc 89,38%) | Trouser cao nhất 98,33%, Shirt thấp nhất 66,33%, ROC-AUC 0,9923; báo cáo từng lớp lưu ra CSV |
-| `visualize` | Member B (Thư) | xong | đạt (dữ liệu giả, 3 test) | đạt (lưu 3 hình trong artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png; hình của lần chạy 2026-11-01 chưa được xem lại bằng mắt |
-| `experiment` | Member B (Thư) | xong | đạt (dữ liệu giả, 8 test) | đạt (35 lần chạy, lưu tại artifacts/runs/experiment_results.csv) | 7 cấu hình, mỗi cấu hình 5 seed; test của baseline 88,42 +/- 0,37% |
-| `main.py`, README, tích hợp | Nhóm trưởng (Thư) | xong | đạt (chạy thử 1 epoch) | đạt (toàn bộ pipeline) | Báo cáo ngắn và báo cáo chi tiết trong README, `extended_study.py`, lab1_presentation.ipynb (26 ô), 54 test đều đạt (python -m pytest labs/lab1/tests tests -q -> 54 passed) |
+| `train` | Member B (Thư) | xong | đạt (dữ liệu giả, 4 test) | đạt (data chính thức, VAL 6.000: loss 0,3018, acc 89,05%) | 5 epoch, Adam lr=1e-3, checkpoint tốt nhất lưu tại artifacts/models/mlp_baseline.pt |
+| `evaluate` | Member B (Thư) | xong | đạt (dữ liệu giả, 5 test) | đạt (data chính thức, VAL 6.000: loss 0,3018, acc 89,05%; TEST 88,36%) | Trouser cao nhất 98,17%, Shirt thấp nhất 70,17%, ROC-AUC 0,9925; báo cáo từng lớp lưu ra CSV |
+| `visualize` | Member B (Thư) | xong | đạt (dữ liệu giả, 3 test) | đạt (lưu 3 hình trong artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png; hình của lần chạy 2026-11-04 chưa được xem lại bằng mắt |
+| `experiment` | Member B (Thư) | xong | đạt (dữ liệu giả, 8 test) | đạt (35 lần chạy, lưu tại artifacts/runs/experiment_results.csv) | 7 cấu hình, mỗi cấu hình 5 seed; test của baseline 88,00 +/- 0,39% (data chính thức) |
+| `main.py`, README, tích hợp | Nhóm trưởng (Thư) | xong | đạt (chạy thử 1 epoch) | đạt (toàn bộ pipeline) | Báo cáo ngắn và báo cáo chi tiết trong README, `extended_study.py`, lab1_presentation.ipynb (26 ô), hướng dẫn từng module trong `docs/`; chạy lại toàn bộ trên data chính thức ngày 2026-11-04; 54 test đều đạt |
 
 ## Bàn giao A -> B (tuần tự, không xen kẽ)
 Member B chỉ bắt đầu code khi TẤT CẢ các điều kiện sau đều đúng:
@@ -26,7 +26,7 @@ Member B chỉ bắt đầu code khi TẤT CẢ các điều kiện sau đều �
 Sau bàn giao, Member A chỉ trả lời câu hỏi và review PR, không sửa module của Member B.
 
 ## Kiểm chứng: đổi sang dữ liệu chính thức của Zalando (2026-11-02, Python 3.13.7, torch 2.13.0 CPU, torchvision 0.29.1)
-Dữ liệu và split dưới đây thay thế CSV Kaggle. Các số huấn luyện ở mục kế tiếp vẫn là của CSV Kaggle, chờ chạy lại `main.py` và notebook.
+Dữ liệu và split dưới đây thay thế CSV Kaggle. Kết quả huấn luyện trên dữ liệu này nằm ở mục kế tiếp (2026-11-04).
 - `python -m labs.lab1.preprocessing.download_official` -> đạt: torchvision tải 4 file IDX gốc và kiểm MD5; ghi `fashion-mnist_train.csv` (60.000 dòng, 6.000 mỗi lớp) và `fashion-mnist_test.csv` (10.000 dòng, 1.000 mỗi lớp); `load_csv` đọc lại khớp từng pixel và nhãn với dữ liệu gốc
 - CSV Kaggle cũ giữ lại để đối chiếu: `raw_data/fashion-mnist_train_kaggle.csv`, `raw_data/fashion-mnist_test_kaggle.csv` (không commit)
 - `python -m labs.lab1.preprocessing.preprocessing` -> đạt: `make_split(labels, val_ratio=0.1, seed=42)`, train 54.000 / val 6.000 (600 mỗi lớp), ghi lại `artifacts/splits/train_val_split.json`
@@ -35,8 +35,25 @@ Dữ liệu và split dưới đây thay thế CSV Kaggle. Các số huấn luy�
 - Ảnh giống hệt nhau giữa các tập -> train-val 0, train-test 0, val-test 0 (CSV Kaggle: 9, 9, 1); test có 0 dòng trùng
 - `python -m pytest labs/lab1/tests -q` -> 50 passed; `python -m pytest tests -q` -> 4 passed
 
-## Kiểm chứng: kết quả trên CSV Kaggle (2026-11-01, Python 3.13.7, torch 2.14.1 CPU, 4 thread)
-Các số này thay thế mọi kết quả trong phần kiểm chứng cũ bên dưới.
+## Kiểm chứng: kết quả trên dữ liệu chính thức (2026-11-04, Python 3.13.7, torch 2.14.1 CPU, 4 thread)
+Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook và `docs/` dùng đúng các số này.
+- CSV tạo lại trên máy nhóm trưởng bằng `python -m labs.lab1.preprocessing.download_official`: MD5 train `8ff2cced1c624159b21dac4f735b4215`, test `78e18be2098f1256a07ce6f91a4d436e`; `make_split(labels, 0.1, 42)` ra đúng y `train_val_split.json` đã commit (54.000 / 6.000); mean 0,2859, std 0,3530
+- `python -m labs.lab1.main` -> đạt, 35 lần chạy thí nghiệm, 7.401 giây; seed 42: val 89,05% (loss 0,3018), test 88,36% (loss 0,3338, 8.836/10.000), epoch tốt nhất là 5
+- Thời gian: phần lớn mỗi lần chạy 55-140 giây; riêng `softmax_regression` seed 3407 mất 5.445 giây và seed 42 mất 388 giây (máy không vào sleep, chưa rõ nguyên nhân); accuracy không phụ thuộc thời gian chạy
+- Notebook chạy lại toàn bộ bằng `jupyter nbconvert --execute` sau `main.py` và `extended_study.py` -> 0 lỗi, cùng val 89,05% và test 88,36% với `main.py`; ROC-AUC macro 0,9925, PR-AUC macro 0,9479 (validation)
+- Baseline qua 5 seed: test 88,00 +/- 0,39%; val 88,62 +/- 0,36%; train 90,92%
+- Epoch tốt nhất của 5 seed baseline: 5, 4, 5, 5, 5
+- So sánh từng cặp trên validation (quy tắc chốt trước: cả 5 seed cùng chiều và |trung bình| >= 2 std):
+  - Khác biệt rõ: bỏ lớp ẩn -3,80 +/- 0,71; SGD so với Adam ở lr 1e-3 -3,45 +/- 0,33; SGD lr 0,01 so với 1e-3 +3,14 +/- 0,17
+  - Chưa thấy khác biệt rõ: mạng lớn hơn -0,52 +/- 0,40; dropout 0,2 -0,46 +/- 0,35; weight decay 1e-4 -0,29 +/- 0,17
+- Kiểm định t theo cặp có hiệu chỉnh Holm: 3 cặp khác biệt rõ có p sau hiệu chỉnh <= 0,0011; mạng lớn hơn 0,0844; dropout 0,0844; weight decay 0,0587 (trước hiệu chỉnh: 0,042; 0,044; 0,020)
+- Recall qua các seed (validation): Shirt thấp nhất ở 4/5 seed (trung bình 69,97%), Coat thấp nhất ở 1 seed; nhầm nhiều nhất: Shirt -> T-shirt/top (419 lần qua 5 seed)
+- `python -m labs.lab1.extended_study` -> đạt, 10 lần chạy 20 epoch, 1.440 giây: baseline val 89,22 +/- 0,26%, test 88,62 +/- 0,19%, train 92,95%, epoch tốt nhất 7-10, val loss thấp nhất 0,2988, cuối 0,3972; dropout 0,2 val 89,58 +/- 0,29%, epoch tốt nhất 9-20, val loss cuối 0,3095
+- Ở 20 epoch: dropout so với baseline +0,36 điểm val accuracy, p sau hiệu chỉnh 0,15; val loss cuối thấp hơn 0,088 ở cả 5 seed (p sau hiệu chỉnh 0,0001); 20 so với 5 epoch +0,60 điểm, p sau hiệu chỉnh 0,15
+- `python -m pytest labs/lab1/tests tests -q` -> 54 passed; md5 của `mlp_baseline.pt` không đổi sau khi chạy test
+- Kết quả và notebook của lần chạy trên CSV Kaggle được sao lưu ngoài repo (`lab1_kaggle_artifacts_backup_2026-11-04`), không commit
+
+## Kiểm chứng: kết quả trên CSV Kaggle (2026-11-01, đã thay thế, giữ làm lịch sử)
 - `python -m pytest labs/lab1/tests tests -q` -> 54 passed; md5 của mọi file `.pt` không đổi sau khi chạy test
 - `python -m labs.lab1.main` -> đạt, 35 lần chạy thí nghiệm; seed 42: val 89,38% (loss 0,3031), test 88,97% (loss 0,3005, 8.897/10.000), epoch tốt nhất là 5
 - Chạy `main.py` lần hai -> trọng số baseline y hệt, cả 35 kết quả thí nghiệm y hệt
@@ -111,6 +128,7 @@ Các số này thay thế mọi kết quả trong phần kiểm chứng cũ bên
 - 2026-11-02 Toàn: `preprocessing`, `eda`: đổi sang dữ liệu chính thức của Zalando bằng `download_official.py` (torchvision, kiểm MD5), cùng tên file và định dạng CSV; đổi tên CSV Kaggle thành `*_kaggle.csv`; tạo lại split; sửa chữ Kaggle trong docstring `eda.py` và `project_description.md` -> 50 passed; 0 dòng trùng, 0 ảnh chung giữa các tập
 - 2026-11-02 Toàn: notebook, README: sửa chữ về nguồn data ở ô 0, 1, 3 của notebook; thêm `README_official_data.md` (bản nháp README, chỉ đổi các đoạn về data) để nhóm trưởng so với `README.md` -> chỉ sửa tài liệu, không chạy code
 - 2026-11-02 Toàn: notebook: chạy lại Phần A (cell 0-10: EDA, split, features, model) trên dữ liệu chính thức; cell 11-25 và phần chữ giữ nguyên, chờ Thư chạy lại -> 0 lỗi; Duplicate rows 0, mean 0,2859, std 0,3530
+- 2026-11-04 Thư: `main.py`, `extended_study.py`, notebook, README, `docs/`: tạo lại CSV chính thức trên máy nhóm trưởng; chạy lại `main.py`, `extended_study.py`, notebook trên data chính thức; gộp `README_official_data.md` của Toàn vào `README.md` rồi xóa bản nháp; thay mọi số trong README, chữ trong notebook và file này; thêm 9 hướng dẫn module trong `labs/lab1/docs/`; ghi phạm vi chỉ làm MLP -> 54 passed, notebook 0 lỗi và khớp `main.py`
 - 2026-11-01 Thư: `experiment`, `extended_study`, notebook, README: thêm train accuracy, kiểm định t có hiệu chỉnh Holm, khoảng tin cậy 95%, nghiên cứu 20 epoch; đối chiếu CSV Kaggle với file chính thức; viết báo cáo chi tiết trong README; bỏ CNN vì thiếu thời gian -> 54 passed, chạy `main.py` hai lần ra kết quả y hệt.
 
 ## Vấn đề mở
@@ -118,7 +136,8 @@ Các số này thay thế mọi kết quả trong phần kiểm chứng cũ bên
 - Đã xử lý 2026-11-01: `best_val_acc` lấy từ epoch có validation loss thấp nhất, cùng epoch với checkpoint được giữ.
 - Đã xử lý 2026-11-01: `torch.randn` trong notebook làm đổi thứ tự xáo dữ liệu; nay dùng `torch.zeros`, và `main.py`, notebook đều dùng 4 thread CPU.
 - Đã xử lý 2026-11-02: đổi sang dữ liệu chính thức của Zalando; 43 dòng trùng và ảnh chung giữa các tập (9, 9, 1) của CSV Kaggle không còn (0 dòng trùng, 0 ảnh chung).
-- Chưa làm: chạy lại `main.py`, notebook, `extended_study.py` trên dữ liệu mới và cập nhật README, báo cáo (nhóm trưởng làm sau khi merge).
+- Đã xử lý 2026-11-04: chạy lại `main.py`, notebook, `extended_study.py` trên dữ liệu mới và cập nhật README.
 - Chưa xong: mỗi thành viên tự điền phần của mình trong `AI_usage.md`.
 - Chưa kiểm chứng: giả thuyết về nguyên nhân lỗi của Shirt, và nguyên nhân CSV Kaggle khác file chính thức.
-- Chưa làm: chạy trên máy khác; CNN (bỏ vì thiếu thời gian).
+- Chưa làm: chạy trên máy khác; chạy `main.py` hai lần trên data chính thức để kiểm tra tái lập (lần 2026-11-01 trên Kaggle cho kết quả y hệt).
+- Ngoài phạm vi (quyết định của nhóm, 2026-11-04): CNN; Lab 1 chỉ làm MLP.
