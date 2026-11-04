@@ -4,7 +4,7 @@
 - **Problem:** Classify 28x28 grayscale clothing images into 10 classes with a neural network trained in PyTorch.
 - **Target users:** the lecturer (grading) and the group (learning).
 - **Input / Output:** Input: CSV rows (label + 784 pixels, values 0-255). Output: trained model, accuracy, loss curves, predicted-vs-actual images, experiment table.
-- **Data:** Kaggle `zalando-research/fashionmnist` (CSV: `label` + 784 pixel columns, 60,000 train rows). Check the real file names after download.
+- **Data:** official Fashion-MNIST from Zalando GitHub (`zalandoresearch/fashion-mnist`), downloaded by `preprocessing/download_official.py` and written as CSV (`label` + 784 pixel columns, 60,000 train / 10,000 test rows).
 - **Core features:**
   1. Load the dataset and apply transforms
   2. Build a neural network (MLP)
@@ -32,7 +32,7 @@
 
 | Module | Owner | Function / class | Input | Output |
 |---|---|---|---|---|
-| `eda` | Member A | `run_eda(train_csv: str, out_dir: str)` | train_csv: path to the Kaggle training CSV; out_dir: folder for figures | dict with n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; PNG files (class bar chart, sample image grid) in out_dir |
+| `eda` | Member A | `run_eda(train_csv: str, out_dir: str)` | train_csv: path to the training CSV (official Zalando data); out_dir: folder for figures | dict with n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; PNG files (class bar chart, sample image grid) in out_dir |
 | `preprocessing` | Member A | `load_csv(csv_path: str)` | csv_path: path to a CSV file | (images: uint8 array [N,28,28], labels: int64 array [N]) |
 | `preprocessing` | Member A | `make_split(labels, val_ratio: float = 0.1, seed: int = 42)` | labels: int64 array [N]; val_ratio; seed | (train_idx, val_idx): disjoint index arrays covering all N samples |
 | `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | train_idx, val_idx, path (.json) | JSON file at path |
@@ -95,7 +95,7 @@ labs/lab1/
   - Wrong reshape/dtype when reading the CSV: print shapes and value range
   - Large CSV committed to git: keep raw_data/ ignored
   - Extra random numbers or a different CPU thread count change the results of the same seed: use `torch.zeros` for shape checks, fix the thread count, report mean and std across seeds
-  - Identical images in different splits (train-val 9, train-test 9, val-test 1) and Kaggle CSVs that differ from the official split: keep the CSVs, disclose as a limitation, do not compare with published results
+  - Kaggle CSVs differ from the official Zalando files (about 8% of images match no official image, train and test images mixed): use the official files; checked 0 identical images across train/val/test
 
 ---
 
@@ -107,7 +107,7 @@ labs/lab1/
 - **Bài toán:** Phân loại ảnh quần áo xám 28x28 thành 10 lớp bằng mạng nơ-ron huấn luyện trong PyTorch.
 - **Người dùng:** cô (chấm bài) và nhóm (học).
 - **Đầu vào / Đầu ra:** Đầu vào: các dòng CSV (label + 784 pixel, giá trị 0-255). Đầu ra: model đã huấn luyện, accuracy, đồ thị loss, ảnh dự đoán vs thực tế, bảng thí nghiệm.
-- **Dữ liệu:** Kaggle `zalando-research/fashionmnist` (CSV: cột `label` + 784 cột pixel, 60.000 dòng train). Kiểm tra tên file thật sau khi tải.
+- **Dữ liệu:** Fashion-MNIST chính thức từ GitHub của Zalando (`zalandoresearch/fashion-mnist`), tải bằng `preprocessing/download_official.py` và ghi ra CSV (cột `label` + 784 cột pixel, 60.000 dòng train / 10.000 dòng test).
 - **Tính năng chính:**
   1. Nạp dataset và áp dụng transform
   2. Xây dựng mạng nơ-ron (MLP)
@@ -135,7 +135,7 @@ labs/lab1/
 
 | Module | Phụ trách | Hàm / lớp | Đầu vào | Đầu ra |
 |---|---|---|---|---|
-| `eda` | Member A | `run_eda(train_csv: str, out_dir: str)` | train_csv: đường dẫn CSV train của Kaggle; out_dir: thư mục lưu hình | dict gồm n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; file PNG (biểu đồ số lượng mỗi lớp, lưới ảnh mẫu) trong out_dir |
+| `eda` | Member A | `run_eda(train_csv: str, out_dir: str)` | train_csv: đường dẫn CSV train (dữ liệu chính thức của Zalando); out_dir: thư mục lưu hình | dict gồm n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; file PNG (biểu đồ số lượng mỗi lớp, lưới ảnh mẫu) trong out_dir |
 | `preprocessing` | Member A | `load_csv(csv_path: str)` | csv_path: đường dẫn file CSV | (images: mảng uint8 [N,28,28], labels: mảng int64 [N]) |
 | `preprocessing` | Member A | `make_split(labels, val_ratio: float = 0.1, seed: int = 42)` | labels: mảng int64 [N]; val_ratio; seed | (train_idx, val_idx): hai mảng chỉ số không giao nhau, gộp lại đủ N mẫu |
 | `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | train_idx, val_idx, path (.json) | file JSON tại path |
@@ -176,4 +176,4 @@ labs/lab1/
   - Reshape/dtype sai khi đọc CSV: in shape và khoảng giá trị
   - Commit CSV lớn lên git: giữ raw_data/ trong .gitignore
   - Số ngẫu nhiên phát sinh thêm hoặc số thread CPU khác làm đổi kết quả của cùng seed: dùng `torch.zeros` khi kiểm tra shape, cố định số thread, báo mean và std qua nhiều seed
-  - Ảnh giống hệt nhau nằm ở các tập khác nhau (train-val 9, train-test 9, val-test 1) và CSV Kaggle khác cách chia chính thức: giữ nguyên CSV, ghi rõ là giới hạn, không so với kết quả đã công bố
+  - CSV Kaggle khác file chính thức của Zalando (khoảng 8% ảnh không khớp ảnh chính thức nào, ảnh train và test bị trộn): dùng file chính thức; đã kiểm 0 ảnh giống hệt nhau giữa train/val/test
