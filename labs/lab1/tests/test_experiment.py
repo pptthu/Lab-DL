@@ -9,7 +9,9 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 import labs.lab1.experiment.experiment as experiment_module
-from labs.lab1.experiment.experiment import analyze_seed_runs, build_model, compare_pairs, run_experiments, save_results
+from labs.lab1.experiment.experiment import (
+    analyze_seed_runs, build_model, compare_pairs, run_experiments, save_history, save_results,
+)
 from labs.lab1.train.train import save_checkpoint
 from labs.lab1.model.model import MLP
 
@@ -79,6 +81,34 @@ def test_best_val_acc_comes_from_lowest_val_loss_epoch(tmp_path, monkeypatch):
     assert results[0]["best_val_acc"] == 0.7
     assert results[0]["best_val_loss"] == 0.3
     assert results[0]["best_epoch"] == 2
+
+
+def test_run_experiments_keeps_epoch_history(tmp_path, monkeypatch):
+    monkeypatch.setattr(experiment_module, "artifact_dir", lambda *_: tmp_path)
+    history = {"train_loss": [1.0, 0.9, 0.8], "val_loss": [0.5, 0.3, 0.4], "val_acc": [0.9, 0.7, 0.8]}
+    monkeypatch.setattr(experiment_module, "train_model", lambda **_: history)
+
+    results = run_experiments([{"hidden_sizes": (4,), "seed": 42}], _make_dummy_loaders(), device="cpu")
+
+    assert results[0]["history"] == history
+
+
+def test_save_history_writes_one_row_per_epoch(tmp_path):
+    history = {"train_loss": [1.0, 0.9], "val_loss": [0.5, 0.3], "val_acc": [0.6, 0.7]}
+    results = [
+        {"config": {"name": "baseline", "seed": 42}, "history": history},
+        {"config": {"name": "baseline", "seed": 7}, "history": history},
+    ]
+    csv_path = tmp_path / "nested" / "history.csv"
+
+    save_history(results, str(csv_path))
+
+    df = pd.read_csv(csv_path)
+    assert list(df.columns) == ["name", "seed", "epoch", "train_loss", "val_loss", "val_acc"]
+    assert len(df) == 4
+    assert df["epoch"].tolist() == [1, 2, 1, 2]
+    assert df["seed"].tolist() == [42, 42, 7, 7]
+    assert df["val_loss"].tolist() == [0.5, 0.3, 0.5, 0.3]
 
 
 def test_save_results_marks_network_without_hidden_layers(tmp_path):

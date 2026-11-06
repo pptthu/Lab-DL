@@ -53,8 +53,9 @@
 | `visualize` | Member B | `plot_loss_curves(history: dict, out_path: str)` | history from train_model; out_path (.png) | PNG file |
 | `visualize` | Member B | `show_predictions(model, loader, class_names, device, out_path: str, n: int = 16)` | model, loader, class_names (10 names), device, out_path, n | PNG file |
 | `visualize` | Member B | `plot_confusion_matrix(cm, class_names, out_path: str)` | cm, class_names, out_path | PNG file |
-| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device, ckpt_prefix: str = 'exp_run')` | configs: list of dicts; loaders: (train, val, test); device; ckpt_prefix | list of result dicts: config, best_val_acc, best_val_loss, best_epoch (all from the kept checkpoint), final_val_loss, n_params, train_seconds, ckpt_path |
+| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device, ckpt_prefix: str = 'exp_run')` | configs: list of dicts; loaders: (train, val, test); device; ckpt_prefix | list of result dicts: config, best_val_acc, best_val_loss, best_epoch (all from the kept checkpoint), final_val_loss, n_params, train_seconds, ckpt_path, history (train_loss, val_loss, val_acc per epoch) |
 | `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | CSV file |
+| `experiment` | Member B | `save_history(results: list, csv_path: str)` | results, csv_path | CSV file: name, seed, epoch, train_loss, val_loss, val_acc (one row per run and epoch) |
 | `experiment` | Member B | `analyze_seed_runs(runs: list, loaders: tuple, class_names, device, out_dir: str, top_k: int = 10, prefix: str = '', use_test: bool = True)` | results of one fixed configuration, one per seed; loaders; class_names; device; out_dir; top_k; prefix; use_test | dict: train_acc_mean, val_acc_mean, and test_acc_mean, test_acc_std when use_test; seed_results.csv, recall_by_class.csv, top_confusions.csv in out_dir |
 | `experiment` | Member B | `build_model(cfg: dict, num_classes: int = 10)` | cfg, num_classes | new, untrained MLP |
 | `experiment` | Member B | `compare_pairs(values, pairs)` | values: table seed x configuration; pairs: (variant, reference, factor) | DataFrame: mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm |
@@ -95,7 +96,6 @@ labs/lab1/
   - Wrong reshape/dtype when reading the CSV: print shapes and value range
   - Large CSV committed to git: keep raw_data/ ignored
   - Extra random numbers or a different CPU thread count change the results of the same seed: use `torch.zeros` for shape checks, fix the thread count, report mean and std across seeds
-  - Kaggle CSVs differ from the official Zalando files (about 8% of images match no official image, train and test images mixed): use the official files; checked 0 identical images across train/val/test
 
 ---
 
@@ -176,4 +176,3 @@ labs/lab1/
   - Reshape/dtype sai khi đọc CSV: in shape và khoảng giá trị
   - Commit CSV lớn lên git: giữ raw_data/ trong .gitignore
   - Số ngẫu nhiên phát sinh thêm hoặc số thread CPU khác làm đổi kết quả của cùng seed: dùng `torch.zeros` khi kiểm tra shape, cố định số thread, báo mean và std qua nhiều seed
-  - CSV Kaggle khác file chính thức của Zalando (khoảng 8% ảnh không khớp ảnh chính thức nào, ảnh train và test bị trộn): dùng file chính thức; đã kiểm 0 ảnh giống hệt nhau giữa train/val/test

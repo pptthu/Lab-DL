@@ -16,7 +16,7 @@ from shared.paths import artifact_dir, raw_data_dir
 from labs.lab1.main import CLASS_NAMES, N_THREADS, SEEDS
 from labs.lab1.preprocessing.preprocessing import load_csv, load_split
 from labs.lab1.features.features import compute_mean_std, build_transform, FashionDataset, make_loaders
-from labs.lab1.experiment.experiment import analyze_seed_runs, run_experiments, save_results
+from labs.lab1.experiment.experiment import analyze_seed_runs, run_experiments, save_history, save_results
 
 EPOCHS = 20
 # The test set is reported only for the baseline, fixed before the run.
@@ -60,6 +60,7 @@ def main() -> None:
 
     runs_dir = artifact_dir("lab1", "runs")
     save_results(results, str(runs_dir / "extended_results.csv"))
+    save_history(results, str(runs_dir / "extended_epoch_history.csv"))
     for name in VARIANTS:
         runs = [r for r in results if r["config"]["name"] == name]
         summary = analyze_seed_runs(
