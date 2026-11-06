@@ -1,4 +1,4 @@
-﻿"""Unit tests for training module (fake data only, fast).
+"""Unit tests for training module (fake data only, fast).
 
 VI: Unit test cho module huấn luyện (chỉ dùng dữ liệu giả lập, chạy nhanh).
 """

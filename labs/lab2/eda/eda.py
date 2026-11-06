@@ -8,14 +8,20 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
-import os
+import sys
 from pathlib import Path
+
 import matplotlib
-matplotlib.use("Agg")  # Non-interactive backend to safely generate figures
-import matplotlib.pyplot as plt
-import numpy as np
-import torchvision
-import torchvision.datasets as datasets
+
+# Force a non-interactive backend only outside a notebook (scripts, CI,
+# headless servers). Inside Jupyter the inline backend must stay active,
+# otherwise plt.show() warns that FigureCanvasAgg is non-interactive.
+if "ipykernel" not in sys.modules:
+    matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import torchvision.datasets as datasets  # noqa: E402
 
 
 CIFAR10_CLASSES = (

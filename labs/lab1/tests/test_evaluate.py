@@ -1,4 +1,4 @@
-﻿"""Unit tests for evaluate module (fake data only, fast).
+"""Unit tests for evaluate module (fake data only, fast).
 
 VI: Unit test cho module đánh giá (chỉ dùng dữ liệu giả lập, chạy nhanh).
 """
@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from labs.lab1.evaluate.evaluate import confusion_matrix, evaluate, per_class_accuracy
+from labs.lab1.evaluate.evaluate import confusion_matrix, evaluate, per_class_accuracy, save_classification_report
 
 
 class DummyClassifier(nn.Module):
@@ -95,3 +95,17 @@ def test_per_class_accuracy_empty_row_handles_zero_division():
     assert isinstance(accs, dict)
     assert accs[0] == 1.0
     assert accs[1] == 0.0
+
+
+def test_save_classification_report_values_and_file(tmp_path):
+    cm = np.array([[8, 2], [1, 9]])
+    csv_path = tmp_path / "nested" / "report.csv"
+
+    df = save_classification_report(cm, ["a", "b"], str(csv_path))
+
+    assert csv_path.is_file()
+    assert df.loc[0, "support"] == 10
+    assert df.loc[0, "recall"] == pytest.approx(0.8)
+    assert df.loc[0, "precision"] == pytest.approx(8 / 9)
+    assert df.loc[0, "specificity"] == pytest.approx(0.9)
+    assert df.loc[1, "f1"] == pytest.approx(2 * (9 / 11) * 0.9 / ((9 / 11) + 0.9))

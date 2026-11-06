@@ -8,7 +8,7 @@ import importlib
 import pytest
 
 SLUG = "lab1"
-EXPECTED = {'eda': ['run_eda'], 'preprocessing': ['load_csv', 'make_split', 'save_split', 'load_split'], 'features': ['compute_mean_std', 'build_transform', 'FashionDataset', 'make_loaders'], 'model': ['MLP', 'count_parameters'], 'train': ['train_model', 'save_checkpoint', 'load_checkpoint'], 'evaluate': ['evaluate', 'confusion_matrix', 'per_class_accuracy'], 'visualize': ['plot_loss_curves', 'show_predictions', 'plot_confusion_matrix'], 'experiment': ['run_experiments', 'save_results']}
+EXPECTED = {'eda': ['run_eda'], 'preprocessing': ['load_csv', 'make_split', 'save_split', 'load_split'], 'features': ['compute_mean_std', 'build_transform', 'FashionDataset', 'make_loaders'], 'model': ['MLP', 'count_parameters'], 'train': ['train_model', 'save_checkpoint', 'load_checkpoint'], 'evaluate': ['evaluate', 'confusion_matrix', 'per_class_accuracy', 'save_classification_report'], 'visualize': ['plot_loss_curves', 'show_predictions', 'plot_confusion_matrix'], 'experiment': ['run_experiments', 'save_results', 'analyze_seed_runs', 'build_model', 'compare_pairs']}
 
 
 @pytest.mark.parametrize("module,names", list(EXPECTED.items()))
