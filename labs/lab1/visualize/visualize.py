@@ -34,6 +34,8 @@ def plot_loss_curves(history: dict, out_path: str) -> None:
     fig = Figure(figsize=(7, 5))
     ax = fig.subplots()
 
+    # One point per epoch: train loss (blue) and validation loss (orange).
+    # VI: Mỗi epoch một điểm: train loss (xanh dương) và validation loss (cam).
     ax.plot(epochs, train_loss, label="Train Loss", marker="o", color="#1f77b4")
     if val_loss:
         ax.plot(epochs, val_loss, label="Validation Loss", marker="s", color="#ff7f0e")
@@ -83,6 +85,8 @@ def show_predictions(
             logits = model(x_batch)
             preds = torch.argmax(logits, dim=1)
 
+            # Take the first n images of the loader (validation is not shuffled, so always the same images).
+            # VI: Lấy n ảnh đầu của loader (validation không xáo nên lần nào cũng là cùng các ảnh).
             for img, t, p in zip(x_batch, y_batch, preds):
                 collected_images.append(img.cpu())
                 collected_trues.append(int(t.item()))
@@ -106,6 +110,8 @@ def show_predictions(
     for i, ax in enumerate(axes_flat):
         if i < actual_n:
             img = collected_images[i].squeeze().float().numpy()
+            # Rescale the normalized image back to 0-1 so it can be shown.
+            # VI: Đưa ảnh đã chuẩn hóa về khoảng 0-1 để hiển thị.
             img_min = float(img.min())
             img_max = float(img.max())
             if img_max > img_min:
@@ -121,6 +127,8 @@ def show_predictions(
             ax.imshow(img_rescaled, cmap="gray", vmin=0.0, vmax=1.0)
             ax.axis("off")
             is_correct = (p_idx == t_idx)
+            # Green title = correct prediction, red = wrong.
+            # VI: Tiêu đề xanh lá = đoán đúng, đỏ = đoán sai.
             color = "#2ca02c" if is_correct else "#d62728"
             ax.set_title(f"pred: {pred_name}\ntrue: {true_name}", color=color, fontsize=9)
         else:
@@ -151,6 +159,8 @@ def plot_confusion_matrix(cm, class_names: Sequence[str], out_path: str) -> None
     fig = Figure(figsize=(8.5, 7.5))
     ax = fig.subplots()
 
+    # Darker cell = more images; the diagonal holds the correct predictions.
+    # VI: Ô càng đậm càng nhiều ảnh; đường chéo là các dự đoán đúng.
     cax = ax.imshow(cm_arr, cmap="Blues", interpolation="nearest")
     fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
 
@@ -164,6 +174,8 @@ def plot_confusion_matrix(cm, class_names: Sequence[str], out_path: str) -> None
     ax.set_ylabel("True label", fontsize=10)
     ax.set_title("Confusion Matrix", fontsize=12)
 
+    # White numbers on dark cells, black on light cells, so every count is readable.
+    # VI: Số màu trắng trên ô đậm, màu đen trên ô nhạt, để đọc được mọi số.
     thresh = cm_arr.max() / 2.0 if cm_arr.max() > 0 else 1.0
     for i in range(cm_arr.shape[0]):
         for j in range(cm_arr.shape[1]):

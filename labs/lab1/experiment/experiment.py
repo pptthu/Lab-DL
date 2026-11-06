@@ -61,6 +61,8 @@ def run_experiments(
     models_dir = artifact_dir("lab1", "models")
 
     for idx, cfg in enumerate(configs):
+        # Same seed -> same initial weights and same shuffling, so the runs can be repeated.
+        # VI: Cùng seed -> cùng trọng số ban đầu và cùng thứ tự xáo, nên chạy lại ra đúng kết quả.
         seed = cfg.get("seed", 42)
         set_seed(seed)
 
@@ -209,6 +211,8 @@ def analyze_seed_runs(
         val_loss, val_acc = evaluate(model, val_loader, device=device)
         cm = confusion_matrix(model, val_loader, device=device, num_classes=num_classes)
         cm_sum += cm
+        # Recall per class on validation, one list per seed.
+        # VI: Recall từng lớp trên validation, mỗi seed một danh sách.
         recalls.append(list(per_class_accuracy(cm).values()))
         row = {
             "seed": cfg.get("seed"),
@@ -278,10 +282,14 @@ def compare_pairs(values: pd.DataFrame, pairs: Sequence[Tuple[str, str, str]]) -
     """
     rows = []
     for variant, reference, factor in pairs:
+        # Difference per seed: both configurations were trained with the same 5 seeds.
+        # VI: Chênh lệch theo từng seed: hai cấu hình được train với cùng 5 seed.
         diff = values[variant] - values[reference]
         n = len(diff)
         mean, std = float(diff.mean()), float(diff.std(ddof=1))
         half_width = float(stats.t.ppf(0.975, n - 1)) * std / np.sqrt(n)
+        # Condition 1 of the rule: all seeds point the same way.
+        # VI: Điều kiện 1 của quy tắc: mọi seed cùng chiều.
         same_direction = bool((diff > 0).all() or (diff < 0).all())
         rows.append({
             "factor": factor,
@@ -292,8 +300,8 @@ def compare_pairs(values: pd.DataFrame, pairs: Sequence[Tuple[str, str, str]]) -
             "ci95_low": mean - half_width,
             "ci95_high": mean + half_width,
             "seeds_higher": int((diff > 0).sum()),
-            # Rule fixed before reading the results.
-            # VI: Quy tắc chốt trước khi đọc kết quả.
+            # Rule fixed before reading the results: condition 1 and |mean| >= 2 std (condition 2).
+            # VI: Quy tắc chốt trước khi đọc kết quả: điều kiện 1 và |trung bình| >= 2 std (điều kiện 2).
             "rule_clear": same_direction and abs(mean) >= 2 * std,
             "p_value": float(stats.ttest_rel(values[variant], values[reference]).pvalue),
         })
