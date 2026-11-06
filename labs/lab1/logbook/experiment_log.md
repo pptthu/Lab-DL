@@ -2,6 +2,11 @@
 
 One entry per experiment: what changed, why, and the result. Numbers come from `artifacts/runs/`.
 
+## 2026-11-06: per-epoch history saved
+- **Why:** only the best and final values of each run were kept, so explanations such as "SGD at lr 1e-3 is still learning" or "the baseline overfits after epoch 7" had no curve behind them.
+- **Change:** `run_experiments` keeps each run's history; `save_history` writes `epoch_history.csv` (35 runs x 5 epochs) and `extended_epoch_history.csv` (10 runs x 20 epochs). Data, configurations, seeds and the rule are unchanged.
+- **Result:** all 12 result CSVs are identical to the 2026-11-04 run (timing columns aside), and the history matches each run's best epoch, best and final values (0 mismatches in 45 runs). The curves show: the linear model levels off near 84% from epoch 2; SGD at lr 1e-3 is still rising at epoch 5; the 20-epoch baseline's mean val loss is lowest at epoch 7 (0.3028) and rises to 0.3972 while train loss falls to 0.1240; dropout keeps val loss between 0.2984 and 0.3100 from epoch 7 to 20.
+
 ## 2026-11-04: rerun on the official Zalando data
 - **Why:** the Kaggle CSVs differ from the official files (see README); the 2026-11-01 entries below were measured on them.
 - **Change:** data only (official files, same CSV format, same split rule and seed). Code, configurations, seeds and the rule are unchanged.
@@ -38,6 +43,11 @@ One entry per experiment: what changed, why, and the result. Numbers come from `
 # Sổ ghi thí nghiệm
 
 Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `artifacts/runs/`.
+
+## 06/11/2026: lưu lịch sử theo epoch
+- **Vì sao:** trước đây mỗi lần chạy chỉ giữ giá trị tốt nhất và cuối cùng, nên các giải thích như "SGD lr 1e-3 vẫn đang học" hay "baseline overfit sau epoch 7" không có đường cong làm bằng chứng.
+- **Thay đổi:** `run_experiments` giữ lịch sử của từng lần chạy; `save_history` ghi `epoch_history.csv` (35 lần chạy x 5 epoch) và `extended_epoch_history.csv` (10 lần chạy x 20 epoch). Data, cấu hình, seed và quy tắc giữ nguyên.
+- **Kết quả:** 12 file CSV kết quả giống hệt lần chạy 04/11 (trừ cột thời gian), lịch sử khớp epoch tốt nhất, giá trị tốt nhất và cuối của từng lần chạy (0 sai lệch trên 45 lần chạy). Đường cong cho thấy: mô hình tuyến tính đứng quanh 84% từ epoch 2; SGD lr 1e-3 vẫn đang tăng ở epoch 5; baseline 20 epoch có val loss trung bình thấp nhất ở epoch 7 (0,3028) rồi tăng lên 0,3972 trong khi train loss giảm xuống 0,1240; dropout giữ val loss trong khoảng 0,2984 đến 0,3100 từ epoch 7 đến 20.
 
 ## 04/11/2026: chạy lại trên data chính thức của Zalando
 - **Vì sao:** CSV Kaggle khác file chính thức (xem README); các mục ngày 01/11 bên dưới đo trên CSV đó.

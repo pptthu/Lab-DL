@@ -21,7 +21,7 @@ from labs.lab1.model.model import MLP, count_parameters
 from labs.lab1.train.train import train_model, load_checkpoint
 from labs.lab1.evaluate.evaluate import evaluate, confusion_matrix, per_class_accuracy, save_classification_report
 from labs.lab1.visualize.visualize import plot_loss_curves, show_predictions, plot_confusion_matrix
-from labs.lab1.experiment.experiment import analyze_seed_runs, run_experiments, save_results
+from labs.lab1.experiment.experiment import analyze_seed_runs, run_experiments, save_history, save_results
 
 CLASS_NAMES = [
     "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
@@ -158,6 +158,7 @@ def main(seed: int = 42, epochs: int = 5) -> dict:
     exp_results = run_experiments(configs, loaders, device=device)
     exp_csv = str(runs_dir / "experiment_results.csv")
     save_results(exp_results, exp_csv)
+    save_history(exp_results, str(runs_dir / "epoch_history.csv"))
     print(f"Experiments completed and saved to: {exp_csv}")
 
     # 10. Baseline across seeds (fixed beforehand, so the test set selects nothing)

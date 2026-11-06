@@ -21,8 +21,8 @@
 | Install | `pip install -r labs/lab1/requirements.txt` | |
 | Data | `python -m labs.lab1.preprocessing.download_official` (set `PYTHONIOENCODING=utf-8` on Windows with a Vietnamese path) | a few minutes (downloads about 30 MB) |
 | Tests | `python -m pytest labs/lab1/tests tests -q` | under 1 minute |
-| Full pipeline | `python -m labs.lab1.main` | 35 runs of 5 epochs; most runs take 1 to 2 minutes; 19 minutes for the whole run on the second try, 2 h 3 min on the first because one run stalled (cause not found); both runs gave identical results and checkpoints |
-| 20-epoch study | `python -m labs.lab1.extended_study` (after `main.py`) | 24 minutes on 2026-11-04 |
+| Full pipeline | `python -m labs.lab1.main` | 35 runs of 5 epochs; most runs take 1 to 2 minutes; 19 minutes for the whole run on the second try, 2 h 3 min on the first because one run stalled (cause not found); both runs gave identical results and checkpoints; 10 min 26 s on 2026-11-06 |
+| 20-epoch study | `python -m labs.lab1.extended_study` (after `main.py`) | 24 minutes on 2026-11-04; 11 min 42 s on 2026-11-06 |
 | Notebook | Restart & Run All `labs/lab1/notebook/lab1_presentation.ipynb` (reads the results of the two scripts, retrains only the seed-42 baseline) | about 1 minute |
 
 `main.py` stages: EDA -> load split -> train-only normalization and loaders -> MLP -> train (best checkpoint by validation loss) -> validation and one test evaluation -> figures -> 7 configurations x 5 seeds -> per-seed analysis.
@@ -40,7 +40,7 @@ Results of the recorded run (official data, 2026-11-04, Run):
 
 ## What to show in the oral exam
 
-- Data: why the official Zalando files and not the Kaggle CSVs; stratified split with seed 42; normalization from the training split only.
+- Data: official Zalando files (MD5 checked); stratified split with seed 42; normalization from the training split only.
 - Model: MLP 784-256-128-10, logits and CrossEntropyLoss, 235,146 parameters.
 - Training: Adam, 5 epochs, checkpoint with the lowest validation loss; loss curves.
 - Evaluation: validation for every choice, test once; confusion matrix and the Shirt error analysis.
@@ -52,7 +52,7 @@ Results of the recorded run (official data, 2026-11-04, Run):
 
 - **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
 - **Dành cho AI:** phần này của nhóm trưởng (Thư): `main.py`, `extended_study.py`, notebook, README. Cấm sửa file module của người khác, data, file split đã commit. Cấm tự chạy `main.py` (35 lần) hay `extended_study.py` khi chưa hỏi nhóm trưởng, cấm thêm CNN (nhóm đã chốt chỉ làm MLP), cấm ghi số không lấy từ một lần chạy đã ghi lại.
-- **Hiện tại:** tải data bằng `download_official` (vài phút, khoảng 30 MB), test dưới 1 phút, `main.py` gồm 35 lần chạy 5 epoch (lần hai ngày 04/11 mất 19 phút; lần một mất 2 giờ 3 phút vì có một lần chạy bị treo, chưa rõ nguyên nhân; hai lần cho kết quả và checkpoint y hệt), `extended_study.py` 24 phút, notebook khoảng 1 phút.
+- **Hiện tại:** tải data bằng `download_official` (vài phút, khoảng 30 MB), test dưới 1 phút, `main.py` gồm 35 lần chạy 5 epoch (lần hai ngày 04/11 mất 19 phút; lần một mất 2 giờ 3 phút vì có một lần chạy bị treo, chưa rõ nguyên nhân; hai lần cho kết quả và checkpoint y hệt; ngày 06/11 mất 10 phút 26 giây), `extended_study.py` 24 phút (ngày 06/11: 11 phút 42 giây), notebook khoảng 1 phút.
 - **Kết quả đã chạy (04/11/2026, data chính thức):** model seed 42: val 89,05%, test 88,36%, notebook ra cùng số; baseline 5 seed: test 88,00 ± 0,39%; tác động rõ: bỏ lớp ẩn −3,80, SGD so với Adam −3,45, SGD lr 0,01 +3,14 điểm; 20 epoch: baseline overfit, dropout giữ val loss cuối thấp hơn.
 - **Bài nộp:** toàn bộ source của 3 lab và một bài báo cáo (PDF, viết sau).
 - **Khi vấn đáp:** vì sao dùng data Zalando; chia phân tầng seed 42; chuẩn hóa chỉ trên train; MLP và logits; chọn checkpoint theo val loss; test chỉ dùng một lần; phân tích lỗi Shirt; mỗi cặp đổi một yếu tố, 5 seed, quy tắc chốt trước, hiệu chỉnh Holm.

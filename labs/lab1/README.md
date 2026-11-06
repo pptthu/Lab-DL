@@ -4,7 +4,7 @@
 **Task.** Classify 28x28 grayscale clothing images into 10 classes with a multilayer perceptron (MLP).
 
 **Data.** Official Fashion-MNIST from Zalando GitHub, written as CSV: 60,000 train, 10,000 test, split 90/10 by class (seed 42) into 54,000 train / 6,000 validation.
-Normalization uses the training split only. We use the official train/test split, not the Kaggle CSVs, which differ from it.
+Normalization uses the training split only. The official 10,000 test images are the test set.
 
 **Model and training.** MLP 784 -> 256 -> 128 -> 10 (235,146 parameters), ReLU, CrossEntropyLoss.
 Adam (lr 1e-3), batch size 64, 5 epochs; the checkpoint with the lowest validation loss is kept.
@@ -17,7 +17,7 @@ no hidden layers (-3.80 points), SGD instead of Adam at lr 1e-3 (-3.45), SGD lr 
 Network size, dropout and weight decay show no significant effect within 5 epochs.
 At 20 epochs the baseline overfits; dropout keeps the final validation loss lower but does not clearly raise accuracy.
 
-**Figures.** Shown in the notebook and saved in `artifacts/figures/`. Details: see Detailed report.
+**Figures.** Shown in the notebook and saved in `artifacts/figures/`. Per-epoch curves of all 45 runs: notebook Stages 9b and 10b, from `artifacts/runs/epoch_history.csv` and `extended_epoch_history.csv`. Details: see Detailed report.
 
 ## Detailed report
 
@@ -30,8 +30,6 @@ At 20 epochs the baseline overfits; dropout keeps the final validation loss lowe
 ### 2. Data
 - Official Zalando files (`zalandoresearch/fashion-mnist`), downloaded by `python -m labs.lab1.preprocessing.download_official` (torchvision, MD5 checked) and written as CSV: 10 balanced classes, no missing values, 0 duplicate rows.
 - One stratified split (seed 42), used by every run. Mean 0.2859 and std 0.3530 come from the training split only.
-- **Why not the Kaggle CSVs:** they differ from the official files. Of the 9,999 distinct images in the Kaggle test file, 7,918 come from the official training set, 1,291 from the official test set, and about 790 have no exact match. Of the 59,957 distinct images in the Kaggle train file, 47,259 come from the official training set, 7,885 from the official test set, and about 4,800 have no exact match. The cause is unknown, so since 2026-11-02 we use the official files.
-- No identical images across our splits: train-val 0, train-test 0, val-test 0 (the Kaggle CSVs had 9, 9, 1).
 
 ### 3. Method
 - Baseline: MLP 256-128, Adam, lr 1e-3, batch 64, 5 epochs, fixed before the experiments. The checkpoint with the lowest validation loss is kept.
@@ -62,10 +60,10 @@ At 20 epochs the baseline overfits; dropout keeps the final validation loss lowe
 Shirt has the lowest recall in 4 of 5 seeds at 5 epochs (mean 69.97%) and 5 of 5 at 20 epochs (mean 69.03%). The most frequent confusions across seeds at 5 epochs are Shirt -> T-shirt/top, T-shirt/top -> Shirt and Pullover -> Shirt.
 
 ### 5. Discussion
-- The three clear effects are large compared with the variation between seeds. Hidden layers add about 3.80 points over a linear model.
-- At lr 1e-3, SGD with momentum learns too slowly in 5 epochs; lr 0.01 recovers most of that gap, so the optimizer result depends on the learning rate.
+- The three clear effects are large compared with the variation between seeds. Hidden layers add about 3.80 points over a linear model; the linear model levels off near 84% from epoch 2 and its training loss flattens around 0.41 (Stage 9b).
+- At lr 1e-3, SGD with momentum learns too slowly in 5 epochs: it is still rising at epoch 5 (Stage 9b). lr 0.01 recovers most of that gap, so the optimizer result depends on the learning rate.
 - The larger network, dropout and weight decay are all slightly lower than the baseline, but none passes the rule or the Holm-corrected test, so no effect is claimed.
-- At 20 epochs the baseline overfits: val loss ends far above its lowest value. Best-checkpoint selection keeps accuracy near 89%.
+- At 20 epochs the baseline overfits: mean val loss is lowest at epoch 7 (0.3028) and rises to 0.3972, while train loss keeps falling to 0.1240 (Stage 10b). Best-checkpoint selection keeps accuracy near 89%.
 - Dropout does not clearly raise val accuracy at 20 epochs (+0.36 points, p (Holm) = 0.15), but it keeps the final val loss lower (0.3095 vs 0.3972, lower on all 5 seeds).
 - 20 versus 5 epochs: +0.60 points on validation, p (Holm) = 0.15, so the gain is not established.
 
@@ -138,7 +136,7 @@ Environment of the reported results (2026-11-04, official data): Python 3.13.7, 
 **Bài toán.** Phân loại ảnh quần áo xám 28x28 thành 10 lớp bằng mạng nơ-ron nhiều lớp (MLP).
 
 **Dữ liệu.** Fashion-MNIST chính thức từ GitHub của Zalando, ghi ra CSV: 60.000 train, 10.000 test, chia 90/10 theo từng lớp (seed 42) thành 54.000 train / 6.000 validation.
-Chuẩn hóa chỉ tính trên train. Nhóm dùng cách chia train/test chính thức, không dùng CSV Kaggle vì CSV đó khác bản chính thức.
+Chuẩn hóa chỉ tính trên train. Tập test là 10.000 ảnh test chính thức.
 
 **Mô hình và huấn luyện.** MLP 784 -> 256 -> 128 -> 10 (235.146 tham số), ReLU, CrossEntropyLoss.
 Adam (lr 1e-3), batch 64, 5 epoch; giữ checkpoint có validation loss thấp nhất.
@@ -151,7 +149,7 @@ bỏ lớp ẩn (-3,80 điểm), SGD thay Adam ở lr 1e-3 (-3,45), SGD lr 0,01 
 Kích thước mạng, dropout, weight decay chưa có tác động có ý nghĩa trong 5 epoch.
 Ở 20 epoch, baseline overfit; dropout giữ val loss cuối thấp hơn nhưng chưa làm tăng accuracy rõ rệt.
 
-**Hình.** Hiển thị trong notebook, lưu ở `artifacts/figures/`. Chi tiết: xem Báo cáo chi tiết.
+**Hình.** Hiển thị trong notebook, lưu ở `artifacts/figures/`. Đường cong theo epoch của cả 45 lần chạy: notebook Stage 9b và 10b, từ `artifacts/runs/epoch_history.csv` và `extended_epoch_history.csv`. Chi tiết: xem Báo cáo chi tiết.
 
 ## Báo cáo chi tiết
 
@@ -164,8 +162,6 @@ Kích thước mạng, dropout, weight decay chưa có tác động có ý nghĩ
 ### 2. Dữ liệu
 - File chính thức của Zalando (`zalandoresearch/fashion-mnist`), tải bằng `python -m labs.lab1.preprocessing.download_official` (torchvision, tự kiểm MD5) và ghi ra CSV: 10 lớp cân bằng, không thiếu giá trị, 0 dòng trùng.
 - Một cách chia phân tầng (seed 42), dùng cho mọi lần chạy. Mean 0,2859 và std 0,3530 chỉ tính trên train.
-- **Vì sao bỏ CSV Kaggle:** CSV khác file chính thức. Trong 9.999 ảnh khác nhau của file test Kaggle, 7.918 ảnh thuộc train chính thức, 1.291 ảnh thuộc test chính thức, khoảng 790 ảnh không khớp chính xác. Trong 59.957 ảnh khác nhau của file train Kaggle, 47.259 ảnh thuộc train chính thức, 7.885 ảnh thuộc test chính thức, khoảng 4.800 ảnh không khớp chính xác. Chưa rõ nguyên nhân, nên từ 2026-11-02 nhóm dùng file chính thức.
-- Không có ảnh giống hệt nhau giữa các tập: train-val 0, train-test 0, val-test 0 (CSV Kaggle là 9, 9, 1).
 
 ### 3. Phương pháp
 - Baseline: MLP 256-128, Adam, lr 1e-3, batch 64, 5 epoch, chốt trước khi thí nghiệm. Giữ checkpoint có validation loss thấp nhất.
@@ -184,10 +180,10 @@ Các bảng số giống phần tiếng Anh ở trên.
 - Shirt có recall thấp nhất ở 4/5 seed với 5 epoch (trung bình 69,97%) và 5/5 seed với 20 epoch (trung bình 69,03%).
 
 ### 5. Thảo luận
-- Ba tác động rõ đều lớn hơn nhiều so với dao động giữa các seed.
-- Ở lr 1e-3, SGD có momentum học quá chậm trong 5 epoch; lr 0,01 kéo lại phần lớn khoảng cách, nên kết quả về optimizer phụ thuộc learning rate.
+- Ba tác động rõ đều lớn hơn nhiều so với dao động giữa các seed. Mô hình tuyến tính đứng quanh 84% từ epoch 2 và train loss chững ở khoảng 0,41 (Stage 9b).
+- Ở lr 1e-3, SGD có momentum học quá chậm trong 5 epoch: vẫn đang tăng ở epoch 5 (Stage 9b). lr 0,01 kéo lại phần lớn khoảng cách, nên kết quả về optimizer phụ thuộc learning rate.
 - Mạng lớn hơn, dropout và weight decay đều thấp hơn baseline một chút, nhưng không cặp nào qua quy tắc hay kiểm định đã hiệu chỉnh Holm, nên không kết luận có tác động.
-- Ở 20 epoch, baseline overfit: val loss cuối cao hơn nhiều so với mức thấp nhất. Nhờ chọn checkpoint tốt nhất, accuracy vẫn gần 89%.
+- Ở 20 epoch, baseline overfit: val loss trung bình thấp nhất ở epoch 7 (0,3028) rồi tăng lên 0,3972, trong khi train loss vẫn giảm xuống 0,1240 (Stage 10b). Nhờ chọn checkpoint tốt nhất, accuracy vẫn gần 89%.
 - Dropout chưa làm tăng val accuracy rõ rệt ở 20 epoch (+0,36 điểm, p (Holm) = 0,15), nhưng giữ val loss cuối thấp hơn (0,3095 so với 0,3972, thấp hơn ở cả 5 seed).
 - 20 so với 5 epoch: +0,60 điểm trên validation, p (Holm) = 0,15, nên chưa khẳng định được lợi ích.
 

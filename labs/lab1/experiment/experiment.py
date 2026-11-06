@@ -49,11 +49,11 @@ def run_experiments(
     """Train one model per config (e.g. hidden sizes, lr, dropout, optimizer) and compare on VALIDATION data.
 
     Input : configs: list of dicts; loaders: (train, val, test); device; ckpt_prefix: checkpoint file name prefix
-    Output: list of result dicts: config, best_val_acc, best_val_loss, best_epoch, final_val_loss, n_params, train_seconds, ckpt_path
+    Output: list of result dicts: config, best_val_acc, best_val_loss, best_epoch, final_val_loss, n_params, train_seconds, ckpt_path, history
 
     VI: Huấn luyện mỗi config một model (hidden sizes, lr, dropout, optimizer...) và so sánh trên VALIDATION.
     Vào : configs: danh sách dict; loaders: (train, val, test); device; ckpt_prefix: tiền tố tên file checkpoint
-    Ra  : danh sách dict kết quả: config, best_val_acc, best_val_loss, best_epoch, final_val_loss, n_params, train_seconds, ckpt_path
+    Ra  : danh sách dict kết quả: config, best_val_acc, best_val_loss, best_epoch, final_val_loss, n_params, train_seconds, ckpt_path, history
     """
     train_loader, val_loader, _test_loader = loaders
     results: List[Dict[str, Any]] = []
@@ -105,6 +105,9 @@ def run_experiments(
             "n_params": n_params,
             "train_seconds": train_seconds,
             "ckpt_path": ckpt_path,
+            # Per-epoch curves, kept as evidence for the plots.
+            # VI: Đường cong theo từng epoch, giữ làm bằng chứng cho các hình.
+            "history": history,
         })
 
     return results
@@ -138,6 +141,36 @@ def save_results(results: List[Dict[str, Any]], csv_path: str) -> None:
         rows.append(row)
 
     df = pd.DataFrame(rows)
+    p = Path(csv_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(p, index=False)
+
+
+def save_history(results: List[Dict[str, Any]], csv_path: str) -> None:
+    """Save the per-epoch history of every run, one row per run and epoch.
+
+    Input : results from run_experiments (each with config name, seed and history), csv_path
+    Output: CSV file with columns name, seed, epoch, train_loss, val_loss, val_acc
+
+    VI: Lưu lịch sử theo từng epoch của mọi lần chạy, mỗi dòng là một lần chạy và một epoch.
+    Vào : results từ run_experiments (mỗi kết quả có tên config, seed và history), csv_path
+    Ra  : file CSV gồm các cột name, seed, epoch, train_loss, val_loss, val_acc
+    """
+    rows = []
+    for r in results:
+        cfg = r.get("config", {})
+        history = r.get("history", {})
+        for i, val_loss in enumerate(history.get("val_loss", [])):
+            rows.append({
+                "name": cfg.get("name"),
+                "seed": cfg.get("seed"),
+                "epoch": i + 1,
+                "train_loss": history["train_loss"][i],
+                "val_loss": val_loss,
+                "val_acc": history["val_acc"][i],
+            })
+
+    df = pd.DataFrame(rows, columns=["name", "seed", "epoch", "train_loss", "val_loss", "val_acc"])
     p = Path(csv_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(p, index=False)
