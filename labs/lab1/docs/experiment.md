@@ -19,7 +19,7 @@
 ## What the brief requires
 
 - Brief requirement: try different hyperparameters and compare.
-- Team choices: 7 configurations x 5 seeds (42, 7, 123, 2024, 3407), each pair changes one factor; comparison on validation only; rule fixed before reading the results: a clear difference needs all 5 seeds in the same direction **and** |mean difference| >= 2 std; paired t-test with Holm correction and a 95% CI as a second check. Optional 20-epoch study (`extended_study.py`, baseline and dropout 0.2).
+- Team choices: 7 configurations x 5 seeds (42, 7, 123, 2024, 3407), each pair changes one factor; comparison on validation only; rule fixed before reading the results: a clear difference needs all 5 seeds in the same direction **and** |mean difference| >= 2 std. `compare_pairs` also returns a paired t-test p-value with Holm correction and a 95% CI; the notebook and README report only the rule columns (`mean_diff`, `std_diff`, `seeds_higher`, `rule_clear`). Optional 20-epoch study (`extended_study.py`, baseline and dropout 0.2).
 
 ## How the module works (current code)
 
@@ -37,7 +37,7 @@
 
 ## Open questions / limitations
 
-- 5 seeds and one split: a non-significant result is not proof of no effect.
+- 5 seeds and one split: a result that does not pass the rule is not proof of no effect.
 
 ---
 
@@ -45,5 +45,5 @@
 
 - **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
 - **Dành cho AI:** người phụ trách Member B (Thư), do nhóm trưởng giao. Được sửa `experiment.py`, `tests/test_experiment.py`, file này. Chữ ký 6 hàm khớp `project_description.md` (thêm `save_history`: lưu loss và accuracy theo từng epoch ra CSV). Cấm so sánh cấu hình trên tập test, cấm đổi quy tắc sau khi xem kết quả, cấm thêm cấu hình hay sweep lớn khi chưa hỏi nhóm trưởng, cấm tự chạy 35 lần hoặc nghiên cứu 20 epoch.
-- **Đề:** thử các siêu tham số khác nhau và so sánh. Nhóm chọn 7 cấu hình × 5 seed, mỗi cặp đổi một yếu tố, so trên validation, quy tắc chốt trước (cả 5 seed cùng chiều và |chênh lệch| >= 2 std), kiểm định t có hiệu chỉnh Holm.
+- **Đề:** thử các siêu tham số khác nhau và so sánh. Nhóm chọn 7 cấu hình × 5 seed, mỗi cặp đổi một yếu tố, so trên validation, quy tắc chốt trước (cả 5 seed cùng chiều và |chênh lệch| >= 2 std). Hàm `compare_pairs` vẫn tính thêm p-value (Holm) và khoảng tin cậy, nhưng notebook và README chỉ báo các cột của quy tắc.
 - **Kiểm chứng:** baseline test 88,00 ± 0,39%; rõ: bỏ lớp ẩn −3,80, SGD so với Adam −3,45, SGD lr 0,01 +3,14 điểm; chưa rõ: mạng lớn hơn −0,52, dropout −0,46, weight decay −0,29 (đã chạy 04/11/2026 trên data chính thức).

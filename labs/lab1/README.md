@@ -14,7 +14,7 @@ Shirt is the hardest class (lowest recall in 4 of 5 seeds, mean 69.97%).
 
 **Experiments.** Seven configurations, 5 seeds each, changing one factor per pair. Clear effects on validation accuracy:
 no hidden layers (-3.80 points), SGD instead of Adam at lr 1e-3 (-3.45), SGD lr 0.01 instead of 1e-3 (+3.14).
-Network size, dropout and weight decay show no significant effect within 5 epochs.
+Network size, dropout and weight decay show no clear effect within 5 epochs.
 At 20 epochs the baseline overfits; dropout keeps the final validation loss lower but does not clearly raise accuracy.
 
 **Figures.** Shown in the notebook and saved in `artifacts/figures/`. Per-epoch curves of all 45 runs: notebook Stages 9b and 10b, from `artifacts/runs/epoch_history.csv` and `extended_epoch_history.csv`. Details: see Detailed report.
@@ -34,18 +34,18 @@ At 20 epochs the baseline overfits; dropout keeps the final validation loss lowe
 ### 3. Method
 - Baseline: MLP 256-128, Adam, lr 1e-3, batch 64, 5 epochs, fixed before the experiments. The checkpoint with the lowest validation loss is kept.
 - Each pair of configurations differs in one factor and shares seeds 42, 7, 123, 2024, 3407. SGD always uses momentum 0.9.
-- Rule fixed before reading the results: a pair shows a clear difference if all 5 seeds point the same way and |mean difference| >= 2 std. Second check: paired t-test with Holm correction [5] and a 95% confidence interval.
+- Rule fixed before reading the results: a pair shows a clear difference if all 5 seeds point the same way and |mean difference| >= 2 std. The same 5 seeds are used for both configurations of a pair.
 - Comparisons use validation data only. The test set is reported only for baselines fixed beforehand.
 
 ### 4. Results
-| Comparison (validation accuracy) | Mean difference (points) | 95% CI | p (Holm) | Result |
+| Comparison (validation accuracy) | Mean difference (points) | Std of the difference | Seeds higher (of 5) | Result |
 |---|---|---|---|---|
-| No hidden layers vs baseline | -3.80 | -4.67 to -2.92 | 0.0011 | Clear |
-| SGD vs Adam, lr 1e-3 | -3.45 | -3.86 to -3.04 | 0.0001 | Clear |
-| SGD lr 0.01 vs 1e-3 | +3.14 | 2.93 to 3.36 | < 0.0001 | Clear |
-| Larger network vs baseline | -0.52 | -1.02 to -0.03 | 0.0844 | Not significant |
-| Dropout 0.2 vs baseline | -0.46 | -0.89 to -0.02 | 0.0844 | Not significant |
-| Weight decay 1e-4 vs baseline | -0.29 | -0.51 to -0.08 | 0.0587 | Not significant |
+| No hidden layers vs baseline | -3.80 | 0.71 | 0 | Clear |
+| SGD vs Adam, lr 1e-3 | -3.45 | 0.33 | 0 | Clear |
+| SGD lr 0.01 vs 1e-3 | +3.14 | 0.17 | 5 | Clear |
+| Larger network vs baseline | -0.52 | 0.40 | 0 | Not clear |
+| Dropout 0.2 vs baseline | -0.46 | 0.35 | 1 | Not clear |
+| Weight decay 1e-4 vs baseline | -0.29 | 0.17 | 0 | Not clear |
 
 | Baseline across 5 seeds | Train | Validation | Test |
 |---|---|---|---|
@@ -62,13 +62,13 @@ Shirt has the lowest recall in 4 of 5 seeds at 5 epochs (mean 69.97%) and 5 of 5
 ### 5. Discussion
 - The three clear effects are large compared with the variation between seeds. Hidden layers add about 3.80 points over a linear model; the linear model levels off near 84% from epoch 2 and its training loss flattens around 0.41 (Stage 9b).
 - At lr 1e-3, SGD with momentum learns too slowly in 5 epochs: it is still rising at epoch 5 (Stage 9b). lr 0.01 recovers most of that gap, so the optimizer result depends on the learning rate.
-- The larger network, dropout and weight decay are all slightly lower than the baseline, but none passes the rule or the Holm-corrected test, so no effect is claimed.
+- The larger network, dropout and weight decay are all slightly lower than the baseline, but none passes the rule: each mean difference is smaller than twice its standard deviation, so no effect is claimed.
 - At 20 epochs the baseline overfits: mean val loss is lowest at epoch 7 (0.3028) and rises to 0.3972, while train loss keeps falling to 0.1240 (Stage 10b). Best-checkpoint selection keeps accuracy near 89%.
-- Dropout does not clearly raise val accuracy at 20 epochs (+0.36 points, p (Holm) = 0.15), but it keeps the final val loss lower (0.3095 vs 0.3972, lower on all 5 seeds).
-- 20 versus 5 epochs: +0.60 points on validation, p (Holm) = 0.15, so the gain is not established.
+- Dropout does not clearly raise val accuracy at 20 epochs (+0.36 points, 3 of 5 seeds higher), but it keeps the final val loss lower (0.3095 vs 0.3972, lower on all 5 seeds).
+- 20 versus 5 epochs: +0.60 points on validation, 4 of 5 seeds higher, so the gain does not pass the rule.
 
 ### 6. Limitations
-- One split, one machine, 5 seeds. Non-significant results are not proof of no effect.
+- One split, one machine, 5 seeds. A result that does not pass the rule is not proof of no effect.
 - The test set was seen several times during development, though no choice used it.
 - The causes of the Shirt errors are not tested; low resolution and the lack of built-in local structure in an MLP remain hypotheses.
 - Scope: MLP only. A CNN is not part of this lab (team decision, 2026-11-04).
@@ -81,7 +81,6 @@ The MLP learns the task well above a linear model, reaching 88.00 +/- 0.39% on t
 2. D. P. Kingma, J. Ba. Adam: A Method for Stochastic Optimization. arXiv:1412.6980, 2014.
 3. N. Srivastava et al. Dropout: A Simple Way to Prevent Neural Networks from Overfitting. JMLR 15, 2014.
 4. PyTorch documentation: https://pytorch.org/docs/stable/
-5. S. Holm. A Simple Sequentially Rejective Multiple Test Procedure. Scandinavian Journal of Statistics 6(2), 1979.
 
 ## Data
 Official Fashion-MNIST from Zalando GitHub (https://github.com/zalandoresearch/fashion-mnist). Run `python -m labs.lab1.preprocessing.download_official`: it downloads the 4 IDX files with torchvision (MD5 checked) and writes `fashion-mnist_train.csv` and `fashion-mnist_test.csv` (`label` + 784 pixel columns) into `labs/lab1/raw_data/` (this folder is not committed).
@@ -146,7 +145,7 @@ Shirt là lớp khó nhất (recall thấp nhất ở 4/5 seed, trung bình 69,9
 
 **Thí nghiệm.** Bảy cấu hình, mỗi cấu hình 5 seed, mỗi cặp đổi một yếu tố. Tác động rõ lên validation accuracy:
 bỏ lớp ẩn (-3,80 điểm), SGD thay Adam ở lr 1e-3 (-3,45), SGD lr 0,01 thay 1e-3 (+3,14).
-Kích thước mạng, dropout, weight decay chưa có tác động có ý nghĩa trong 5 epoch.
+Kích thước mạng, dropout, weight decay chưa có tác động rõ trong 5 epoch.
 Ở 20 epoch, baseline overfit; dropout giữ val loss cuối thấp hơn nhưng chưa làm tăng accuracy rõ rệt.
 
 **Hình.** Hiển thị trong notebook, lưu ở `artifacts/figures/`. Đường cong theo epoch của cả 45 lần chạy: notebook Stage 9b và 10b, từ `artifacts/runs/epoch_history.csv` và `extended_epoch_history.csv`. Chi tiết: xem Báo cáo chi tiết.
@@ -166,14 +165,14 @@ Kích thước mạng, dropout, weight decay chưa có tác động có ý nghĩ
 ### 3. Phương pháp
 - Baseline: MLP 256-128, Adam, lr 1e-3, batch 64, 5 epoch, chốt trước khi thí nghiệm. Giữ checkpoint có validation loss thấp nhất.
 - Mỗi cặp cấu hình chỉ khác một yếu tố và dùng chung seed 42, 7, 123, 2024, 3407. SGD luôn có momentum 0,9.
-- Quy tắc chốt trước khi đọc kết quả: khác biệt rõ khi cả 5 seed cùng chiều và |chênh lệch trung bình| >= 2 std. Kiểm tra thứ hai: kiểm định t theo cặp có hiệu chỉnh Holm [5] và khoảng tin cậy 95%.
+- Quy tắc chốt trước khi đọc kết quả: khác biệt rõ khi cả 5 seed cùng chiều và |chênh lệch trung bình| >= 2 std. Hai cấu hình của một cặp dùng chung 5 seed.
 - So sánh chỉ dùng validation. Tập test chỉ báo cho baseline đã chốt trước.
 
 ### 4. Kết quả
 Các bảng số giống phần tiếng Anh ở trên.
 
 - Bỏ lớp ẩn: -3,80 điểm; SGD thay Adam ở lr 1e-3: -3,45 điểm; SGD lr 0,01 thay 1e-3: +3,14 điểm. Cả ba đều rõ.
-- Mạng lớn hơn: -0,52; dropout 0,2: -0,46; weight decay 1e-4: -0,29. Cả ba chưa có ý nghĩa sau hiệu chỉnh.
+- Mạng lớn hơn: -0,52; dropout 0,2: -0,46; weight decay 1e-4: -0,29. Cả ba chưa rõ: chênh lệch nhỏ hơn 2 lần độ lệch chuẩn.
 - Baseline 5 epoch: train 90,92%, validation 88,62 +/- 0,36%, test 88,00 +/- 0,39%.
 - Baseline 20 epoch (checkpoint tốt nhất): train 92,95%, validation 89,22 +/- 0,26%, test 88,62 +/- 0,19%.
 - Val loss cuối ở 20 epoch: baseline 0,3972, dropout 0,3095.
@@ -182,13 +181,13 @@ Các bảng số giống phần tiếng Anh ở trên.
 ### 5. Thảo luận
 - Ba tác động rõ đều lớn hơn nhiều so với dao động giữa các seed. Mô hình tuyến tính đứng quanh 84% từ epoch 2 và train loss chững ở khoảng 0,41 (Stage 9b).
 - Ở lr 1e-3, SGD có momentum học quá chậm trong 5 epoch: vẫn đang tăng ở epoch 5 (Stage 9b). lr 0,01 kéo lại phần lớn khoảng cách, nên kết quả về optimizer phụ thuộc learning rate.
-- Mạng lớn hơn, dropout và weight decay đều thấp hơn baseline một chút, nhưng không cặp nào qua quy tắc hay kiểm định đã hiệu chỉnh Holm, nên không kết luận có tác động.
+- Mạng lớn hơn, dropout và weight decay đều thấp hơn baseline một chút, nhưng không cặp nào qua quy tắc (chênh lệch nhỏ hơn 2 lần độ lệch chuẩn), nên không kết luận có tác động.
 - Ở 20 epoch, baseline overfit: val loss trung bình thấp nhất ở epoch 7 (0,3028) rồi tăng lên 0,3972, trong khi train loss vẫn giảm xuống 0,1240 (Stage 10b). Nhờ chọn checkpoint tốt nhất, accuracy vẫn gần 89%.
-- Dropout chưa làm tăng val accuracy rõ rệt ở 20 epoch (+0,36 điểm, p (Holm) = 0,15), nhưng giữ val loss cuối thấp hơn (0,3095 so với 0,3972, thấp hơn ở cả 5 seed).
-- 20 so với 5 epoch: +0,60 điểm trên validation, p (Holm) = 0,15, nên chưa khẳng định được lợi ích.
+- Dropout chưa làm tăng val accuracy rõ rệt ở 20 epoch (+0,36 điểm, 3/5 seed cao hơn), nhưng giữ val loss cuối thấp hơn (0,3095 so với 0,3972, thấp hơn ở cả 5 seed).
+- 20 so với 5 epoch: +0,60 điểm trên validation, 4/5 seed cao hơn, nên chưa qua quy tắc.
 
 ### 6. Giới hạn
-- Một cách chia, một máy, 5 seed. Kết quả chưa có ý nghĩa không chứng minh là không có tác động.
+- Một cách chia, một máy, 5 seed. Không qua quy tắc không chứng minh là không có tác động.
 - Tập test đã được xem nhiều lần khi phát triển, dù không dùng để chọn gì.
 - Nguyên nhân lỗi Shirt chưa kiểm chứng; độ phân giải thấp và việc MLP không khai thác sẵn vùng lân cận vẫn là giả thuyết.
 - Phạm vi: chỉ làm MLP. CNN không thuộc lab này (quyết định của nhóm, 04/11/2026).
