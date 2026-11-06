@@ -32,7 +32,6 @@
 
 - Never write data paths by hand; use `raw_data_dir("lab1")` from `shared/paths.py`.
 - On Windows with a Vietnamese path, set `PYTHONIOENCODING=utf-8` before running the scripts, otherwise the last `print` can fail with `UnicodeEncodeError` (the files are written before it).
-- The old Kaggle CSVs can stay locally as `*_kaggle.csv`; they are not used.
 
 ## How to verify
 

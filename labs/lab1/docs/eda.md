@@ -42,7 +42,7 @@
 
 ## Open questions / limitations
 
-- None for this module. The old Kaggle CSVs (43 duplicate rows) are no longer used.
+- None for this module.
 
 ---
 
