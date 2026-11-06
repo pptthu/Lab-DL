@@ -27,6 +27,8 @@ def evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[floa
     Ra  : (avg_loss: float, accuracy: float trong 0-1)
     """
     model.to(device)
+    # Eval mode (dropout off) and no gradients: we only measure, we do not train.
+    # VI: Chế độ eval (tắt dropout) và không tính gradient: chỉ đo, không huấn luyện.
     model.eval()
     criterion = nn.CrossEntropyLoss()
 
@@ -43,6 +45,8 @@ def evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[floa
             logits = model(x_batch)
             loss = criterion(logits, y_batch)
 
+            # Weight by batch size so the mean loss is exact per sample.
+            # VI: Nhân với số ảnh của batch để loss trung bình đúng theo từng mẫu.
             running_loss += loss.item() * batch_size
             preds = torch.argmax(logits, dim=1)
             running_correct += (preds == y_batch).sum().item()
@@ -77,6 +81,8 @@ def confusion_matrix(
             preds = torch.argmax(logits, dim=1).cpu().numpy()
             targets = y_batch.cpu().numpy()
 
+            # Add 1 at [true class, predicted class]: rows = true, columns = predicted.
+            # VI: Cộng 1 vào ô [lớp thật, lớp dự đoán]: hàng = lớp thật, cột = lớp dự đoán.
             np.add.at(cm, (targets, preds), 1)
 
     return cm
@@ -99,6 +105,8 @@ def per_class_accuracy(cm: np.ndarray) -> Dict[int, float]:
     for i in range(num_classes):
         row_sum = cm_arr[i].sum()
         if row_sum > 0:
+            # Diagonal / row sum = correct images of class i / all images of class i (recall).
+            # VI: Đường chéo / tổng hàng = số ảnh lớp i đoán đúng / tổng ảnh lớp i (recall).
             accs[i] = float(cm_arr[i, i] / row_sum)
         else:
             accs[i] = 0.0
@@ -119,6 +127,8 @@ def save_classification_report(cm: np.ndarray, class_names: Sequence[str], csv_p
     cm_arr = np.asarray(cm)
     rows = []
     for i, name in enumerate(class_names):
+        # TP: class i predicted as i; FN: class i predicted as another; FP: another class predicted as i; TN: the rest.
+        # VI: TP: lớp i đoán đúng là i; FN: lớp i bị đoán sang lớp khác; FP: lớp khác bị đoán thành i; TN: phần còn lại.
         tp = int(cm_arr[i, i])
         fn = int(cm_arr[i].sum()) - tp
         fp = int(cm_arr[:, i].sum()) - tp
@@ -126,6 +136,8 @@ def save_classification_report(cm: np.ndarray, class_names: Sequence[str], csv_p
         precision = tp / (tp + fp) if tp + fp > 0 else 0.0
         recall = tp / (tp + fn) if tp + fn > 0 else 0.0
         specificity = tn / (tn + fp) if tn + fp > 0 else 0.0
+        # F1 = harmonic mean of precision and recall.
+        # VI: F1 = trung bình điều hòa của precision và recall.
         f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0.0
         rows.append({
             "class": name,
