@@ -1,78 +1,49 @@
 # Model Module Documentation (`labs/lab2/model/model.py`)
 
-## 1. Overview
-The `model` module handles the instantiation of pre-trained convolutional neural networks from `torchvision.models` (ResNet-18, DenseNet-121, VGG-16), adapting their final classification head for CIFAR-10 (10 classes), freezing backbone parameters for transfer learning (feature extraction), and selective layer unfreezing for fine-tuning.
+## 1. Purpose
+- Load pre-trained CNN architectures from `torchvision.models` (ResNet-18, DenseNet-121, VGG-16) using modern `weights=` API.
+- Replace the final classification head with a new linear layer adapted for 10-class CIFAR-10 classification.
+- Support Feature Extraction (Transfer Learning) by freezing backbone parameters (`param.requires_grad = False`).
+- Support Fine-Tuning by selectively unfreezing deep residual/dense blocks (`unfreeze_last_blocks`).
+- Inspect model parameter counts (total vs. trainable) and architectural layers.
 
-- **File location:** `labs/lab2/model/model.py`
-- **Assigned owner:** Member A
-- **Dependencies:** `torch`, `torch.nn`, `torchvision.models`
+## 2. Input - Output
+- **Input:**
+  - `name` (`str`): Architecture name (`"resnet18"`, `"densenet121"`, `"vgg16"`).
+  - `num_classes` (`int`): Target classification classes (default: `10` for CIFAR-10).
+  - `freeze_backbone` (`bool`): Whether to freeze backbone weights (default: `True`).
+  - `pretrained` (`bool`): Whether to download/load ImageNet pre-trained weights (default: `True`).
+  - `n_blocks` (`int`): Number of deep blocks to unfreeze for fine-tuning.
+  - Forward pass tensor input: Mini-batch tensor of shape `[B, 3, H, W]` (e.g. `[64, 3, 224, 224]` or `[64, 3, 32, 32]`).
+  - Model checkpoint output path (managed downstream by `train`):
+    - **Standard path:** `labs/lab2/artifacts/models/<model_name>_best.pt` (resolved via `shared.paths.artifact_dir("lab2", "models")`).
+- **Output:**
+  - Instantiated `nn.Module` producing output logits tensor of shape `[B, 10]` with dtype `torch.float32`.
+  - Architecture description dictionary from `describe_model`:
+    - `total_params` (`int`): Total parameter count (e.g., 11,181,642 for ResNet-18).
+    - `trainable_params` (`int`): Trainable parameter count (5,130 when frozen; 8,398,858 when unfreezing `layer4`).
+    - `layer_names` (`list[str]`): List of top-level children modules.
 
----
+## 3. Success
+- Model loads using valid modern torchvision weights (`ResNet18_Weights.DEFAULT`, etc.) without deprecation warnings.
+- Output layer correctly outputs logits of shape `[B, 10]` matching the target class count.
+- Freezing works accurately: only the new classification head has `requires_grad=True` (5,130 trainable parameters for ResNet-18).
+- Fine-tuning unfreezing works accurately: calling `unfreeze_last_blocks(model, n_blocks=1)` unfreezes `layer4` alongside `fc`.
+- Forward pass produces clean logits without any `NaN` or `Inf` values.
 
-## 2. Functions & API Contract
-
-### `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True) -> nn.Module`
-Builds a transfer learning model by loading a pre-trained backbone, freezing weights if requested, and replacing the final fully connected classification layer.
-
-#### Arguments:
-- `name` (`str`): Architecture name. Supported options: `"resnet18"`, `"densenet121"`, `"vgg16"` (case-insensitive).
-- `num_classes` (`int`): Number of target output classes (default: `10` for CIFAR-10).
-- `freeze_backbone` (`bool`): If `True`, freezes all backbone parameters (`param.requires_grad = False`) before attaching the new classification head.
-- `pretrained` (`bool`): If `True`, initializes the backbone with pre-trained ImageNet weights (default: `True`).
-
-#### Classification Head Adaptations:
-- **ResNet-18:**
-  - Original: `model.fc` with 512 input features.
-  - Replacement: `model.fc = nn.Linear(512, num_classes)`
-- **DenseNet-121:**
-  - Original: `model.classifier` with 1024 input features.
-  - Replacement: `model.classifier = nn.Linear(1024, num_classes)`
-- **VGG-16:**
-  - Original: `model.classifier[6]` with 4096 input features.
-  - Replacement: `model.classifier[6] = nn.Linear(4096, num_classes)`
-
-#### Returns:
-- `nn.Module`: The instantiated PyTorch model producing logits with shape `[Batch_Size, num_classes]`.
-
----
-
-### `describe_model(model: nn.Module) -> dict`
-Inspects model parameters and structural modules.
-
-#### Arguments:
-- `model` (`nn.Module`): The model instance to inspect.
-
-#### Returns:
-A dictionary containing parameter counts and layer names:
-- `total_params` (`int`): Total count of all parameters.
-- `trainable_params` (`int`): Count of parameters with `requires_grad=True`.
-- `layer_names` (`list[str]`): List of top-level children module names.
-
----
-
-### `unfreeze_last_blocks(model: nn.Module, n_blocks: int) -> None`
-Unfreezes parameters in the deepest `n_blocks` convolutional stages for fine-tuning.
-
-#### Arguments:
-- `model` (`nn.Module`): The model modified in-place.
-- `n_blocks` (`int`): Number of end blocks to unfreeze (from output backwards).
-
-#### Architecture Support:
-- **ResNet:** Traverses `[model.layer4, model.layer3, model.layer2, model.layer1][:n_blocks]` and sets `param.requires_grad = True`.
-- **DenseNet:** Unfreezes `model.classifier` and the last `n_blocks * 2` child blocks inside `model.features`.
-- **Generic Fallback:** Unfreezes the last `n_blocks` top-level children modules in `model.children()`.
-
----
-
-## 3. Key Implementation Details & Defense Q&A
-- **Q: Why use `weights=models.ResNet18_Weights.DEFAULT` instead of `pretrained=True`?**
-  - **A:** `pretrained=True` has been deprecated in modern torchvision. Passing `weights=..._Weights.DEFAULT` ensures forward compatibility and explicit versioning of pre-trained checkpoint weights.
-- **Q: Why do we freeze the backbone before replacing the classification layer?**
-  - **A:** By freezing the entire model first and then creating `model.fc = nn.Linear(...)`, the new linear layer is automatically created with `requires_grad=True` while all existing convolutional weights remain frozen. This avoids accidentally freezing the new head.
-- **Q: What is the difference between Feature Extraction and Fine-Tuning?**
-  - **A:** In Feature Extraction (Transfer Learning), the backbone weights are completely frozen, acting as a fixed feature extractor; only the new head is trained. In Fine-Tuning, one or more later convolutional blocks are unfrozen alongside the head and trained with a smaller learning rate to adapt domain-specific visual features.
-- **Q: Why unfreeze the last layers instead of the first layers?**
-  - **A:** Early convolutional layers capture generic features (edges, corners, color blobs) applicable across all vision tasks. Later layers capture task-specific high-level semantics. Unfreezing later layers allows adaptation to the target domain without destroying low-level feature extraction capabilities.
+## 4. How to do
+Execute the model initialization and configuration pipeline:
+1. **Build base model (Transfer Learning):**
+   - Call `model = build_model("resnet18", num_classes=10, freeze_backbone=True, pretrained=True)`.
+   - The backbone weights are frozen, and `model.fc` is replaced by `nn.Linear(512, 10)`.
+2. **Inspect architecture & parameters:**
+   - Call `stats = describe_model(model)`.
+   - Verify `stats["trainable_params"] == 5130` for ResNet-18 feature extraction.
+3. **Configure Fine-Tuning (optional):**
+   - Call `unfreeze_last_blocks(model, n_blocks=1)` to unfreeze `layer4` convolutional filters.
+   - Verify parameter count increases to enable fine-tuning.
+4. **Handoff to training loop:**
+   - Pass `model` and its trainable parameters directly to the optimizer in `train_model()`.
 
 ---
 
@@ -80,53 +51,47 @@ Unfreezes parameters in the deepest `n_blocks` convolutional stages for fine-tun
 
 # Tài liệu Module Mô Hình (`labs/lab2/model/model.py`)
 
-## 1. Tổng quan
-Module `model` phụ trách nạp các mô hình mạng nơ-ron tích chập (CNN) đã được huấn luyện trước từ `torchvision.models` (ResNet-18, DenseNet-121, VGG-16), thay thế lớp phân loại cuối cùng (classification head) cho bài toán phân loại 10 lớp của CIFAR-10, đóng băng (freeze) các trọng số backbone cho chế độ Transfer Learning và mở khóa (unfreeze) một số khối cuối cho chế độ Fine-tuning.
+## 1. Purpose (Mục đích)
+- Nạp các kiến trúc mạng CNN tiền huấn luyện từ `torchvision.models` (ResNet-18, DenseNet-121, VGG-16) sử dụng API hiện đại `weights=`.
+- Thay thế lớp phân loại cuối (classification head) bằng lớp Linear mới phù hợp với 10 lớp của CIFAR-10.
+- Hỗ trợ chế độ Transfer Learning (Feature Extraction) bằng cách đóng băng toàn bộ backbone (`param.requires_grad = False`).
+- Hỗ trợ chế độ Fine-Tuning bằng cách mở khóa có chọn lọc các khối tích chập sâu cuối cùng (`unfreeze_last_blocks`).
+- Kiểm tra số lượng tham số mô hình (tổng tham số và tham số cần huấn luyện) cùng cấu trúc các tầng.
 
-- **Vị trí file:** `labs/lab2/model/model.py`
-- **Người phụ trách:** Member A
-- **Thư viện phụ thuộc:** `torch`, `torch.nn`, `torchvision.models`
+## 2. Input - Output (Đầu vào - Đầu ra)
+- **Input (Đầu vào):**
+  - `name` (`str`): Tên kiến trúc mô hình (`"resnet18"`, `"densenet121"`, `"vgg16"`).
+  - `num_classes` (`int`): Số lượng nhãn phân loại (mặc định: `10` cho CIFAR-10).
+  - `freeze_backbone` (`bool`): Đóng băng trọng số backbone hay không (mặc định: `True`).
+  - `pretrained` (`bool`): Có tải và nạp trọng số ImageNet hay không (mặc định: `True`).
+  - `n_blocks` (`int`): Số lượng khối tích chập sâu cần mở khóa để fine-tuning.
+  - Tensor đầu vào cho hàm forward: Batch ảnh có kích thước `[B, 3, H, W]` (ví dụ: `[64, 3, 224, 224]` hoặc `[64, 3, 32, 32]`).
+  - Đường dẫn lưu file checkpoint trọng số (do module `train` quản lý):
+    - **Đường dẫn chuẩn:** `labs/lab2/artifacts/models/<tên_model>_best.pt` (truy xuất qua `shared.paths.artifact_dir("lab2", "models")`).
+- **Output (Đầu ra):**
+  - Thể hiện mô hình `nn.Module` xuất ra tensor logits kích thước `[B, 10]` kiểu `torch.float32`.
+  - Dictionary mô tả cấu trúc từ hàm `describe_model`:
+    - `total_params` (`int`): Tổng số tham số (11.181.642 tham số cho ResNet-18).
+    - `trainable_params` (`int`): Số tham số huấn luyện (5.130 khi đóng băng backbone; tăng lên 8.398.858 khi mở khóa `layer4`).
+    - `layer_names` (`list[str]`): Danh sách tên các module con cấp 1.
 
----
+## 3. Success (Tiêu chuẩn đạt yêu cầu)
+- Nạp thành công mô hình với trọng số ImageNet chuẩn (`ResNet18_Weights.DEFAULT`...) không có cảnh báo deprecation.
+- Lớp phân loại cuối xuất ra logits đúng kích thước `[B, 10]`, khớp với số lớp của CIFAR-10.
+- Đóng băng chính xác: chỉ có lớp Linear phân loại mới là có `requires_grad=True` (5.130 tham số huấn luyện cho ResNet-18).
+- Mở khóa fine-tuning chính xác: gọi `unfreeze_last_blocks(model, n_blocks=1)` sẽ kích hoạt gradient cho toàn bộ `layer4`.
+- Quá trình forward pass hoạt động trơn tru, không sinh ra giá trị `NaN` hay `Inf`.
 
-## 2. Các hàm & Giao diện lập trình (API)
-
-### `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True) -> nn.Module`
-Khởi tạo mô hình mạng theo tên kiến trúc, nạp trọng số tiền huấn luyện và thay thế lớp phân loại cuối.
-
-#### Tham số:
-- `name` (`str`): Tên kiến trúc mô hình (`"resnet18"`, `"densenet121"`, `"vgg16"`).
-- `num_classes` (`int`): Số lớp phân loại mục tiêu (10 cho CIFAR-10).
-- `freeze_backbone` (`bool`): Đóng băng các tầng backbone (đặt `param.requires_grad = False`).
-- `pretrained` (`bool`): Có nạp trọng số ImageNet hay không.
-
-#### Cách thay thế lớp phân loại:
-- **ResNet-18:** Thay thế `model.fc = nn.Linear(512, num_classes)`.
-- **DenseNet-121:** Thay thế `model.classifier = nn.Linear(1024, num_classes)`.
-- **VGG-16:** Thay thế lớp thứ 6 trong bộ classifier `model.classifier[6] = nn.Linear(4096, num_classes)`.
-
----
-
-### `describe_model(model: nn.Module) -> dict`
-Kiểm tra cấu trúc và đếm số lượng tham số của mô hình.
-
-#### Đầu ra:
-- `total_params`: Tổng số lượng tham số trong mô hình.
-- `trainable_params`: Số lượng tham số cần cập nhật gradient (`requires_grad=True`).
-- `layer_names`: Danh sách tên các khối tầng con cấp 1 của mô hình.
-
----
-
-### `unfreeze_last_blocks(model: nn.Module, n_blocks: int) -> None`
-Mở khóa các khối tích chập ở các tầng sâu cuối cùng để tiến hành Fine-tuning.
-
-- Với ResNet: Mở khóa các tầng `layer4`, `layer3` tùy theo tham số `n_blocks`.
-- Với DenseNet: Mở khóa các khối con trong `model.features`.
-
----
-
-## 3. Chi tiết kỹ thuật & Câu hỏi vấn đáp thường gặp
-- **Hỏi: Phân biệt Transfer Learning (Feature Extraction) và Fine-tuning?**
-  - **Trả lời:** Trong Transfer Learning (Feature Extraction), toàn bộ các tầng tích chập của mạng đều bị đóng băng, chỉ huấn luyện lớp phân loại mới. Trong Fine-tuning, ngoài lớp phân loại mới, một hoặc nhiều khối tích chập cuối cùng cũng được mở khóa để cùng cập nhật trọng số với learning rate nhỏ.
-- **Hỏi: Tại sao nên mở khóa từ các tầng sau cùng thay vì các tầng đầu tiên?**
-  - **Trả lời:** Các tầng đầu tiên của mạng CNN học các đặc trưng thị giác cơ bản (cạnh, góc, màu sắc, hoa văn) có tính tổng quát cao cho mọi bộ dữ liệu. Các tầng càng sâu về sau càng học các đặc trưng ngữ nghĩa phức tạp và đặc thù cho từng bài toán, do đó mở khóa tầng sâu giúp mô hình thích nghi tốt nhất với dữ liệu mới mà không làm hỏng các bộ lọc đặc trưng cơ bản.
+## 4. How to do (Cách thực hiện)
+Quy trình khởi tạo và cấu hình mô hình gồm các bước:
+1. **Khởi tạo mô hình cơ sở (Transfer Learning):**
+   - Gọi `model = build_model("resnet18", num_classes=10, freeze_backbone=True, pretrained=True)`.
+   - Các trọng số backbone được đóng băng, và `model.fc` được thay mới bằng `nn.Linear(512, 10)`.
+2. **Kiểm tra thông số kiến trúc:**
+   - Gọi `stats = describe_model(model)`.
+   - Xác nhận `stats["trainable_params"] == 5130` cho chế độ feature extraction của ResNet-18.
+3. **Cấu hình Fine-Tuning (tùy chọn):**
+   - Gọi `unfreeze_last_blocks(model, n_blocks=1)` để mở khóa thêm khối tích chập `layer4`.
+   - Kiểm tra số lượng tham số trainable tăng lên sẵn sàng cho fine-tuning.
+4. **Bàn giao sang module huấn luyện:**
+   - Truyền `model` và danh sách tham số trainable sang cho optimizer trong hàm `train_model()`.
