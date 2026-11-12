@@ -37,7 +37,7 @@ Sau bàn giao, Member A chỉ trả lời câu hỏi và review PR, không sửa
 ## Kiểm chứng: đổi sang dữ liệu chính thức của Zalando (2026-11-02, Python 3.13.7, torch 2.13.0 CPU, torchvision 0.29.1)
 Dữ liệu và split dưới đây thay thế CSV Kaggle. Kết quả huấn luyện trên dữ liệu này nằm ở mục kế tiếp (2026-11-04).
 - `python -m labs.lab1.preprocessing.download_official` -> đạt: torchvision tải 4 file IDX gốc và kiểm MD5; ghi `fashion-mnist_train.csv` (60.000 dòng, 6.000 mỗi lớp) và `fashion-mnist_test.csv` (10.000 dòng, 1.000 mỗi lớp); `load_csv` đọc lại khớp từng pixel và nhãn với dữ liệu gốc
-- CSV Kaggle cũ giữ lại để đối chiếu: `raw_data/fashion-mnist_train_kaggle.csv`, `raw_data/fashion-mnist_test_kaggle.csv` (không commit)
+- CSV Kaggle cũ (`raw_data/fashion-mnist_*_kaggle.csv`, không commit) từng giữ lại để đối chiếu, đã xóa ngày 2026-11-08 vì code không dùng; các số so sánh Kaggle trong file này không còn kiểm chứng lại được
 - `python -m labs.lab1.preprocessing.preprocessing` -> đạt: `make_split(labels, val_ratio=0.1, seed=42)`, train 54.000 / val 6.000 (600 mỗi lớp), ghi lại `artifacts/splits/train_val_split.json`
 - `run_eda` trên CSV train mới -> đạt: n_rows 60000, 6000 mỗi lớp, pixel 0-255, n_missing 0, n_duplicates 0 (CSV Kaggle: 43)
 - `compute_mean_std` trên 54.000 ảnh train -> mean 0,2859, std 0,3530 (CSV Kaggle: 0,2860 / 0,3527)
@@ -61,7 +61,7 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - `python -m labs.lab1.extended_study` -> đạt, 10 lần chạy 20 epoch, 1.440 giây: baseline val 89,22 +/- 0,26%, test 88,62 +/- 0,19%, train 92,95%, epoch tốt nhất 7-10, val loss thấp nhất 0,2988, cuối 0,3972; dropout 0,2 val 89,58 +/- 0,29%, epoch tốt nhất 9-20, val loss cuối 0,3095
 - Ở 20 epoch: dropout so với baseline +0,36 điểm val accuracy, p sau hiệu chỉnh 0,15; val loss cuối thấp hơn 0,088 ở cả 5 seed (p sau hiệu chỉnh 0,0001); 20 so với 5 epoch +0,60 điểm, p sau hiệu chỉnh 0,15
 - `python -m pytest labs/lab1/tests tests -q` -> 54 passed; md5 của `mlp_baseline.pt` không đổi sau khi chạy test
-- Kết quả và notebook của lần chạy trên CSV Kaggle được sao lưu ngoài repo (`lab1_kaggle_artifacts_backup_2026-11-04`), không commit
+- Kết quả và notebook của lần chạy trên CSV Kaggle từng được sao lưu ngoài repo (`lab1_kaggle_artifacts_backup_2026-11-04`, không commit), đã xóa ngày 2026-11-08
 
 ## Kiểm chứng: kết quả trên CSV Kaggle (2026-11-01, đã thay thế, giữ làm lịch sử)
 - `python -m pytest labs/lab1/tests tests -q` -> 54 passed; md5 của mọi file `.pt` không đổi sau khi chạy test
