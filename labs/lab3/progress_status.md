@@ -32,6 +32,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - Member B: `compute_metrics` accuracy and F1 compared with scikit-learn on 300 random cases (random sizes 1 to 599) -> maximum absolute difference 0.
 - Member B: the code of the notebook cells of sections 5.2, 6.2, 7, 8, 9, 10 was executed against fake objects only (both branches: train and load the saved model). The real model run (tiny fine-tune and full small run) is recorded in the `evaluate` row above.
 ## Log (dated, one line per step)
+- 2026-11-12 Member B: rewrote the 7 lab3 docs (purpose, input/output, model save location); verified with grep of main.py, notebook and `git check-ignore`.
 - 2026-10-31 Member B: ran the tiny fine-tune and the full small run (notebook top to bottom); results recorded in the `evaluate` row, README and notebook outputs.
 - 2026-10-29 Member B: `model` (PR #38) and `train` (PR #39) merged into main; fake-`transformers` tests pass (8 + 8).
 - 2026-10-30 Member B: implemented `evaluate` (`compute_metrics`, `evaluate_on_test`, `predict_texts`, helpers `classification_metrics`, `zero_shot_labels`); 16 tests; `pytest labs/lab3/tests` -> 56 passed.
