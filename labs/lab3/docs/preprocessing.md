@@ -1,5 +1,10 @@
 # Lab 3 / preprocessing: guide for AI agents
 
+## Purpose
+
+- Load the IMDB movie reviews and cut **small, reproducible** subsets (train / validation / test) that run on a CPU.
+- Clean the review text a little (remove HTML such as `<br />`) without losing sentiment signals.
+
 ## For AI agents (read first)
 
 | Field | Value |
@@ -19,21 +24,32 @@
 ## What the brief requires
 
 - Brief requirement (Exercise 2): load a simple binary text dataset and preprocess it for the model.
-- Team choice: IMDB from the Hugging Face Hub (`stanfordnlp/imdb`; official page https://ai.stanford.edu/~amaas/data/sentiment/). The link list came from another group, not from the lecturer, so IMDB is a team choice. Small subsets for CPU.
+- Team implementation choice: IMDB from the Hugging Face Hub (`stanfordnlp/imdb`).
+- Not yet confirmed: the dataset link list came from another group, not from the lecturer.
+- Team implementation choice: small subsets (2000 / 500 / 500) for CPU.
 
 ## How the module works (current code)
 
-- `load_dataset(HUB_IDS.get(name, name))` with the cache in `raw_data_dir("lab3")` (never `./data/raw`).
+- Loads the dataset with `load_dataset(HUB_IDS.get(name, name), cache_dir=...)`; the cache is `raw_data_dir("lab3")`, i.e. `labs/lab3/raw_data/` (never `./data/raw`).
 - The Hub splits are ordered by label, so each pool is **shuffled with `seed` before selecting**.
-- Train and validation come from the original train split (`0..n_train`, then `n_train..n_train+n_val`); test comes from the original test split. The three subsets never overlap.
-- `clean_text` is applied to every subset; labels are checked to be in {0, 1}; missing `text`/`label` columns raise `ValueError`.
-- `clean_text`: HTML entities decoded, HTML tags such as `<br />` replaced by a space, whitespace collapsed. No lowercasing, no punctuation or stop-word removal (the uncased tokenizer lowercases; "!" carries sentiment).
+- Train and validation both come from the original train split (`0..n_train`, then `n_train..n_train+n_val`); test comes from the original test split. The three subsets never overlap.
+- Applies `clean_text` to every subset.
+- Checks that labels are in {0, 1}; a missing `text` or `label` column raises `ValueError`.
+- `clean_text`:
+  - decodes HTML entities (`&amp;` becomes `&`).
+  - replaces HTML tags such as `<br />` with a space.
+  - collapses whitespace and strips the ends.
+  - does **not** lowercase and does **not** remove punctuation or stop words (the uncased tokenizer lowercases by itself; "!" carries sentiment).
 
 ## Inputs, outputs and pitfalls
 
-- Output: three `datasets.Dataset` objects with columns `text` and `label` (0/1).
-- `n_train + n_val` larger than the train split, or `n_test` larger than the test split, raises `ValueError`.
-- The first call needs internet; later calls use the cache.
+- Input: `name`, `n_train`, `n_val`, `n_test`, `seed`.
+- Output: a tuple of three `datasets.Dataset` objects with columns `text` and `label` (0/1).
+- Where data goes: the downloaded dataset is a cache in `labs/lab3/raw_data/`; it is not committed.
+- Pitfalls:
+  - `n_train + n_val` larger than the train split, or `n_test` larger than the test split, raises `ValueError`.
+  - the first call needs internet; later calls use the cache.
+  - selecting before shuffling would give a one-label subset, because the source is sorted by label.
 
 ## How to verify
 
@@ -52,9 +68,59 @@
 
 **Tiếng Việt**
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member A (Muội), do nhóm trưởng giao. Được sửa `preprocessing.py`, `tests/test_preprocessing.py`, file này. Chữ ký `load_text_dataset(name='imdb', n_train=2000, n_val=500, n_test=500, seed=42)` và `clean_text(text)`, khớp `project_description.md`; có thêm hàm phụ `label_counts`. Cấm lấy val từ test, cấm chọn trước khi xáo, cấm hạ chữ thường hay bỏ dấu câu khi chưa hỏi nhóm trưởng, cấm commit data, cấm tải data trong unit test.
-- **Đề:** nạp dataset văn bản nhị phân và tiền xử lý. IMDB (`stanfordnlp/imdb`) là lựa chọn của nhóm; danh sách link do nhóm khác tổng hợp, không phải của cô.
-- **Cách hoạt động:** cache trong `raw_data_dir("lab3")`; xáo theo `seed` **trước khi** chọn vì dữ liệu gốc xếp theo nhãn; train và val lấy từ train gốc, test từ test gốc, không trùng nhau; `clean_text` chỉ bỏ thẻ HTML và khoảng trắng thừa.
-- **Kiểm chứng:** số đã ghi 2000/500/500, nhãn {0: 1000, 1: 1000} ở train, không còn `<br` (chỉ có trong báo cáo).
-- **Câu hỏi mở:** IMDB và kích thước tập con chưa được cô xác nhận; README ghi "đặt dataset vào raw_data" nhưng code tự tải vào đó.
+## Mục đích
+
+- Nạp các review phim IMDB và cắt các tập con **nhỏ, tái lập được** (train / validation / test) để chạy được trên CPU.
+- Làm sạch văn bản một chút (bỏ HTML như `<br />`) mà không làm mất tín hiệu cảm xúc.
+
+## Dành cho AI (đọc trước)
+
+- Người phụ trách: Member A (Muội), do nhóm trưởng giao. Trạng thái: xong (chỉ có trong báo cáo, 25/10).
+- Việc được giao: xem GitHub Issue và `progress_status.md`; không tự giao việc cho mình, hỏi nhóm trưởng.
+- Được sửa: `preprocessing.py`, `tests/test_preprocessing.py`, file này.
+- Cấm sửa: module khác, cache dataset trong `labs/lab3/raw_data/`, ô notebook của người khác.
+- Chữ ký: `load_text_dataset(name='imdb', n_train=2000, n_val=500, n_test=500, seed=42) -> tuple` và `clean_text(text) -> str`, khớp `project_description.md`; có thêm hàm phụ `label_counts`.
+- Cấm: lấy validation từ test; chọn mẫu trước khi xáo; hạ chữ thường hoặc bỏ dấu câu trong `clean_text` khi chưa hỏi nhóm trưởng; commit dataset; tải dữ liệu trong unit test.
+- Kiểm tra: unit test `pytest labs/lab3/tests/test_preprocessing.py` (dataset giả, không cần mạng); smoke test gọi `load_text_dataset()` thật một lần.
+- Xong khi: unit test qua, kết quả smoke ghi vào `progress_status.md`, đã cập nhật file này.
+
+## Đề yêu cầu gì
+
+- Đề (Bài 2): nạp một dataset văn bản nhị phân đơn giản và tiền xử lý cho model.
+- Lựa chọn của nhóm: IMDB từ Hugging Face Hub (`stanfordnlp/imdb`).
+- Chưa xác nhận: danh sách link dataset do một nhóm khác tổng hợp, không phải của cô.
+- Lựa chọn của nhóm: tập con nhỏ (2000 / 500 / 500) để chạy trên CPU.
+
+## Cách hoạt động
+
+- Nạp bằng `load_dataset(...)`, cache ở `raw_data_dir("lab3")` tức `labs/lab3/raw_data/` (không dùng `./data/raw`).
+- Dữ liệu gốc trên Hub xếp theo nhãn nên mỗi tập được **xáo theo `seed` trước khi chọn**.
+- Train và validation cùng lấy từ tập train gốc (`0..n_train`, rồi `n_train..n_train+n_val`); test lấy từ tập test gốc. Ba tập không trùng nhau.
+- Áp dụng `clean_text` cho mọi tập.
+- Kiểm tra nhãn thuộc {0, 1}; thiếu cột `text` hoặc `label` thì báo `ValueError`.
+- `clean_text`:
+  - giải mã thực thể HTML (`&amp;` thành `&`).
+  - thay thẻ HTML như `<br />` bằng khoảng trắng.
+  - gộp khoảng trắng và cắt hai đầu.
+  - **không** hạ chữ thường, **không** bỏ dấu câu hay stop word (tokenizer uncased tự hạ chữ thường; dấu "!" mang thông tin cảm xúc).
+
+## Đầu vào, đầu ra và lỗi hay gặp
+
+- Đầu vào: `name`, `n_train`, `n_val`, `n_test`, `seed`.
+- Đầu ra: bộ ba `datasets.Dataset` có cột `text` và `label` (0/1).
+- Dữ liệu nằm đâu: dataset tải về là cache trong `labs/lab3/raw_data/`; không commit.
+- Lưu ý:
+  - `n_train + n_val` lớn hơn tập train gốc, hoặc `n_test` lớn hơn tập test gốc, sẽ báo `ValueError`.
+  - lần gọi đầu cần mạng; các lần sau dùng cache.
+  - chọn trước khi xáo sẽ ra tập chỉ có một nhãn vì dữ liệu gốc xếp theo nhãn.
+
+## Cách kiểm chứng
+
+- Unit test: `python -m pytest labs/lab3/tests/test_preprocessing.py -q`, kỳ vọng tất cả qua, không cần mạng.
+- Smoke test: lệnh trong bảng tiếng Anh ở trên. Đã ghi (chỉ có trong báo cáo): `2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False`.
+- Chạy tích hợp thật: chỉ ở mốc nhóm đã duyệt.
+
+## Câu hỏi mở
+
+- IMDB và kích thước tập con là lựa chọn của nhóm, cô chưa xác nhận.
+- README ghi "đặt dataset vào `labs/lab3/raw_data/`"; trong code dataset tự tải về thư mục đó làm cache.
