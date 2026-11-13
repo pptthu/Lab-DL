@@ -9,7 +9,9 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from labs.lab1.evaluate.evaluate import confusion_matrix, evaluate, per_class_accuracy, save_classification_report
+from labs.lab1.evaluate.evaluate import (
+    TEST_ACC_THRESHOLD, confusion_matrix, evaluate, per_class_accuracy, save_classification_report, save_test_results,
+)
 
 
 class DummyClassifier(nn.Module):
@@ -109,3 +111,15 @@ def test_save_classification_report_values_and_file(tmp_path):
     assert df.loc[0, "precision"] == pytest.approx(8 / 9)
     assert df.loc[0, "specificity"] == pytest.approx(0.9)
     assert df.loc[1, "f1"] == pytest.approx(2 * (9 / 11) * 0.9 / ((9 / 11) + 0.9))
+
+
+def test_save_test_results_marks_threshold_only_for_baseline(tmp_path):
+    rows = [
+        {"name": "baseline", "role": "baseline", "val_loss": 0.3, "val_acc": 0.89, "test_loss": 0.33, "test_acc": 0.885},
+        {"name": "dropout_0.2", "role": "selected", "val_loss": 0.29, "val_acc": 0.90, "test_loss": 0.32, "test_acc": 0.86},
+    ]
+    df = save_test_results(rows, str(tmp_path / "r" / "test.csv"))
+    assert TEST_ACC_THRESHOLD == 0.87
+    assert (tmp_path / "r" / "test.csv").is_file()
+    assert bool(df.loc[0, "meets_threshold"]) is True
+    assert df.loc[1, "meets_threshold"] is None
