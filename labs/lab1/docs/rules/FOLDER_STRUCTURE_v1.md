@@ -1,6 +1,6 @@
 # Cấu trúc thư mục Lab 1 (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
 - Trạng thái: cây **đích**. Code hiện vẫn ghi vào `artifacts/`, `raw_data/`; chỉ chuyển khi leader cho phép, làm một PR bằng `git mv` (O5). Khi chuyển phải sửa cả `.gitignore` (hiện đang bỏ qua `labs/*/raw_data/*` và `labs/*/artifacts/*`).
 
 ## 1. Cây thư mục `labs/lab1/`

@@ -1,6 +1,6 @@
 # Khuôn model card (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
 - Dùng cho: mỗi model đã train của Lab 1. Bản đã điền lưu ở `docs/models/<tên>_v<N>.md`.
 
 ## Cách dùng

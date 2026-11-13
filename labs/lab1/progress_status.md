@@ -1,5 +1,8 @@
 # Tiến độ Lab 1
 
+- **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T00:15:45+07:00 (pptthu)
+
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì.
 

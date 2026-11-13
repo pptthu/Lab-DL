@@ -1,7 +1,7 @@
 # Detail plan v1 — Cập nhật tài liệu yêu cầu Lab 1
 
 - **Tác giả:** Thư (leader) duyệt; AI soạn theo thảo luận
-- **Tạo:** 2026-11-13T00:00:00+07:00 | **Cập nhật:** 2026-11-13 (v1)
+- **Tạo:** 2026-11-13T05:06:45+07:00 | **Cập nhật:** 2026-11-13T05:06:45+07:00 (v1)
 - **Trạng thái:** Leader yêu cầu sửa từ v0 ngày 2026-11-13; bản đang dùng
 - **Nguồn quyết định:** handoff_2026-11-10.md (C1–C13) + các mục chốt trong thảo luận 2026-11-12/13 (O3–O12)
 - **Phạm vi:** chỉ tài liệu md trong `Lab-DL/labs/lab1/docs/`. Không sửa code, không đổi thư mục code/dữ liệu/kết quả của Lab-DL trong plan này.

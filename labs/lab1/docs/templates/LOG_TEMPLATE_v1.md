@@ -1,6 +1,6 @@
 # Khuôn log và quy tắc dừng (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
 - Dùng cho: mọi lần chạy train của Lab 1 (smoke run và normal run).
 
 ## 1. File sinh ra mỗi lần chạy

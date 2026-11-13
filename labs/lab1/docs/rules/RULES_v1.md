@@ -1,6 +1,6 @@
 # Luật làm việc Lab 1 (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
 - Áp dụng cho: cả nhóm và AI agent khi làm Lab 1. Luật này luôn bật, đọc trước mọi việc.
 
 ## 1. Quy trình

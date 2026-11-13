@@ -1,5 +1,8 @@
 # Lab 1: Phân loại Fashion-MNIST bằng MLP (PyTorch)
 
+- **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T00:06:38+07:00 (pptthu)
+
 > Kết quả trong file này là lần chạy ngày 04/11/2026 theo yêu cầu cũ (5 epoch, 7 cấu hình × 5 seed). Nhóm sẽ chạy lại theo desc mới [`docs/lab1_description_v1.md`](docs/lab1_description_v1.md) (5 cấu hình, seed 42, tối đa 30 epoch + early stopping) và cập nhật lại báo cáo này.
 
 ## Báo cáo ngắn
