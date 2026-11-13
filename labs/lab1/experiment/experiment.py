@@ -16,7 +16,7 @@ import pandas as pd
 from scipy import stats
 from torch import nn
 
-from shared.paths import artifact_dir
+from shared.paths import output_dir
 from shared.seed import set_seed
 from labs.lab1.model.model import MLP, count_parameters
 from labs.lab1.train.train import load_checkpoint, train_model
@@ -58,7 +58,7 @@ def run_experiments(
     train_loader, val_loader, _test_loader = loaders
     results: List[Dict[str, Any]] = []
 
-    models_dir = artifact_dir("lab1", "models")
+    models_dir = output_dir("lab1", "models")
 
     for idx, cfg in enumerate(configs):
         # Same seed -> same initial weights and same shuffling, so the runs can be repeated.
