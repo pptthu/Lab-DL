@@ -9,7 +9,7 @@
 - Open a Pull Request into `main` using the template; write `Closes #<issue number>`; the team leader reviews and merges.
 - Before opening the PR: run `pytest labs/<lab>/tests`, update `progress_status.md`, and add your AI use to `AI_usage.md`.
 - Do not rename functions or change signatures without telling the team leader (the interface is a contract).
-- Add a bug report (docs/templates/bug_report.md) in the lab's `logbook/` when you fix a non-trivial bug.
+- Add a bug report (docs/templates/bug_report.md) in the lab's `logbook/` when you fix a non-trivial bug (Lab 1: `labs/lab1/docs/bugs/`; experiment notes in `labs/lab1/docs/experiments/`).
 - Handoff A -> B is sequential: Member B starts only after Member A's modules are merged into `main` and the handoff checklist in `progress_status.md` is complete.
 
 ## Commit messages
@@ -47,7 +47,7 @@ Old messages on `main` stay as they are (history is not rewritten). How they map
 - Không commit dữ liệu, file model, kết quả, bí mật. Không force-push nhánh dùng chung.
 - Mở Pull Request vào `main` theo template, ghi `Closes #<số issue>`; nhóm trưởng duyệt và merge.
 - Trước khi mở PR: chạy `pytest labs/<lab>/tests`, cập nhật `progress_status.md`, ghi việc dùng AI vào `AI_usage.md`.
-- Không đổi tên hàm/chữ ký khi chưa báo nhóm trưởng. Với lỗi khó, viết bug report vào `logbook/` của lab.
+- Không đổi tên hàm/chữ ký khi chưa báo nhóm trưởng. Với lỗi khó, viết bug report vào `logbook/` của lab (Lab 1: `labs/lab1/docs/bugs/`; ghi chép thí nghiệm ở `labs/lab1/docs/experiments/`).
 - Bàn giao A -> B là tuần tự: B chỉ bắt đầu sau khi module của A đã merge vào `main` và checklist bàn giao trong `progress_status.md` đã xong.
 
 ## Tin nhắn commit
