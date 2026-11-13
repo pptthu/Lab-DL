@@ -1,7 +1,7 @@
 # Tiến độ Lab 1
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T00:34:29+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì.
@@ -150,6 +150,7 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-13 Thư: `docs/`: sửa tài liệu theo nhận xét của cô; thêm `rules/`, `templates/`, `plans/`, `lab1_description_v1.md`, `00_README_v1.md`; chuyển 9 hướng dẫn module vào `docs/phases/<module>_v1.md` (giữ lịch sử) rồi viết lại theo khuôn phase của M; trạng thái module ghi "Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới" -> chỉ sửa tài liệu, không đổi code; `pytest labs/lab1/tests` 52 passed
 - 2026-11-13 Thư: `README`, `docs/experiments/experiment_log.md`, notebook: chuyển sang tiếng Việt (dịch từ phần tiếng Anh vì đầy đủ hơn); notebook chỉ đổi 16 ô markdown, ô code và output giữ nguyên -> chỉ sửa tài liệu, không chạy lại notebook
 - 2026-11-14 Thư: `docs/`: thêm ngày tạo/cập nhật thật cho mọi file md; tạo `00_README_v2.md`, `rules/FOLDER_STRUCTURE_v2.md` (trỏ tới `phases/`, `experiments/`); thêm `plans/detail_plan_lab1_md_v2.md`; bỏ chữ "leader", ghi tên Thư -> chỉ sửa tài liệu, không đổi code
+- 2026-11-14 Thư: `docs/`: chốt test cho cả baseline và cấu hình được chọn; ngưỡng test ≥ 87% (bài báo gốc Fashion-MNIST, MLP 0,871); sơ đồ kiến trúc vẽ bằng mermaid trong model card; duyệt Goals/Success của 9 file phase -> chỉ sửa tài liệu, không đổi code
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.
