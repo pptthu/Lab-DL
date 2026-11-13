@@ -1,7 +1,7 @@
 # Tiến độ Lab 1
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T03:19:53+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T03:34:08+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì.
@@ -14,7 +14,7 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 | `model` | Member A (Toàn) | xong | đạt (6 test) | đạt | MLP 784->256->128->10: 235.146 tham số huấn luyện được |
 | `train` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (7 test) | đạt (normal run 2026-11-14) | Early stopping theo val_loss (patience 5, min_delta 1e-4, tối đa 30 epoch); 3 file log mỗi run; `_best.pt` + `_last.pt` trong `outputs/models/` |
 | `evaluate` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (6 test) | đạt (baseline TEST 88,60% ≥ 87%; larger_network TEST 88,46%) | Test chạy một lần cho mỗi model, ghi `outputs/results/test_results.csv`; val_acc từ checkpoint khớp log |
-| `visualize` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (5 test) | đạt (14 hình trong `outputs/figures/`, demo trong `outputs/demo/`) | Loss/accuracy vẽ từ `_history.csv`; ảnh dự đoán trên test; demo 15/16 đúng; Thư cần xem lại hình trước buổi trình bày |
+| `visualize` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (5 test) | đạt (14 hình trong `outputs/figures/`, demo trong `outputs/demo/`) | Loss/accuracy vẽ từ `_history.csv`; ảnh dự đoán trên test; demo 15/16 đúng; Thư đã xem từng hình |
 | `experiment` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (10 test) | đạt (5 cấu hình × seed 42, `outputs/results/experiment_results.csv`) | Cả 5 dừng sớm ở epoch 11–15; chọn larger_network (val 89,28%); baseline val 88,97% > softmax 85,15% |
 | `main.py`, README, notebook | Thư | xong (yêu cầu mới, 2026-11-14) | đạt (`test_smoke.py`, 9 test) | đạt (smoke 21 giây, normal 403 giây) | `--smoke` ghi vào `outputs/_smoke/`; notebook giữ khung Stage 0–10 cũ (Stage 0–4 của Toàn giữ nguyên, output không đổi), không train, chạy lại 0 lỗi; model card trong `docs/models/` |
 
@@ -67,7 +67,7 @@ Dữ liệu và split dưới đây thay thế CSV Kaggle. Kết quả huấn lu
 
 ## Kiểm chứng: kết quả trên dữ liệu chính thức (2026-11-04, Python 3.13.7, torch 2.14.1 CPU, 4 thread)
 Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook và `docs/` dùng đúng các số này.
-- CSV tạo lại trên máy nhóm trưởng bằng `python -m labs.lab1.preprocessing.download_official`: MD5 train `8ff2cced1c624159b21dac4f735b4215`, test `78e18be2098f1256a07ce6f91a4d436e`; `make_split(labels, 0.1, 42)` ra đúng y `train_val_split.json` đã commit (54.000 / 6.000); mean 0,2859, std 0,3530
+- CSV tạo lại trên máy của Thư bằng `python -m labs.lab1.preprocessing.download_official`: MD5 train `8ff2cced1c624159b21dac4f735b4215`, test `78e18be2098f1256a07ce6f91a4d436e`; `make_split(labels, 0.1, 42)` ra đúng y `train_val_split.json` đã commit (54.000 / 6.000); mean 0,2859, std 0,3530
 - `python -m labs.lab1.main` -> đạt, 35 lần chạy thí nghiệm, 7.401 giây; seed 42: val 89,05% (loss 0,3018), test 88,36% (loss 0,3338, 8.836/10.000), epoch tốt nhất là 5
 - Chạy `main.py` lần hai (2026-11-04, 1.145 giây) -> cả 5 file kết quả (`experiment_results`, `seed_results`, `recall_by_class`, `top_confusions`, `classification_report`) y hệt lần một (bỏ cột thời gian), MD5 của 35 checkpoint thí nghiệm và `mlp_baseline.pt` y hệt
 - Thời gian: phần lớn mỗi lần chạy 55-140 giây; riêng `softmax_regression` seed 3407 mất 5.445 giây và seed 42 mất 388 giây (máy không vào sleep, chưa rõ nguyên nhân); accuracy không phụ thuộc thời gian chạy
@@ -155,15 +155,15 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-10-30 Thư: `notebook`: thêm ô Stage 0 Data Source; sửa các chỗ nói quá (cấu hình không đổi từng yếu tố, cách nói về `torch.no_grad`, checkpoint, recall Sandal đúng 95,00%, ghi chú tập test, overfit) -> chạy lại notebook, so output code với bản trước: chỉ khác tên bảng thí nghiệm.
 - 2026-10-31 Thư: `project_description`: cập nhật Design với cấu trúc hệ thống, cây thư mục hiện tại và 2 rủi ro kỹ thuật (thứ tự RNG, ảnh trùng giữa các tập); phần tiếng Việt trỏ tới cây thư mục; interface không đổi -> chỉ sửa tài liệu, không chạy code.
 - 2026-11-01 Thư: `train`, `evaluate`, `experiment`, `main`, notebook: notebook khớp `main.py` (`torch.zeros`, cố định số thread); `best_val_acc` báo đúng checkpoint được giữ; test không còn ghi đè checkpoint thật; thêm `save_classification_report`, `analyze_seed_runs`; thiết kế lại thí nghiệm thành 7 cấu hình, 5 seed; xóa BOM; cập nhật tài liệu từ một lần chạy -> 50 passed, đã đối chiếu notebook và `main.py`.
-- 2026-11-01 Thư: `progress_status`: chuyển toàn bộ file sang tiếng Việt theo quyết định của nhóm trưởng, giữ nguyên nội dung -> chỉ sửa tài liệu, không chạy code.
+- 2026-11-01 Thư: `progress_status`: chuyển toàn bộ file sang tiếng Việt theo quyết định của Thư, giữ nguyên nội dung -> chỉ sửa tài liệu, không chạy code.
 - 2026-11-02 Toàn: `preprocessing`, `eda`: đổi sang dữ liệu chính thức của Zalando bằng `download_official.py` (torchvision, kiểm MD5), cùng tên file và định dạng CSV; đổi tên CSV Kaggle thành `*_kaggle.csv`; tạo lại split; sửa chữ Kaggle trong docstring `eda.py` và `project_description.md` -> 50 passed; 0 dòng trùng, 0 ảnh chung giữa các tập
-- 2026-11-02 Toàn: notebook, README: sửa chữ về nguồn data ở ô 0, 1, 3 của notebook; thêm `README_official_data.md` (bản nháp README, chỉ đổi các đoạn về data) để nhóm trưởng so với `README.md` -> chỉ sửa tài liệu, không chạy code
+- 2026-11-02 Toàn: notebook, README: sửa chữ về nguồn data ở ô 0, 1, 3 của notebook; thêm `README_official_data.md` (bản nháp README, chỉ đổi các đoạn về data) để Thư so với `README.md` -> chỉ sửa tài liệu, không chạy code
 - 2026-11-02 Toàn: notebook: chạy lại Phần A (cell 0-10: EDA, split, features, model) trên dữ liệu chính thức; cell 11-25 và phần chữ giữ nguyên, chờ Thư chạy lại -> 0 lỗi; Duplicate rows 0, mean 0,2859, std 0,3530
 - 2026-11-07 Thư: `train`, `evaluate`, `visualize`, `experiment`, `main.py`: thêm chú thích tiếng Anh và tiếng Việt (`# VI:`) cho các dòng code quan trọng; chỉ thêm comment, không đổi code -> pytest 56 đạt
 - 2026-11-07 Thư: notebook: bảng recall bỏ `recall_min`, `recall_max`; bảng cặp hay nhầm bỏ `mean_per_seed` (= total / 5); Summary viết gọn lại, số liệu không đổi -> notebook chạy lại 0 lỗi
 - 2026-11-07 Thư: notebook, README, `docs/experiment.md`: bảng so sánh chỉ hiện các cột của quy tắc (`mean_diff`, `std_diff`, `seeds_higher`, `rule_clear`), bỏ p-value, Holm, khoảng tin cậy; kết luận không đổi -> notebook chạy lại 0 lỗi
 - 2026-11-06 Thư: `experiment` (thêm `history`, `save_history`), `main.py`, `extended_study.py`, notebook (Stage 9b, 10b), README, `docs/`: lưu lịch sử theo epoch, chạy lại, kết quả giống hệt 04/11; bỏ số liệu Kaggle
-- 2026-11-04 Thư: `main.py`, `extended_study.py`, notebook, README, `docs/`: tạo lại CSV chính thức trên máy nhóm trưởng; chạy lại `main.py`, `extended_study.py`, notebook trên data chính thức; gộp `README_official_data.md` của Toàn vào `README.md` rồi xóa bản nháp; thay mọi số trong README, chữ trong notebook và file này; thêm 9 hướng dẫn module trong `labs/lab1/docs/`; ghi phạm vi chỉ làm MLP -> 54 passed, notebook 0 lỗi và khớp `main.py`
+- 2026-11-04 Thư: `main.py`, `extended_study.py`, notebook, README, `docs/`: tạo lại CSV chính thức trên máy của Thư; chạy lại `main.py`, `extended_study.py`, notebook trên data chính thức; gộp `README_official_data.md` của Toàn vào `README.md` rồi xóa bản nháp; thay mọi số trong README, chữ trong notebook và file này; thêm 9 hướng dẫn module trong `labs/lab1/docs/`; ghi phạm vi chỉ làm MLP -> 54 passed, notebook 0 lỗi và khớp `main.py`
 - 2026-11-01 Thư: `experiment`, `extended_study`, notebook, README: thêm train accuracy, kiểm định t có hiệu chỉnh Holm, khoảng tin cậy 95%, nghiên cứu 20 epoch; đối chiếu CSV Kaggle với file chính thức; viết báo cáo chi tiết trong README; bỏ CNN vì thiếu thời gian -> 54 passed, chạy `main.py` hai lần ra kết quả y hệt.
 - 2026-11-13 Thư: `docs/`: sửa tài liệu theo nhận xét của cô; thêm `rules/`, `templates/`, `plans/`, `lab1_description_v1.md`, `00_README_v1.md`; chuyển 9 hướng dẫn module vào `docs/phases/<module>_v1.md` (giữ lịch sử) rồi viết lại theo khuôn phase của M; trạng thái module ghi "Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới" -> chỉ sửa tài liệu, không đổi code; `pytest labs/lab1/tests` 52 passed
 - 2026-11-13 Thư: `README`, `docs/experiments/experiment_log.md`, notebook: chuyển sang tiếng Việt (dịch từ phần tiếng Anh vì đầy đủ hơn); notebook chỉ đổi 16 ô markdown, ô code và output giữ nguyên -> chỉ sửa tài liệu, không chạy lại notebook
@@ -173,6 +173,7 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-14 Thư: sửa code theo desc mới: `train` (early stopping, 3 file log, `_last.pt`, `max_batches`), `experiment` (5 cấu hình, `select_config`; bỏ `analyze_seed_runs`, `compare_pairs`, `extended_study.py` theo O10), `evaluate` (`save_test_results`, mức 0,87), `visualize` (vẽ từ `_history.csv`, accuracy curve, `demo_predictions`), `main.py` (`--smoke`, `run_summary.json`) -> smoke 21 giây, normal 403 giây, baseline test 88,60%; `pytest` 64 passed
 - 2026-11-14 Thư: notebook dựng lại chỉ đọc `outputs/` (0 lỗi); model card `docs/models/`; mục "Kết quả audit" trong 6 file phase; viết lại README, `project_description.md`
 - 2026-11-14 Thư: `notebook`: khôi phục Stage 0–4 của Toàn (ô và output như bản cũ, chỉ ô setup bỏ import `compare_pairs` đã xoá và nạp `run_summary.json`); phần B giữ thứ tự Stage 5–10 cũ (train baseline, val + báo cáo lớp, lỗi Shirt, hình, thí nghiệm, test) theo desc mới, không train, markdown rút gọn -> chạy lại 0 lỗi, output Stage 1–4 trùng bản cũ
+- 2026-11-14 Thư: `notebook`: output phần B chỉ in số liệu (bỏ các dòng nhận xét), phép kiểm giữ bằng `assert`; `docs/`: viết gọn README, `project_description.md`, 5 file phase phần B (`train`, `evaluate`, `experiment`, `visualize`, `demo`); đóng các mục còn mở -> notebook chạy lại 0 lỗi; `pytest` 64 passed
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.
@@ -180,9 +181,8 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - Đã xử lý 2026-11-01: `torch.randn` trong notebook làm đổi thứ tự xáo dữ liệu; nay dùng `torch.zeros`, và `main.py`, notebook đều dùng 4 thread CPU.
 - Đã xử lý 2026-11-02: đổi sang dữ liệu chính thức của Zalando; 43 dòng trùng và ảnh chung giữa các tập (9, 9, 1) của CSV Kaggle không còn (0 dòng trùng, 0 ảnh chung).
 - Đã xử lý 2026-11-04: chạy lại `main.py`, notebook, `extended_study.py` trên dữ liệu mới và cập nhật README.
-- Chưa xong: mỗi thành viên tự điền phần của mình trong `AI_usage.md`.
-- Chưa kiểm chứng: giả thuyết về nguyên nhân lỗi của Shirt, và nguyên nhân CSV Kaggle khác file chính thức.
-- Chưa làm: chạy trên máy khác. Trên cùng máy, `main.py` chạy hai lần cho kết quả y hệt (2026-11-04).
+- Ngoài phạm vi (desc lab, 2026-11-13): kiểm chứng nguyên nhân lỗi của Shirt (cần CNN) và nguyên nhân CSV Kaggle khác file chính thức.
+- Giới hạn đã ghi trong README: kết quả chạy trên một máy (Python 3.13.7, torch 2.14.1 CPU, 4 thread); trên cùng máy, `main.py` chạy hai lần cho kết quả y hệt (2026-11-04).
 - Ngoài phạm vi (quyết định của nhóm, 2026-11-04): CNN; Lab 1 chỉ làm MLP.
-- Đã xử lý 2026-11-14: sửa code theo desc mới `docs/lab1_description_v1.md`; mọi mục "Chỗ code chưa khớp plan" trong `docs/phases/` đã đóng (demo dựng lại kiến trúc bằng config của `experiment` thay vì đọc `_config.json`, ghi trong `demo_v1.md`).
-- Chưa làm: Thư xem lại từng hình trong `outputs/figures/` trước buổi trình bày (tiêu chí normal run của `visualize`).
+- Đã xử lý 2026-11-14: sửa code theo desc mới `docs/lab1_description_v1.md`; mọi file trong `docs/phases/` ghi "Chỗ code chưa khớp plan: không có".
+- Đã xử lý 2026-11-14: Thư xem lại từng hình trong `outputs/figures/` (tiêu chí normal run của `visualize`).

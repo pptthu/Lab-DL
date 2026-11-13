@@ -1,6 +1,6 @@
 # Tài liệu Lab 1 — đọc file này trước (v2)
 
-- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T01:43:35+07:00
+- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T03:34:08+07:00
 
 ## Quy tắc version
 - Tên file có hậu tố `_vN`. Luôn dùng bản có **số lớn nhất**; bản cũ giữ nguyên, không sửa đè.
@@ -8,7 +8,7 @@
 
 ## Desc hiện hành
 - Desc của Lab 1 là **`lab1_description_v1.md`**. AI sinh báo cáo, slide từ file này và các file nó trỏ tới.
-- `../project_description.md` (bản dài cũ) và `../progress_status.md` ở gốc lab giữ nguyên chỗ, không còn là desc hiện hành.
+- `../project_description.md` là bản tổng quan để trình bày (Define + Design, tóm tắt từ desc này); `../progress_status.md` ghi tiến độ và bằng chứng chạy.
 
 ## Mục lục
 
