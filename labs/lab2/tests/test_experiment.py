@@ -1,13 +1,21 @@
 """Unit tests for Lab 2 Member B: experiment module."""
 import csv
 import os
+import sys
 import tempfile
+from pathlib import Path
+
 import pytest
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from labs.lab2.experiment.experiment import run_comparison, save_results
+# Allow running this file directly: python labs/lab2/tests/test_experiment.py
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from labs.lab2.experiment.experiment import run_comparison, save_results  # noqa: E402
 
 
 class DummyNet(nn.Module):
@@ -98,3 +106,7 @@ def test_save_results_creates_valid_csv():
         assert "hp_epochs" in headers
         assert "best_val_acc" in headers
         assert "train_seconds" in headers
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-v"]))

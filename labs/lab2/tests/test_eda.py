@@ -1,13 +1,11 @@
 """Test suite cho Module EDA (CIFAR-10 thật)."""
-import os
 import sys
 from pathlib import Path
-import pytest
 repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
-from shared.paths import raw_data_dir, artifact_dir
-from labs.lab2.eda.eda import run_eda
+from shared.paths import raw_data_dir, artifact_dir  # noqa: E402
+from labs.lab2.eda.eda import run_eda  # noqa: E402
 
 
 def test_run_eda():

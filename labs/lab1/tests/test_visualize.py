@@ -1,4 +1,4 @@
-﻿"""Unit tests for visualize module (fake data only, fast).
+"""Unit tests for visualize module (fake data only, fast).
 
 VI: Unit test cho module trực quan hóa (chỉ dùng dữ liệu giả lập, chạy nhanh).
 """

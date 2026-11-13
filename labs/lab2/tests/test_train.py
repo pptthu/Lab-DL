@@ -1,13 +1,20 @@
 """Unit tests for Lab 2 Member B: train module."""
 import os
-import shutil
+import sys
 import tempfile
+from pathlib import Path
+
 import pytest
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from labs.lab2.train.train import train_model, save_checkpoint, load_checkpoint
+# Allow running this file directly: python labs/lab2/tests/test_train.py
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from labs.lab2.train.train import train_model, save_checkpoint, load_checkpoint  # noqa: E402
 
 
 class TinyCNN(nn.Module):
@@ -116,3 +123,7 @@ def test_train_model_rejects_invalid_inputs(tiny_loaders):
 
     with pytest.raises(ValueError, match="Unsupported optimizer_name"):
         train_model(model, train_loader, val_loader, epochs=1, lr=1e-3, device="cpu", ckpt_path="dummy.pt", optimizer_name="unknown")
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-v"]))

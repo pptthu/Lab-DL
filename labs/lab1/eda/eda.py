@@ -25,11 +25,11 @@ CLASS_NAMES = (
 def run_eda(train_csv: str, out_dir: str) -> dict:
     """Explore the training CSV (read-only, never modify data) and save figures.
 
-    Input : train_csv: path to the Kaggle training CSV; out_dir: folder for figures
+    Input : train_csv: path to the training CSV (official Zalando GitHub data); out_dir: folder for figures
     Output: dict with n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; PNG files (class bar chart, sample image grid) in out_dir
 
     VI: Khám phá file CSV train (chỉ đọc, không sửa dữ liệu) và lưu biểu đồ.
-    Vào : train_csv: đường dẫn CSV train của Kaggle; out_dir: thư mục lưu hình
+    Vào : train_csv: đường dẫn CSV train (dữ liệu chính thức từ GitHub của Zalando); out_dir: thư mục lưu hình
     Ra  : dict gồm n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; file PNG (biểu đồ số lượng mỗi lớp, lưới ảnh mẫu) trong out_dir
     """
     df = pd.read_csv(train_csv)

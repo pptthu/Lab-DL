@@ -1,4 +1,4 @@
-﻿"""Module `evaluate` (Evaluation) of Lab 1: Fashion-MNIST classification with an MLP (PyTorch).
+"""Module `evaluate` (Evaluation) of Lab 1: Fashion-MNIST classification with an MLP (PyTorch).
 
 Owner: Member B (see progress_status.md). Do not rename functions or change signatures
 without telling the team leader: other modules depend on them.
@@ -8,8 +8,10 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
-from typing import Dict, Tuple
+from pathlib import Path
+from typing import Dict, Sequence, Tuple
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 
@@ -25,6 +27,8 @@ def evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[floa
     Ra  : (avg_loss: float, accuracy: float trong 0-1)
     """
     model.to(device)
+    # Eval mode (dropout off) and no gradients: we only measure, we do not train.
+    # VI: Chế độ eval (tắt dropout) và không tính gradient: chỉ đo, không huấn luyện.
     model.eval()
     criterion = nn.CrossEntropyLoss()
 
@@ -41,6 +45,8 @@ def evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[floa
             logits = model(x_batch)
             loss = criterion(logits, y_batch)
 
+            # Weight by batch size so the mean loss is exact per sample.
+            # VI: Nhân với số ảnh của batch để loss trung bình đúng theo từng mẫu.
             running_loss += loss.item() * batch_size
             preds = torch.argmax(logits, dim=1)
             running_correct += (preds == y_batch).sum().item()
@@ -73,8 +79,10 @@ def confusion_matrix(
             x_batch = x_batch.to(device)
             logits = model(x_batch)
             preds = torch.argmax(logits, dim=1).cpu().numpy()
-            targets = y_batch.numpy() if isinstance(y_batch, np.ndarray) else y_batch.cpu().numpy()
+            targets = y_batch.cpu().numpy()
 
+            # Add 1 at [true class, predicted class]: rows = true, columns = predicted.
+            # VI: Cộng 1 vào ô [lớp thật, lớp dự đoán]: hàng = lớp thật, cột = lớp dự đoán.
             np.add.at(cm, (targets, preds), 1)
 
     return cm
@@ -97,8 +105,51 @@ def per_class_accuracy(cm: np.ndarray) -> Dict[int, float]:
     for i in range(num_classes):
         row_sum = cm_arr[i].sum()
         if row_sum > 0:
+            # Diagonal / row sum = correct images of class i / all images of class i (recall).
+            # VI: Đường chéo / tổng hàng = số ảnh lớp i đoán đúng / tổng ảnh lớp i (recall).
             accs[i] = float(cm_arr[i, i] / row_sum)
         else:
             accs[i] = 0.0
 
     return accs
+
+
+def save_classification_report(cm: np.ndarray, class_names: Sequence[str], csv_path: str) -> pd.DataFrame:
+    """Per-class precision, recall, specificity and F1 (values in 0-1), saved as CSV.
+
+    Input : cm: confusion matrix; class_names; csv_path
+    Output: DataFrame with one row per class; CSV file at csv_path
+
+    VI: Precision, recall, specificity và F1 của từng lớp (giá trị trong 0-1), lưu ra CSV.
+    Vào : cm: ma trận nhầm lẫn; class_names; csv_path
+    Ra  : DataFrame mỗi lớp một dòng; file CSV tại csv_path
+    """
+    cm_arr = np.asarray(cm)
+    rows = []
+    for i, name in enumerate(class_names):
+        # TP: class i predicted as i; FN: class i predicted as another; FP: another class predicted as i; TN: the rest.
+        # VI: TP: lớp i đoán đúng là i; FN: lớp i bị đoán sang lớp khác; FP: lớp khác bị đoán thành i; TN: phần còn lại.
+        tp = int(cm_arr[i, i])
+        fn = int(cm_arr[i].sum()) - tp
+        fp = int(cm_arr[:, i].sum()) - tp
+        tn = int(cm_arr.sum()) - tp - fp - fn
+        precision = tp / (tp + fp) if tp + fp > 0 else 0.0
+        recall = tp / (tp + fn) if tp + fn > 0 else 0.0
+        specificity = tn / (tn + fp) if tn + fp > 0 else 0.0
+        # F1 = harmonic mean of precision and recall.
+        # VI: F1 = trung bình điều hòa của precision và recall.
+        f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0.0
+        rows.append({
+            "class": name,
+            "support": tp + fn,
+            "precision": precision,
+            "recall": recall,
+            "specificity": specificity,
+            "f1": f1,
+        })
+
+    df = pd.DataFrame(rows)
+    p = Path(csv_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(p, index=False)
+    return df

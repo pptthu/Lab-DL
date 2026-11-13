@@ -22,3 +22,6 @@ labs/*/artifacts/runs/*
 *.pth
 *.zip
 .env
+
+# Course slides, local only (copyrighted) / Slide môn học, chỉ để trên máy (có bản quyền)
+tailieu/
