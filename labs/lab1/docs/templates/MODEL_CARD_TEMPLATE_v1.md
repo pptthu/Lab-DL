@@ -1,6 +1,6 @@
 # Khuôn model card (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-14T00:55:48+07:00
 - Dùng cho: mỗi model đã train của Lab 1. Bản đã điền lưu ở `docs/models/<tên>_v<N>.md`.
 
 ## Cách dùng
@@ -15,7 +15,7 @@
     ## Purpose
     <1–2 câu: model này dùng để làm gì, so với model nào>
     ## Initial model
-    - Architecture: <vd 784→256→128→10, ReLU, dropout p> | Sơ đồ: outputs/figures/<model>_architecture.png
+    - Architecture: <vd 784→256→128→10, ReLU, dropout p> | Sơ đồ: khối mermaid trong file này + bảng số param từng lớp
     - Xây từ đâu / backbone: <tự viết, không dùng pretrained>
     - Số param: <…> | Input: [B,1,28,28] (chuẩn hóa theo mean/std train) | Output: logits [B,10]
     - Source: labs/lab1/model/model.py

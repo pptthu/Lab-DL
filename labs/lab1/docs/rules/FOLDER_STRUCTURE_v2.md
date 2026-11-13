@@ -1,6 +1,6 @@
 # Cấu trúc thư mục Lab 1 (v2)
 
-- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T00:29:40+07:00
+- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T00:55:48+07:00
 - Trạng thái: cây **đích**. Code hiện vẫn ghi vào `artifacts/`, `raw_data/`; chỉ chuyển khi Thư cho phép, làm một PR bằng `git mv` (O5). Khi chuyển phải sửa cả `.gitignore` (hiện đang bỏ qua `labs/*/raw_data/*` và `labs/*/artifacts/*`).
 
 ## 1. Cây thư mục `labs/lab1/`
@@ -13,7 +13,7 @@
     ├── outputs/
     │   ├── models/     # checkpoint .pt
     │   ├── logs/       # .log, _history.csv, _config.json
-    │   ├── figures/    # loss curve, confusion matrix, sơ đồ kiến trúc
+    │   ├── figures/    # loss curve, accuracy curve, confusion matrix
     │   ├── results/    # CSV đánh giá, bảng so sánh
     │   ├── demo/       # ảnh dự đoán của best checkpoint trên test
     │   └── _smoke/     # mọi đầu ra của smoke run, không dùng để báo cáo
@@ -46,11 +46,11 @@ Bỏ khỏi gốc lab khi chuyển: `artifacts/`, `raw_data/`, `extended_study.p
 | Split train/val | `data/splits/train_val_split.json` | `artifacts/splits/train_val_split.json` |
 | Checkpoint | `outputs/models/<ts>_<run>_best.pt`, `_last.pt` | `artifacts/models/` (`exp_run_N.pt`, `mlp_baseline.pt`) |
 | Log mỗi lần chạy | `outputs/logs/<ts>_<run>.log`, `_history.csv`, `_config.json` | `artifacts/logs/` (đang rỗng); history nằm trong `artifacts/runs/epoch_history.csv` |
-| Biểu đồ | `outputs/figures/` (sơ đồ kiến trúc: `<model>_architecture.png`) | `artifacts/figures/` |
+| Biểu đồ | `outputs/figures/` | `artifacts/figures/` |
 | Bảng đánh giá, so sánh | `outputs/results/` | `artifacts/runs/` |
 | Ảnh demo | `outputs/demo/` | chưa có |
 | Đầu ra smoke run (log, checkpoint, hình) | `outputs/_smoke/` | chưa có |
-| Model card | `docs/models/<tên>_v<N>.md` | chưa có |
+| Model card (có sơ đồ kiến trúc mermaid) | `docs/models/<tên>_v<N>.md` | chưa có |
 | Ghi chép thí nghiệm, lỗi | `docs/experiments/`, `docs/bugs/` | `docs/experiments/experiment_log.md` (đã chuyển); `docs/bugs/` chưa có |
 
 `<ts>` = `YYYYMMDD_HHMMSS` lúc bắt đầu chạy.
