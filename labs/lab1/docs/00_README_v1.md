@@ -1,10 +1,10 @@
 # Tài liệu Lab 1 — đọc file này trước (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-13T11:22:05+07:00 | Cập nhật: Thư, 2026-11-13T11:22:05+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:05+07:00 | Cập nhật: Thư, 2026-11-14T00:34:29+07:00
 
 ## Quy tắc version
 - Tên file có hậu tố `_vN`. Luôn dùng bản có **số lớn nhất**; bản cũ giữ nguyên, không sửa đè.
-- Muốn đổi nội dung: tạo bản `_vN+1` sau khi leader duyệt (xem `rules/RULES_v1.md`).
+- Muốn đổi nội dung: tạo bản `_vN+1` sau khi Thư duyệt (xem `rules/RULES_v1.md`).
 
 ## Desc hiện hành
 - Desc của Lab 1 là **`lab1_description_v1.md`**. AI sinh báo cáo, slide từ file này và các file nó trỏ tới.
