@@ -1,7 +1,7 @@
 # Tiến độ Lab 1
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T01:43:35+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T03:19:53+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì.
@@ -16,7 +16,7 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 | `evaluate` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (6 test) | đạt (baseline TEST 88,60% ≥ 87%; larger_network TEST 88,46%) | Test chạy một lần cho mỗi model, ghi `outputs/results/test_results.csv`; val_acc từ checkpoint khớp log |
 | `visualize` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (5 test) | đạt (14 hình trong `outputs/figures/`, demo trong `outputs/demo/`) | Loss/accuracy vẽ từ `_history.csv`; ảnh dự đoán trên test; demo 15/16 đúng; Thư cần xem lại hình trước buổi trình bày |
 | `experiment` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (10 test) | đạt (5 cấu hình × seed 42, `outputs/results/experiment_results.csv`) | Cả 5 dừng sớm ở epoch 11–15; chọn larger_network (val 89,28%); baseline val 88,97% > softmax 85,15% |
-| `main.py`, README, notebook | Thư | xong (yêu cầu mới, 2026-11-14) | đạt (`test_smoke.py`, 9 test) | đạt (smoke 21 giây, normal 403 giây) | `--smoke` ghi vào `outputs/_smoke/`; notebook chỉ đọc `outputs/`, 23 ô, chạy lại 0 lỗi; model card trong `docs/models/` |
+| `main.py`, README, notebook | Thư | xong (yêu cầu mới, 2026-11-14) | đạt (`test_smoke.py`, 9 test) | đạt (smoke 21 giây, normal 403 giây) | `--smoke` ghi vào `outputs/_smoke/`; notebook giữ khung Stage 0–10 cũ (Stage 0–4 của Toàn giữ nguyên, output không đổi), không train, chạy lại 0 lỗi; model card trong `docs/models/` |
 
 ## Bàn giao A -> B (tuần tự, không xen kẽ)
 Member B chỉ bắt đầu code khi TẤT CẢ các điều kiện sau đều đúng:
@@ -43,7 +43,7 @@ Sau bàn giao, Member A chỉ trả lời câu hỏi và review PR, không sửa
 
 - Chọn trên val: larger_network (hơn sgd_lr_0.01 0,15 điểm). Test một lần: baseline 88,60% (loss 0,3239) ≥ 87% ✔; larger_network 88,46% (loss 0,3315)
 - Val (larger_network): Shirt recall 68,67% thấp nhất, nhầm sang T-shirt/top 71, Pullover 56, Coat 37 ảnh; demo 16 ảnh test đầu: 15 đúng
-- Notebook dựng lại (23 ô), chạy bằng `python -m jupyter nbconvert --execute` -> 0 lỗi; ô kiểm save/load: dự đoán sau khi nạp lại trùng CSV demo
+- Notebook (30 ô, Stage 0–4 giữ nguyên ô và output cũ; Stage 5–10 đọc `outputs/` theo desc mới), chạy bằng `python -m jupyter nbconvert --execute` -> 0 lỗi; ô kiểm save/load: dự đoán sau khi nạp lại trùng CSV demo
 - Các mục "Kiểm chứng" bên dưới là lịch sử theo yêu cầu cũ (5 epoch, 7 cấu hình × 5 seed); file kết quả của chúng đã xoá khi đổi thư mục (O5)
 
 ## Kiểm chứng: lưu lịch sử theo epoch (2026-11-06, Python 3.13.7, torch 2.14.1 CPU, 4 thread)
@@ -172,6 +172,7 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-14 Thư: O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`: thêm `data_dir`, `output_dir` (`shared/paths.py`, giữ `artifact_dir` cho Lab 2, 3); `git mv` split sang `data/splits/`; sửa đường dẫn trong `main.py`, `extended_study.py`, `experiment.py`, `preprocessing.py`, `download_official.py`, test và 7 dòng code notebook (không chạy lại notebook); chuyển CSV sang `data/raw/`; xoá kết quả cũ 04/11 trong `artifacts/` (không commit); cập nhật tài liệu -> `make_split` seed 42 tạo lại split giống từng byte; `pytest labs/lab1/tests tests` 58 passed
 - 2026-11-14 Thư: sửa code theo desc mới: `train` (early stopping, 3 file log, `_last.pt`, `max_batches`), `experiment` (5 cấu hình, `select_config`; bỏ `analyze_seed_runs`, `compare_pairs`, `extended_study.py` theo O10), `evaluate` (`save_test_results`, mức 0,87), `visualize` (vẽ từ `_history.csv`, accuracy curve, `demo_predictions`), `main.py` (`--smoke`, `run_summary.json`) -> smoke 21 giây, normal 403 giây, baseline test 88,60%; `pytest` 64 passed
 - 2026-11-14 Thư: notebook dựng lại chỉ đọc `outputs/` (0 lỗi); model card `docs/models/`; mục "Kết quả audit" trong 6 file phase; viết lại README, `project_description.md`
+- 2026-11-14 Thư: `notebook`: khôi phục Stage 0–4 của Toàn (ô và output như bản cũ, chỉ ô setup bỏ import `compare_pairs` đã xoá và nạp `run_summary.json`); phần B giữ thứ tự Stage 5–10 cũ (train baseline, val + báo cáo lớp, lỗi Shirt, hình, thí nghiệm, test) theo desc mới, không train, markdown rút gọn -> chạy lại 0 lỗi, output Stage 1–4 trùng bản cũ
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.
