@@ -1,5 +1,8 @@
 # Lab 1: Fashion-MNIST classification with an MLP (PyTorch): project description (Define + Design)
 
+- **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T00:34:29+07:00 (pptthu)
+
 ## Define
 - **Problem:** Classify 28x28 grayscale clothing images into 10 classes with a neural network trained in PyTorch.
 - **Target users:** the lecturer (grading) and the group (learning).
@@ -13,7 +16,7 @@
   5. Save and load the model
   6. Experiment with network/hyperparameters
   7. Visualize loss; display predicted vs actual images
-- **Technology constraints:** Python 3, PyTorch, matplotlib, numpy, pandas; CPU is enough. Raw data is not committed. Group scope = MLP + experiments (CNN is optional extra work of the leader).
+- **Technology constraints:** Python 3, PyTorch, matplotlib, numpy, pandas; CPU is enough. Raw data is not committed. Group scope = MLP + experiments (CNN is optional extra work of Thư).
 - **Evaluation criteria:** Practice 1 deliverables: Python code, brief report (README-style, about 200 words or fewer), loss graphs, image displays. Oral Q&A.
 
 ## Design
@@ -26,7 +29,7 @@
 - **Modules and owners** (each module = one sub-folder with one script):
 - Member A: `eda`, `preprocessing`, `features`, `model`
 - Member B: `train`, `evaluate`, `visualize`, `experiment`
-- The team leader owns `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` and PR review.
+- Thư owns `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` and PR review.
 - **Module applicability rule:** if a module is not needed in this lab, mark it `N/A` in `progress_status.md` with a one-line reason. Do not delete it silently.
 - **Interfaces** (names and signatures are a contract; the test in `tests/test_smoke.py` checks the names):
 
@@ -66,8 +69,8 @@ labs/lab1/
 ├── README.md                # brief report (EN + VI) / báo cáo ngắn
 ├── project_description.md   # Define + Design (feed this to the AI agent)
 ├── progress_status.md       # progress, audit, dated log / tiến độ
-├── main.py                  # runs the whole pipeline (leader)
-├── extended_study.py        # 20-epoch study (leader)
+├── main.py                  # runs the whole pipeline (Thư)
+├── extended_study.py        # 20-epoch study (Thư)
 ├── requirements.txt
 ├── eda/eda.py                  # module: eda
 ├── preprocessing/preprocessing.py# module: preprocessing

@@ -1,8 +1,8 @@
 # Detail plan v0 — Cập nhật tài liệu yêu cầu Lab 1
 
-- **Tác giả:** Thư (leader) duyệt; AI soạn theo thảo luận
-- **Tạo:** 2026-11-13T00:00:00+07:00 | **Cập nhật:** —
-- **Trạng thái:** Leader cho lưu ngày 2026-11-13
+- **Tác giả:** Thư duyệt; AI soạn theo thảo luận
+- **Tạo:** 2026-11-13T04:52:35+07:00 | **Cập nhật:** 2026-11-14T00:34:29+07:00
+- **Trạng thái:** Thư cho lưu ngày 2026-11-13
 - **Nguồn quyết định:** handoff_2026-11-10.md (C1–C13) + các mục chốt trong thảo luận 2026-11-12/13 (O3–O12)
 - **Phạm vi:** chỉ tài liệu trong `Tài liệu/Lab 1 MD/`. Không sửa code, không đổi thư mục Lab-DL trong plan này.
 
@@ -22,7 +22,7 @@
 |---|---|
 | O3 | Kết quả để trong `labs/lab1/outputs/{models,logs,figures,results,demo}` (giống M Lab 1: `outputs/practice_1/model/`; Cookiecutter: `models/`) |
 | O4 | `labs/lab1/data/raw/` (thay `raw_data/`) và `labs/lab1/data/splits/` (thay `artifacts/splits/`), như M `data/lab1/splits/` |
-| O5 | Lab 1 làm một PR, dùng `git mv`; thêm hàm đường dẫn riêng cho lab1, không sửa `artifact_dir` cũ (Lab 2, 3 đang dùng). Chỉ làm khi leader cho phép, sau khi nhánh `docs/lab1-part-a-docs` đã merge |
+| O5 | Lab 1 làm một PR, dùng `git mv`; thêm hàm đường dẫn riêng cho lab1, không sửa `artifact_dir` cũ (Lab 2, 3 đang dùng). Chỉ làm khi Thư cho phép, sau khi nhánh `docs/lab1-part-a-docs` đã merge |
 | O6 | Phân vai người/AI: khoảng 5 dòng trong `RULES_v1.md` |
 | O7 | Giữ nguyên 4 file cũ; thêm file mới `_v1`, mỗi template một file |
 | O8 | md từng module viết theo khuôn C13. `demo` = phase "nạp best checkpoint → dự đoán ảnh test → `outputs/demo/`", code đặt trong `visualize/` |
@@ -60,7 +60,7 @@
 
 Bỏ khỏi gốc lab: `artifacts/`, `raw_data/`, `logbook/`, `extended_study.py`.
 
-**Giai đoạn sau (ngoài plan này, chờ leader cho phép):** đổi thư mục và code Lab-DL theo O5; viết lại `labs/lab1/docs/*.md` theo khuôn §3.
+**Giai đoạn sau (ngoài plan này, chờ Thư cho phép):** đổi thư mục và code Lab-DL theo O5; viết lại `labs/lab1/docs/*.md` theo khuôn §3.
 
 ## 3. Khuôn desc (khoảng 20 dòng, C13)
 
@@ -154,6 +154,6 @@ Mỗi lần chạy sinh 3 file trong `outputs/logs/`: `<YYYYMMDD_HHMMSS>_<run>.l
 
 ## 9. Bước tiếp theo
 
-1. Leader duyệt plan → AI lưu các file ở §2, mỗi file một lượt, leader đọc từng file.
-2. Cập nhật handoff khi leader nói "ghi handoff".
-3. Giai đoạn Lab-DL: chỉ làm khi leader cho phép (O5).
+1. Thư duyệt plan → AI lưu các file ở §2, mỗi file một lượt, Thư đọc từng file.
+2. Cập nhật handoff khi Thư nói "ghi handoff".
+3. Giai đoạn Lab-DL: chỉ làm khi Thư cho phép (O5).

@@ -1,7 +1,7 @@
 # features — Chuẩn hoá và DataLoader (v1)
 
-- **Created**: 2026-11-13T23:36:00+07:00
-- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Created**: 2026-11-04T14:49:03+07:00
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done
 
@@ -14,7 +14,7 @@ Features — mean/std từ train, transform, Dataset, DataLoader
 Đề P1: "transforms" và đưa ảnh vào mạng theo batch. Module nhận mảng ảnh từ `preprocessing`,
 trả 3 DataLoader cho `train`, `evaluate`, `visualize`.
 
-## Goals / Purpose  [đề xuất]
+## Goals / Purpose
 - `compute_mean_std` trên ảnh train trả mean 0,2859, std 0,3530 (thang 0–1)
 - `make_loaders` trả 3 loader: train 54.000 / val 6.000 / test 10.000; batch `[64,1,28,28]` float32, nhãn int64
 - Chỉ loader train được shuffle; val và test giữ thứ tự cố định
@@ -55,7 +55,7 @@ images, labels, train_idx, val_idx → compute_mean_std(train) → build_transfo
   - Luôn truyền ảnh train (`images[train_idx]`) vào `compute_mean_std` (`features.md` cũ; `main.py:94`)
   - `std == 0` thì `ValueError` (`features/features.py:49`)
 
-## Success criteria  [đề xuất]
+## Success criteria
 - **Test:** `python -m pytest labs/lab1/tests/test_features.py -q` đạt (6 test)
 - **Smoke run:** 1 batch train thật có shape `[64,1,28,28]` float32, nhãn int64 trong 0–9
 - **Normal run:** mean 0,2859, std 0,3530; số mẫu 54.000 / 6.000 / 10.000

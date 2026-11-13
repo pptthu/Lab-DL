@@ -1,5 +1,8 @@
 # Lab 1: Phân loại Fashion-MNIST bằng MLP (PyTorch)
 
+- **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T00:36:56+07:00 (pptthu)
+
 > Kết quả trong file này là lần chạy ngày 04/11/2026 theo yêu cầu cũ (5 epoch, 7 cấu hình × 5 seed). Nhóm sẽ chạy lại theo desc mới [`docs/lab1_description_v1.md`](docs/lab1_description_v1.md) (5 cấu hình, seed 42, tối đa 30 epoch + early stopping) và cập nhật lại báo cáo này.
 
 ## Báo cáo ngắn
@@ -108,14 +111,14 @@ labs/lab1/
 ├── notebook/lab1_presentation.ipynb    # notebook trình bày
 ├── raw_data/                # file dữ liệu (KHÔNG commit)
 ├── artifacts/               # splits/ (có commit) | models, figures, logs, runs (KHÔNG commit)
-├── docs/                    # tài liệu Lab 1, đọc docs/00_README_v1.md trước
+├── docs/                    # tài liệu Lab 1, đọc docs/00_README_v2.md trước
 │   ├── lab1_description_v1.md   # desc hiện hành
 │   ├── rules/  templates/  plans/
 │   ├── phases/              # desc từng module (<module>_v1.md)
 │   └── experiments/         # ghi chép thí nghiệm (trước là logbook/)
 └── tests/                   # test hợp đồng interface + test từng module (dữ liệu giả)
 ```
-Cây thư mục đích sau khi đổi `artifacts/`, `raw_data/` sang `outputs/`, `data/`: xem [`docs/rules/FOLDER_STRUCTURE_v1.md`](docs/rules/FOLDER_STRUCTURE_v1.md).
+Cây thư mục đích sau khi đổi `artifacts/`, `raw_data/` sang `outputs/`, `data/`: xem [`docs/rules/FOLDER_STRUCTURE_v2.md`](docs/rules/FOLDER_STRUCTURE_v2.md).
 
 ## Desc từng module
 Mỗi module có một file trong [`docs/phases/`](docs/phases/): `eda_v1.md`, `preprocessing_v1.md`, `features_v1.md`, `model_v1.md`, `train_v1.md`, `evaluate_v1.md`, `visualize_v1.md`, `experiment_v1.md`, `demo_v1.md`.

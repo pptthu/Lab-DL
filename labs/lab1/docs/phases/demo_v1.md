@@ -1,7 +1,7 @@
 # demo — Nạp model đã lưu và dự đoán ảnh test (v1)
 
-- **Created**: 2026-11-13T23:36:00+07:00
-- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Created**: 2026-11-04T14:49:03+07:00
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: To Do
 
@@ -15,7 +15,7 @@ Demo — nạp `_best.pt` không cần train lại, dự đoán ảnh test, lưu
 mà không chạy lại pipeline (O8: demo = nạp best checkpoint → dự đoán ảnh test → `outputs/demo/`, code đặt trong `visualize/`).
 Bản cũ (`demo.md`) chỉ mô tả cách chạy `main.py`, notebook, README; chưa có bước demo riêng.
 
-## Goals / Purpose  [đề xuất]
+## Goals / Purpose
 - Một lệnh nạp `_best.pt` của cấu hình đã chọn, dự đoán N ảnh test, không gọi `train_model`
 - Lưu `outputs/demo/<ts>_predictions.png` (ảnh, nhãn dự đoán, nhãn thật, xác suất) và `<ts>_predictions.csv` (chỉ số ảnh, nhãn thật, nhãn dự đoán, xác suất)
 - Không làm:
@@ -53,7 +53,7 @@ _config.json → build_model → load_checkpoint(_best.pt) → test_loader (16 �
   - Windows + đường dẫn tiếng Việt: đặt `PYTHONIOENCODING=utf-8` khi chạy script (`demo.md` cũ)
   - Thời gian chạy `main.py` dao động mạnh giữa các lần (19 phút và 2 giờ 3 phút cho cùng kết quả) (`demo.md` cũ)
 
-## Success criteria  [đề xuất]
+## Success criteria
 - **Test:** test mới trong `labs/lab1/tests/test_visualize.py`: demo với model giả ghi đủ PNG và CSV 16 dòng vào `tmp_path`
 - **Smoke run:** demo trên `_best.pt` của smoke chạy hết, có PNG và CSV trong `outputs/_smoke/`
 - **Normal run:** `outputs/demo/` có PNG và CSV 16 dòng; nhãn trong CSV khớp nhãn thật của 16 ảnh test đầu

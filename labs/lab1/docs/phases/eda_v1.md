@@ -1,7 +1,7 @@
 # eda — Khám phá dữ liệu (v1)
 
-- **Created**: 2026-11-13T23:36:00+07:00
-- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Created**: 2026-11-04T14:49:03+07:00
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done (chờ đổi đường dẫn ở giai đoạn O5)
 
@@ -14,7 +14,7 @@ EDA — kiểm tra file train, phân bố lớp, ảnh mẫu
 Đề P1: "load Fashion-MNIST". Trước khi train cần biết dữ liệu có đúng định dạng, đủ lớp, cân bằng không.
 EDA chỉ chạy trên file train để không đưa thông tin của test vào quyết định.
 
-## Goals / Purpose  [đề xuất]
+## Goals / Purpose
 - `run_eda` trả dict: `n_rows`, `class_counts`, `pixel_min`, `pixel_max`, `n_missing`, `n_duplicates`
 - Lưu 2 hình: `class_counts.png` (số ảnh mỗi lớp) và `sample_grid.png` (ảnh mẫu)
 - Không làm:
@@ -50,7 +50,7 @@ fashion-mnist_train.csv → _check_columns → thống kê (dict)
   - Sai cột thì `ValueError` (`eda/eda.py:66`, `:69`)
   - CSV Kaggle cũ có 43 dòng trùng; file chính thức có 0 (`progress_status.md:42`)
 
-## Success criteria  [đề xuất]
+## Success criteria
 - **Test:** `python -m pytest labs/lab1/tests/test_eda.py -q` đạt (3 test, CSV giả)
 - **Smoke run:** `run_eda` trên CSV train thật ghi đủ 2 PNG vào thư mục tạm
 - **Normal run:** `n_rows` = 60000, 6000 ảnh mỗi lớp, pixel 0–255, `n_missing` = 0, `n_duplicates` = 0

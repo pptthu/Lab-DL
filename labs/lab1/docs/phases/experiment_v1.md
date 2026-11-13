@@ -1,7 +1,7 @@
 # experiment — So sánh 5 cấu hình (v1)
 
-- **Created**: 2026-11-13T23:36:00+07:00
-- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Created**: 2026-11-04T14:49:03+07:00
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -14,14 +14,14 @@ Experiment — chạy 5 cấu hình MLP, bảng so sánh trên val, chọn cấu
 Đề P1: "thử network/hyperparameter khác nhau". Desc lab chốt 5 cấu hình × seed 42 (O10).
 Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 — đề không yêu cầu, nên cắt gọn.
 
-## Goals / Purpose  [đề xuất]
+## Goals / Purpose
 - Chạy đủ 5 cấu hình của desc lab, seed 42, mỗi cấu hình qua `train` với quy tắc dừng chung
 - Ghi một bảng so sánh 5 dòng: tên, số param, `best_epoch`, `stopped_epoch`, `val_loss`, `val_acc`, `train_acc`, `train_acc − val_acc`, thời gian train
 - Chọn một cấu hình theo `val_acc` tại `best_epoch`, ghi lý do chọn
 - Không làm:
   - Đánh giá trên test — việc của `evaluate`, chạy một lần sau khi chọn
   - Đa seed, p-value, Holm, CI95 — đã bỏ (O10)
-  - Thêm cấu hình ngoài 5 cấu hình (vd `sgd_same_lr`, `weight_decay_1e-4` của bản cũ) — leader chưa duyệt
+  - Thêm cấu hình ngoài 5 cấu hình (vd `sgd_same_lr`, `weight_decay_1e-4` của bản cũ) — Thư chưa duyệt
   - Optuna hay tìm siêu tham số tự động — ngoài đề
 
 ## Input / Output
@@ -59,7 +59,7 @@ Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 —
   - Một cấu hình thua baseline với 1 seed chưa chứng minh nó kém hơn — chỉ ghi nhận, không kết luận chắc (`experiment.md` cũ: "5 seeds and one split…")
   - Thời gian chạy dao động mạnh: `softmax_regression` seed 3407 từng mất 5.445 giây (`progress_status.md:52`)
 
-## Success criteria  [đề xuất]
+## Success criteria
 - **Test:** `python -m pytest labs/lab1/tests/test_experiment.py -q` đạt, có test bảng so sánh đủ cột mới
 - **Smoke run:** 5 cấu hình chạy hết; bảng so sánh có đúng 5 dòng; mỗi cấu hình có 3 file log trong `outputs/_smoke/`
 - **Normal run:** bảng so sánh 5 dòng đủ cột; baseline có `val_acc` cao hơn `softmax_regression` (desc lab); cấu hình được chọn có ghi lý do

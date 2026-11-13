@@ -1,14 +1,14 @@
 # Detail plan v1 — Cập nhật tài liệu yêu cầu Lab 1
 
-- **Tác giả:** Thư (leader) duyệt; AI soạn theo thảo luận
-- **Tạo:** 2026-11-13T00:00:00+07:00 | **Cập nhật:** 2026-11-13 (v1)
-- **Trạng thái:** Leader yêu cầu sửa từ v0 ngày 2026-11-13; bản đang dùng
+- **Tác giả:** Thư duyệt; AI soạn theo thảo luận
+- **Tạo:** 2026-11-13T05:06:45+07:00 | **Cập nhật:** 2026-11-14T00:34:29+07:00 (v1)
+- **Trạng thái:** Thư yêu cầu sửa từ v0 ngày 2026-11-13; bản đang dùng
 - **Nguồn quyết định:** handoff_2026-11-10.md (C1–C13) + các mục chốt trong thảo luận 2026-11-12/13 (O3–O12)
 - **Phạm vi:** chỉ tài liệu md trong `Lab-DL/labs/lab1/docs/`. Không sửa code, không đổi thư mục code/dữ liệu/kết quả của Lab-DL trong plan này.
 
 ### Thay đổi so với v0
 
-- Nơi lưu: mọi file md mới nằm trong `labs/lab1/docs/` (repo Lab-DL), **không** lưu vào `Tài liệu/Lab 1 MD/` nữa. Lý do (leader): các file này thuộc về Lab 1.
+- Nơi lưu: mọi file md mới nằm trong `labs/lab1/docs/` (repo Lab-DL), **không** lưu vào `Tài liệu/Lab 1 MD/` nữa. Lý do (Thư): các file này thuộc về Lab 1.
 - `labs/lab1/docs/` được chia thư mục con (§2).
 - Vì các file nằm trong repo, chúng đi chung PR cuối cùng.
 
@@ -28,7 +28,7 @@
 |---|---|
 | O3 | Kết quả để trong `labs/lab1/outputs/{models,logs,figures,results,demo}` (giống M Lab 1: `outputs/practice_1/model/`; Cookiecutter: `models/`) |
 | O4 | `labs/lab1/data/raw/` (thay `raw_data/`) và `labs/lab1/data/splits/` (thay `artifacts/splits/`), như M `data/lab1/splits/` |
-| O5 | Lab 1 làm một PR, dùng `git mv`; thêm hàm đường dẫn riêng cho lab1, không sửa `artifact_dir` cũ (Lab 2, 3 đang dùng). Chỉ làm khi leader cho phép, sau khi nhánh `docs/lab1-part-a-docs` đã merge |
+| O5 | Lab 1 làm một PR, dùng `git mv`; thêm hàm đường dẫn riêng cho lab1, không sửa `artifact_dir` cũ (Lab 2, 3 đang dùng). Chỉ làm khi Thư cho phép, sau khi nhánh `docs/lab1-part-a-docs` đã merge |
 | O6 | Phân vai người/AI: khoảng 5 dòng trong `docs/rules/RULES_v1.md` |
 | O7 | Mỗi template một file, có version `_vN`. 4 file cũ trong `Tài liệu/Lab 1 MD/` (ngoài repo) giữ nguyên, không dùng làm nơi lưu nữa |
 | O8 | md từng module viết theo khuôn C13. `demo` = phase "nạp best checkpoint → dự đoán ảnh test → `outputs/demo/`", code đặt trong `visualize/` |
@@ -71,7 +71,7 @@
 | `lab1_description_v1.md` | Desc thật của Lab 1 theo khuôn §3 (§7) | C5, C12, N3, N5, O10, O11 |
 | `00_README_v1.md` | Mục lục docs; quy tắc version: dùng bản số lớn nhất, bản cũ giữ nguyên; chỉ rõ `lab1_description_v1.md` là desc hiện hành | O7, cô #9 |
 
-Thứ tự tạo: RULES → FOLDER_STRUCTURE → DESC_TEMPLATE → LOG_TEMPLATE → MODEL_CARD_TEMPLATE → lab1_description → 00_README. Mỗi lượt một file; AI in nháp ra chat, chỉ ghi khi leader nói "lưu".
+Thứ tự tạo: RULES → FOLDER_STRUCTURE → DESC_TEMPLATE → LOG_TEMPLATE → MODEL_CARD_TEMPLATE → lab1_description → 00_README. Mỗi lượt một file; AI in nháp ra chat, chỉ ghi khi Thư nói "lưu".
 
 **Không đụng trong plan này:**
 - 9 file module hiện có ở gốc `docs/` (`demo.md`, `eda.md`, …): giữ nguyên chỗ cũ; giai đoạn sau viết lại theo khuôn C13 và chuyển vào `phases/` bằng `git mv`.
@@ -185,7 +185,7 @@ Model card đã điền lưu ở `docs/models/<tên>_v<N>.md`.
 
 ## 9. Bước tiếp theo
 
-1. AI tạo 7 file ở §2, mỗi lượt một file; leader đọc và nói "lưu".
-2. Cập nhật handoff khi leader nói "ghi handoff".
-3. Git: làm trên nhánh `docs/lab1-progress-kaggle-note` (đã có 1 commit `progress_status.md`). Xong 7 file thì mở **một PR** gồm: commit progress, `docs/plans/` (v0, v1) và 7 file mới. Chỉ push/PR khi leader bảo.
-4. Giai đoạn Lab-DL (thư mục, code, viết lại md module vào `phases/`): chỉ làm khi leader cho phép (O5).
+1. AI tạo 7 file ở §2, mỗi lượt một file; Thư đọc và nói "lưu".
+2. Cập nhật handoff khi Thư nói "ghi handoff".
+3. Git: làm trên nhánh `docs/lab1-progress-kaggle-note` (đã có 1 commit `progress_status.md`). Xong 7 file thì mở **một PR** gồm: commit progress, `docs/plans/` (v0, v1) và 7 file mới. Chỉ push/PR khi Thư bảo.
+4. Giai đoạn Lab-DL (thư mục, code, viết lại md module vào `phases/`): chỉ làm khi Thư cho phép (O5).
