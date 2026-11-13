@@ -1,57 +1,70 @@
-# Lab 1 / preprocessing: guide for AI agents
+# preprocessing — Tải dữ liệu và chia train/val (v1)
 
-## For AI agents (read first)
-
-| Field | Value |
-|---|---|
-| Module | `labs/lab1/preprocessing/preprocessing.py`, plus the script `labs/lab1/preprocessing/download_official.py` |
-| Owner | Member A (Toàn), assigned by the team leader |
-| Status | done in `progress_status.md` (Run on the official data, 2026-11-02 and 2026-11-04) |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `labs/lab1/preprocessing/preprocessing.py`, `labs/lab1/preprocessing/download_official.py`, `labs/lab1/tests/test_preprocessing.py`, this guide |
-| Files you must not edit | other modules, raw data, other owners' notebook cells. `artifacts/splits/train_val_split.json` only on purpose, with the team leader (every reported number depends on it) |
-| Agreed signatures | `load_csv(csv_path: str) -> tuple`; `make_split(labels, val_ratio: float = 0.1, seed: int = 42) -> tuple`; `save_split(train_idx, val_idx, path: str) -> None`; `load_split(path: str) -> tuple` (same as `project_description.md`) |
-| Depends on / used by | pandas, numpy, torchvision (download script) / `features`, `main.py`, `extended_study.py`, notebook |
-| Prohibited | taking validation from the test file; changing `val_ratio` or `seed` without the team leader; committing CSV or IDX files; downloads inside unit tests |
-| Checks | Unit: `python -m pytest labs/lab1/tests/test_preprocessing.py -q` (fake CSV). Smoke: regenerate the split and compare it with the committed file |
-| Done when | unit tests pass; output recorded in `progress_status.md`; this guide updated |
-
-## What the brief requires
-
-- Brief requirement: prepare the data and split it for training, validation and testing.
-- Team choices: official Zalando files (https://github.com/zalandoresearch/fashion-mnist) converted to CSV; stratified 90/10 train/validation split of the 60,000 training images, seed 42; the official 10,000 test images are the test set.
-
-## How the module works (current code)
-
-- `download_official.py`: `torchvision.datasets.FashionMNIST(download=True)` fetches the 4 IDX files and checks their MD5; the script writes `fashion-mnist_train.csv` and `fashion-mnist_test.csv` (`label`, `pixel1`..`pixel784`) into `raw_data_dir("lab1")` and reads them back with `load_csv` to compare every pixel and label.
-- `load_csv`: checks the `label` column and 784 pixel columns, checks the range 0-255 **before** casting to `uint8`, returns images `[N,28,28]` uint8 and labels `[N]` int64.
-- `make_split`: per class, a seeded permutation; `val_ratio` of each class goes to validation, so validation has 600 images per class.
-- `save_split` / `load_split`: JSON with `train_idx` and `val_idx`.
-
-## Inputs, outputs and pitfalls
-
-- Never write data paths by hand; use `raw_data_dir("lab1")` from `shared/paths.py`.
-- On Windows with a Vietnamese path, set `PYTHONIOENCODING=utf-8` before running the scripts, otherwise the last `print` can fail with `UnicodeEncodeError` (the files are written before it).
-
-## How to verify
-
-| Type | Command | Expected |
-|---|---|---|
-| Unit test | `python -m pytest labs/lab1/tests/test_preprocessing.py -q` | all pass |
-| Smoke test | `python -m labs.lab1.preprocessing.download_official` | train 60,000 rows (6,000 per class), test 10,000 rows (1,000 per class); MD5 train CSV `8ff2cced1c624159b21dac4f735b4215`, test CSV `78e18be2098f1256a07ce6f91a4d436e` (Run, 2026-11-04) |
-| Smoke test | regenerate `make_split(labels, 0.1, 42)` from the new CSV and compare with `train_val_split.json` | identical, 54,000 / 6,000 (Verified, 2026-11-04) |
-
-## Open questions / limitations
-
-- One split only; results across splits are not measured.
+- **Created**: 2026-11-13T23:36:00+07:00
+- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Người phụ trách**: Member A (Toàn)
+- **Status**: Done (chờ đổi đường dẫn ở giai đoạn O5)
 
 ---
 
-**Tiếng Việt**
+## Name
+Preprocessing — tải Fashion-MNIST chính thức, đọc CSV, chia train/val cố định
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member A (Toàn), do nhóm trưởng giao. Được sửa `preprocessing.py`, `download_official.py`, `tests/test_preprocessing.py`, file này. Chỉ sửa `train_val_split.json` khi có chủ đích và đã hỏi nhóm trưởng (mọi con số phụ thuộc vào nó). Chữ ký 4 hàm khớp `project_description.md`. Cấm lấy val từ file test, cấm đổi `val_ratio` hay `seed` khi chưa hỏi, cấm commit data, cấm tải trong unit test.
-- **Đề:** chuẩn bị và chia dữ liệu. Nhóm chọn file gốc Zalando, chia phân tầng 90/10 với seed 42; test là 10.000 ảnh test chính thức.
-- **Cách hoạt động:** `download_official.py` tải 4 file IDX (tự kiểm MD5), ghi ra CSV và đọc lại để so từng pixel; `load_csv` kiểm khoảng 0-255 trước khi ép kiểu; `make_split` chia theo từng lớp (600 ảnh val mỗi lớp).
-- **Lưu ý:** dùng `raw_data_dir("lab1")`; trên Windows có đường dẫn tiếng Việt thì đặt `PYTHONIOENCODING=utf-8`.
-- **Kiểm chứng:** tạo lại split từ CSV mới ra đúng y file đã commit, 54.000 / 6.000 (đã kiểm, 04/11/2026).
+## Background
+Đề P1: "load FashionMNIST". Nhóm dùng file chính thức của Zalando (kiểm MD5) thay cho CSV Kaggle.
+Val phải tách từ train, test giữ nguyên 10.000 ảnh để đánh giá cuối.
+
+## Goals / Purpose  [đề xuất]
+- Có 2 file CSV: train 60.000 dòng (6.000 mỗi lớp), test 10.000 dòng (1.000 mỗi lớp), cột `label` + `pixel1..pixel784`
+- `load_csv` trả ảnh `[N,28,28]` uint8 và nhãn `[N]` int64
+- File split `train_val_split.json` cố định: 54.000 train / 6.000 val (600 mỗi lớp), seed 42
+- Không làm:
+  - Lấy val từ file test — test chỉ dùng ở `evaluate`
+  - Chuẩn hoá ảnh — việc của `features`
+  - Đổi `val_ratio` hay `seed` — mọi số liệu đã báo cáo phụ thuộc vào file split này
+  - Commit file CSV hay IDX lên git
+
+## Input / Output
+- **Input:** 4 file IDX gốc tải bằng `torchvision.datasets.FashionMNIST(download=True)`
+- **Output:** `fashion-mnist_train.csv`, `fashion-mnist_test.csv`; `train_val_split.json` (`train_idx`, `val_idx`)
+  - Hiện code ghi CSV vào `raw_data/` (`shared/paths.py:16-18`), split vào `artifacts/splits/train_val_split.json` (`main.py:67`, `:83`). Sẽ chuyển sang `data/raw/`, `data/splits/` ở giai đoạn O5.
+
+## How to do it (general plan)
+1. Chạy `python -m labs.lab1.preprocessing.download_official` để tải và ghi 2 CSV, script tự đọc lại để so từng pixel
+2. `load_csv` đọc CSV, kiểm cột và miền giá trị 0–255
+3. `make_split(labels, val_ratio=0.1, seed=42)` chia phân tầng theo lớp
+4. `save_split` ghi JSON; `main.py` dùng lại file đã commit nếu có (`main.py:84-88`)
+5. Smoke run: tạo lại split từ CSV và so với file đã commit
+6. Normal run trong pipeline `main.py`
+
+## Pipeline
+```
+torchvision FashionMNIST (MD5) → download_official → 2 CSV
+  → load_csv → make_split (phân tầng, seed 42) → save_split → train_val_split.json
+  → features
+```
+
+## Detailed plan
+- **Chia phân tầng 90/10:** mỗi lớp lấy 10% làm val — val cân bằng 600 ảnh mỗi lớp
+- **Seed 42 và file split commit:** để mọi người, mọi lần chạy dùng đúng một cách chia
+- **Hàm hiện có:**
+  - `load_csv(csv_path: str) -> tuple` (`preprocessing/preprocessing.py:25`)
+  - `make_split(labels, val_ratio: float = 0.1, seed: int = 42) -> tuple` (`:50`)
+  - `save_split(train_idx, val_idx, path: str) -> None` (`:77`); `load_split(path: str) -> tuple` (`:99`)
+- **Chỗ code chưa khớp plan:** chỉ còn đường dẫn, chờ O5
+- **Gotchas:**
+  - Kiểm miền 0–255 **trước** khi ép kiểu `uint8`, nếu không giá trị sai bị cắt im lặng (`preprocessing/preprocessing.py:44`; `preprocessing.md` cũ)
+  - Windows + đường dẫn có tiếng Việt: đặt `PYTHONIOENCODING=utf-8`, nếu không lệnh `print` cuối có thể lỗi `UnicodeEncodeError` (file vẫn đã ghi) (`preprocessing.md` cũ)
+  - Không tự viết đường dẫn dữ liệu, dùng `raw_data_dir("lab1")` (`preprocessing.md` cũ)
+  - Chỉ có một cách chia; kết quả trên cách chia khác chưa đo (`preprocessing.md` cũ)
+
+## Success criteria  [đề xuất]
+- **Test:** `python -m pytest labs/lab1/tests/test_preprocessing.py -q` đạt (6 test, CSV giả, không tải mạng)
+- **Smoke run:** `make_split(labels, 0.1, 42)` trên CSV vừa tạo cho ra đúng `train_val_split.json` đã commit
+- **Normal run:** MD5 CSV train `8ff2cced1c624159b21dac4f735b4215`, test `78e18be2098f1256a07ce6f91a4d436e`; split 54.000 / 6.000
+
+## Links
+- Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
+- Module liên quan: [eda_v1.md](eda_v1.md), [features_v1.md](features_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (tải và chia lại 2026-11-02, dòng 39–41, 49)
+- Code: `labs/lab1/preprocessing/preprocessing.py`, `labs/lab1/preprocessing/download_official.py` | Test: `labs/lab1/tests/test_preprocessing.py`

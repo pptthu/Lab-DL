@@ -1,52 +1,68 @@
-# Lab 1 / model: guide for AI agents
+# model — Kiến trúc MLP (v1)
 
-## For AI agents (read first)
-
-| Field | Value |
-|---|---|
-| Module | `labs/lab1/model/model.py` |
-| Owner | Member A (Toàn), assigned by the team leader |
-| Status | done in `progress_status.md` (Smoke-tested) |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `labs/lab1/model/model.py`, `labs/lab1/tests/test_model.py`, this guide |
-| Files you must not edit | other modules, saved checkpoints, other owners' notebook cells |
-| Agreed signatures | `class MLP(hidden_sizes=(256, 128), num_classes: int = 10, dropout: float = 0.0)`, `forward(x [B,1,28,28]) -> logits [B,10]`; `count_parameters(model) -> int` (same as `project_description.md`) |
-| Depends on / used by | torch / `train`, `evaluate`, `experiment.build_model`, `main.py`, notebook |
-| Prohibited | adding softmax in `forward` (CrossEntropyLoss expects logits); adding a CNN or other architectures (team decision 2026-11-04: Lab 1 is MLP only); changing the default sizes without the team leader (the saved baseline depends on them) |
-| Checks | Unit: `python -m pytest labs/lab1/tests/test_model.py -q` (shapes, logits, parameter count, dropout, overfit one batch) |
-| Done when | unit tests pass; this guide updated |
-
-## What the brief requires
-
-- Brief requirement: build a multilayer perceptron for Fashion-MNIST in PyTorch.
-- Team choices: baseline 784 -> 256 -> 128 -> 10 with ReLU; optional dropout after each hidden layer; `hidden_sizes=()` gives softmax regression (no hidden layer), used as the linear reference in `experiment`.
-- Not in scope (team decision): CNN.
-
-## How the module works (current code)
-
-- Flattens the input to 784 values, then `Linear` + `ReLU` (+ `Dropout` if `dropout > 0`) per hidden size, then a final `Linear` to 10 logits.
-- `count_parameters` counts trainable parameters only (`requires_grad=True`).
-
-## Inputs, outputs and pitfalls
-
-- Baseline has 235,146 trainable parameters; `larger_network` (512-256-128) is used only in `experiment`.
-
-## How to verify
-
-| Type | Command | Expected |
-|---|---|---|
-| Unit test | `python -m pytest labs/lab1/tests/test_model.py -q` | all pass |
-| Smoke test | `python -c "from labs.lab1.model.model import MLP, count_parameters; print(count_parameters(MLP()))"` | `235146` |
-
-## Open questions / limitations
-
-- An MLP ignores the 2-D layout of the image; this is a known limit of the model, not a task.
+- **Created**: 2026-11-13T23:36:00+07:00
+- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Người phụ trách**: Member A (Toàn)
+- **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
 ---
 
-**Tiếng Việt**
+## Name
+Model — kiến trúc MLP, model builder, sơ đồ kiến trúc, model card
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member A (Toàn), do nhóm trưởng giao. Được sửa `model.py`, `tests/test_model.py`, file này. Chữ ký `MLP(hidden_sizes=(256,128), num_classes=10, dropout=0.0)` trả logits `[B,10]`, `count_parameters(model)`, khớp `project_description.md`. Cấm thêm softmax trong `forward`, cấm thêm CNN hay kiến trúc khác (nhóm đã chốt ngày 04/11: Lab 1 chỉ làm MLP), cấm đổi kích thước mặc định khi chưa hỏi nhóm trưởng.
-- **Đề:** xây MLP cho Fashion-MNIST bằng PyTorch. Nhóm chọn 784 -> 256 -> 128 -> 10, ReLU, dropout tùy chọn; `hidden_sizes=()` là softmax regression để so sánh.
-- **Kiểm chứng:** baseline có 235.146 tham số huấn luyện được.
+## Background
+Đề P1: "build NN" cho Fashion-MNIST bằng PyTorch. Nhóm chốt chỉ dùng MLP (2026-11-04).
+Cô yêu cầu model phải vẽ kiến trúc và có model card ghi rõ xây từ đâu, số lớp, số param, I/O, checkpoint, người train.
+Code model đã có; còn thiếu sơ đồ kiến trúc và model card.
+
+## Goals / Purpose  [đề xuất]
+- `MLP(hidden_sizes, num_classes, dropout)` tạo được đủ 5 kiến trúc của desc lab; `forward` nhận `[B,1,28,28]`, trả logits `[B,10]`
+- `count_parameters` trả đúng số param: baseline 235,146; larger_network 567,434; softmax_regression 7,850
+- Có sơ đồ kiến trúc baseline dạng PNG và model card `docs/models/mlp_baseline_v1.md` theo `templates/MODEL_CARD_TEMPLATE_v1.md`
+- Không làm:
+  - CNN hay kiến trúc khác — nhóm chốt MLP only (2026-11-04)
+  - Pretrained / backbone có sẵn — model tự viết, khởi tạo ngẫu nhiên theo seed
+  - Softmax trong `forward` — `CrossEntropyLoss` ở `train` cần logits
+  - Chọn kiến trúc tốt nhất — việc của `experiment`
+
+## Input / Output
+- **Input:** batch ảnh `[B,1,28,28]` float32 đã chuẩn hoá từ [features_v1.md](features_v1.md); config (`hidden_sizes`, `dropout`) từ [experiment_v1.md](experiment_v1.md)
+- **Output:** đối tượng `nn.Module` chưa train; logits `[B,10]`; sơ đồ `<model>_architecture.png`; model card
+  - Hiện chưa có sơ đồ và model card. Sơ đồ sẽ lưu ở `outputs/figures/` (giai đoạn O5), model card ở `docs/models/`.
+
+## How to do it (general plan)
+1. Kiểm `MLP` với 3 bộ `hidden_sizes`: `(256,128)`, `(512,256,128)`, `()`; in số param từng bộ
+2. Vẽ sơ đồ kiến trúc baseline (784 → 256 → 128 → 10, ReLU, dropout nếu có), lưu PNG [đề xuất: hàm vẽ đặt trong `visualize`]
+3. Điền phần Initial model của model card baseline
+4. Smoke run cùng `train` (1 epoch, 2 batch) → `_best.pt` nạp lại vào `MLP()` mới, dự đoán ra `[B,10]`
+5. Sau normal run: điền phần Trained model (người train, ngày xong, log, checkpoint, val_acc, test_acc)
+
+## Pipeline
+```
+config (experiment) → build_model(cfg) → MLP(hidden_sizes, dropout)
+  → Flatten [B,784] → [Linear → ReLU (→ Dropout)] × số hidden → Linear → logits [B,10]
+→ train / evaluate / visualize
+```
+
+## Detailed plan
+- **Kiến trúc baseline:** 784 → 256 → 128 → 10, ReLU — 3 lớp Linear (2 hidden + 1 output)
+- **5 kiến trúc trong desc lab:** baseline (256,128); softmax_regression `()` — 1 lớp Linear, làm mốc tuyến tính; larger_network (512,256,128) — 4 lớp Linear; `sgd_lr_0.01` và `dropout_0.2` dùng kiến trúc baseline (dropout 0.2 sau mỗi ReLU)
+- **Model builder (xây từ đâu):** tự viết bằng `nn.Sequential`, không backbone, không pretrained. `experiment.build_model(cfg)` đọc `hidden_sizes`, `dropout` từ config rồi gọi `MLP` (`experiment/experiment.py:26-40`)
+- **Hàm hiện có:** `MLP(hidden_sizes=(256, 128), num_classes: int = 10, dropout: float = 0.0)` (`model/model.py:28`); `forward(x)` (`:45`); `count_parameters(model) -> int` (`:49`)
+- **Số param:** cột `n_params` trong `artifacts/runs/experiment_results.csv` (235146 / 567434 / 7850)
+- **Chỗ code chưa khớp plan:** chưa có code vẽ sơ đồ kiến trúc; chưa có model card
+- **Gotchas:**
+  - MLP bỏ qua cấu trúc 2 chiều của ảnh — giới hạn của model, không phải lỗi (`model.md` cũ)
+  - Đổi kích thước mặc định của `MLP` thì checkpoint cũ không nạp được nữa (`model.md` cũ, mục Prohibited)
+  - `count_parameters` chỉ đếm param có `requires_grad=True` (`model/model.py:59`)
+
+## Success criteria  [đề xuất]
+- **Test:** `python -m pytest labs/lab1/tests/test_model.py -q` đạt (6 test: shape, logits, số param, dropout, overfit 1 batch)
+- **Smoke run:** `count_parameters(MLP())` = 235146; `_best.pt` của smoke run nạp lại được vào `MLP()` mới
+- **Normal run:** có file sơ đồ kiến trúc baseline; model card baseline điền đủ cả Initial và Trained model, số liệu có đường dẫn log
+
+## Links
+- Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md) | Khuôn model card: [../templates/MODEL_CARD_TEMPLATE_v1.md](../templates/MODEL_CARD_TEMPLATE_v1.md)
+- Module liên quan: [train_v1.md](train_v1.md), [experiment_v1.md](experiment_v1.md), [visualize_v1.md](visualize_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (MLP forward trên batch thật: logits `[64,10]`, dòng 89 — lần chạy cũ trên CSV Kaggle)
+- Code: `labs/lab1/model/model.py` | Test: `labs/lab1/tests/test_model.py`

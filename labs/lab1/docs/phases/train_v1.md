@@ -1,54 +1,76 @@
-# Lab 1 / train: guide for AI agents
+# train — Huấn luyện MLP (v1)
 
-## For AI agents (read first)
-
-| Field | Value |
-|---|---|
-| Module | `labs/lab1/train/train.py` |
-| Owner | Member B (Thư), assigned by the team leader |
-| Status | done in `progress_status.md` (Run on the official data, 2026-11-04) |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `labs/lab1/train/train.py`, `labs/lab1/tests/test_train.py`, this guide |
-| Files you must not edit | Member A's modules, raw data, committed split file, other owners' notebook cells |
-| Agreed signatures | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, optimizer_name: str = 'adam', weight_decay: float = 0.0) -> dict`; `save_checkpoint(model, path: str)`; `load_checkpoint(model, path: str, device) -> nn.Module` (same as `project_description.md`) |
-| Depends on / used by | `features` loaders, `model` / `evaluate`, `experiment`, `main.py`, `extended_study.py`, notebook |
-| Prohibited | using the test loader during training or for checkpoint selection; tests writing to the real `artifacts/models/` (use `tmp_path`); starting a full run (35 runs) without the team leader |
-| Checks | Unit: `python -m pytest labs/lab1/tests/test_train.py -q` (fake data, includes overfit-one-batch and save/load). Real run: `main.py`, only when the team agrees |
-| Done when | unit tests pass; real run recorded in `progress_status.md`; this guide updated |
-
-## What the brief requires
-
-- Brief requirement: train the network with a loss and an optimizer, and monitor validation.
-- Team choices: CrossEntropyLoss; Adam lr 1e-3 (SGD with momentum 0.9 only in experiments); 5 epochs; keep the checkpoint with the **lowest validation loss**.
-
-## How the module works (current code)
-
-- Each epoch: `zero_grad`, forward, loss, `backward`, `step` on the training loader; then validation under `torch.no_grad()` in `eval` mode.
-- Losses are weighted by batch size and divided by the number of samples, so the last smaller batch is counted exactly.
-- Returns `history` with `train_loss`, `val_loss`, `val_acc` per epoch; saves the state_dict to `ckpt_path` whenever validation loss improves.
-- `optimizer_name` other than `adam` or `sgd` raises `ValueError`. `load_checkpoint` uses `weights_only=True` and switches to eval mode.
-
-## Inputs, outputs and pitfalls
-
-- The reported validation accuracy must come from the same epoch as the saved checkpoint (lowest val loss), not from `max(val_acc)`; `experiment` does this.
-
-## How to verify
-
-| Type | Command | Expected |
-|---|---|---|
-| Unit test | `python -m pytest labs/lab1/tests/test_train.py -q` | all pass |
-| Real integration run | `python -m labs.lab1.main` | seed 42, best epoch 5: val loss 0.3018, val accuracy 89.05% (Run, 2026-11-04, official data) |
-
-## Open questions / limitations
-
-- CPU time varies a lot between runs on the same laptop (one 5-epoch run took 1.5 hours on 2026-11-04, cause not found); accuracy does not depend on it.
+- **Created**: 2026-11-13T23:24:00+07:00
+- **Last Updated**: 2026-11-13T23:32:00+07:00 (Thư)
+- **Người phụ trách**: Member B (Thư)
+- **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
 ---
 
-**Tiếng Việt**
+## Name
+Training — vòng lặp train, log theo lần chạy, quy tắc dừng
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member B (Thư), do nhóm trưởng giao. Được sửa `train.py`, `tests/test_train.py`, file này. Chữ ký 3 hàm khớp `project_description.md`. Cấm dùng tập test khi train hay khi chọn checkpoint, cấm test ghi vào `artifacts/models/` thật, cấm tự chạy toàn bộ 35 lần khi chưa hỏi nhóm trưởng.
-- **Đề:** huấn luyện mạng với loss và optimizer, theo dõi validation. Nhóm chọn CrossEntropyLoss, Adam lr 1e-3, 5 epoch, giữ checkpoint có **validation loss thấp nhất**.
-- **Cách hoạt động:** vòng lặp chuẩn; loss tính theo trọng số batch; lưu checkpoint mỗi khi val loss giảm; accuracy báo cáo phải lấy đúng epoch của checkpoint.
-- **Kiểm chứng:** seed 42, epoch tốt nhất là 5: val loss 0,3018, val accuracy 89,05% (đã chạy 04/11/2026 trên data chính thức).
+## Background
+Đề P1: định nghĩa loss, optimizer, viết training loop, theo dõi validation, save/load model.
+Module này là vòng lặp train dùng chung cho baseline (`main.py`) và 5 cấu hình (`experiment`).
+Bản cũ chạy cố định 5 epoch, không có file log theo lần chạy; cần sửa theo `templates/LOG_TEMPLATE_v1.md`.
+
+## Goals / Purpose  [đề xuất]
+- `train_model` train một cấu hình tới khi dừng theo quy tắc ở Detailed plan và trả `best_epoch`, `stopped_epoch`, `stop_reason`
+- Mỗi lần chạy sinh đủ 3 file log theo `templates/LOG_TEMPLATE_v1.md`; `_history.csv` có đủ 7 cột, mỗi epoch một dòng
+- Sinh `_best.pt` (val_loss thấp nhất) và `_last.pt`, cả hai nạp lại được bằng `load_checkpoint`
+- Không làm:
+  - Dùng tập test trong lúc train hay khi chọn checkpoint — "loss dùng để đánh giá trong quá trình training" là **val loss**; test chỉ dùng ở `evaluate`
+  - Chạy và so sánh 5 cấu hình — việc của `experiment`
+  - Vẽ loss curve — việc của `visualize`; `train` chỉ ghi `_history.csv`
+  - LR scheduler — log có cột `lr` nhưng lr cố định trong cả lần chạy; đề P1 không yêu cầu
+
+## Input / Output
+- **Input:** `train_loader`, `val_loader` từ [features_v1.md](features_v1.md) (batch `[64,1,28,28]` float32, nhãn int64, 54000 train / 6000 val); model từ [model_v1.md](model_v1.md)
+- **Output:**
+  - Checkpoint `<ts>_<run>_best.pt` (val_loss thấp nhất) và `<ts>_<run>_last.pt`
+  - Log `<ts>_<run>.log`, `<ts>_<run>_history.csv`, `<ts>_<run>_config.json`
+  - Hiện code lưu ở `artifacts/models/mlp_baseline.pt` (`main.py:114`), `artifacts/models/exp_run_<i>.pt` (`experiment/experiment.py:77`), chưa ghi log. Sẽ chuyển sang `outputs/models/`, `outputs/logs/` ở giai đoạn O5.
+
+## How to do it (general plan)
+1. Loss: `nn.CrossEntropyLoss()` trên logits (model không có softmax)
+2. Optimizer: Adam lr 1e-3 cho baseline; SGD momentum 0.9 lr 0.01 cho cấu hình `sgd_lr_0.01`
+3. Mỗi epoch: `model.train()` → zero_grad → forward → loss → backward → step; rồi `model.eval()` + `torch.no_grad()` đo val
+4. Ghi một dòng vào `_history.csv`: `epoch, train_loss, train_acc, val_loss, val_acc, lr, time_s`
+5. Kiểm quy tắc dừng; val_loss tốt hơn thì lưu `_best.pt`; hết vòng lặp lưu `_last.pt`
+6. Smoke run (1 epoch, 2 batch, ghi vào `outputs/_smoke/`) → kiểm log đủ 3 phần, `_best.pt` nạp lại dự đoán được
+7. Normal run baseline → `experiment` chạy 5 cấu hình
+
+## Pipeline
+```
+features.make_loaders + model.MLP → train_model:
+  ghi đầu log (config, seed, kiến trúc, số param)
+  mỗi epoch: train step → val step → ghi history → kiểm dừng → lưu _best.pt
+  ghi cuối log (best_epoch, stopped_epoch, stop_reason) → lưu _last.pt
+→ _best.pt cho evaluate / demo; _history.csv cho visualize
+```
+
+## Detailed plan
+- **Quy tắc dừng (training xong khi nào):** tối đa 30 epoch cho mọi cấu hình; theo dõi `val_loss`; giảm ít nhất `1e-4` so với best thì lưu `_best.pt` và reset bộ đếm, không thì bộ đếm +1; bộ đếm = 5 thì dừng (`early_stopping`), hết 30 epoch thì dừng (`max_epochs`)
+- **Training loss để làm gì:** cho biết model có đang học không (train loss phải giảm). Đặt cạnh val loss để thấy overfit: train loss vẫn giảm mà val loss tăng nghĩa là model đang học thuộc tập train. Chênh `train_acc − val_acc` chỉ báo cáo, không làm ngưỡng
+- **Vì sao theo dõi `val_loss` chứ không phải acc:** `val_loss` nhạy hơn; `val_acc` vẫn log và báo cáo
+- **Hàm hiện có:** `train_model(model, train_loader, val_loader, epochs, lr, device, ckpt_path, optimizer_name="adam", weight_decay=0.0)` (`train/train.py:53-63`); `save_checkpoint` (`:17`); `load_checkpoint` (`:34`)
+- **Chỗ code chưa khớp plan:** history thiếu `train_acc`, `lr`, `time_s` (`train/train.py:90-94`); so sánh `<` chưa có `min_delta` (`:161`); chưa có early stopping, `_last.pt`, file log
+- **Gotchas:**
+  - Val acc báo cáo phải lấy ở epoch của `_best.pt`, không lấy `max(val_acc)` (`train.md` cũ)
+  - Đổi key của `history` phải giữ `train_loss`, `val_loss`, `val_acc` vì `experiment` đang đọc (`experiment/experiment.py:170-172`)
+  - `ckpt_path` bị ghi đè mỗi lần val_loss giảm; tên có `<ts>` để không mất checkpoint cũ (`train/train.py:161-163`)
+  - `load_checkpoint` cần model cùng kiến trúc; dùng `weights_only=True` (`train/train.py:46`)
+  - Thời gian CPU dao động mạnh, có lần 5 epoch mất 1,5 giờ, chưa rõ nguyên nhân (`train.md` cũ; `progress_status.md:52`)
+
+## Success criteria  [đề xuất]
+- **Test:** `python -m pytest labs/lab1/tests/test_train.py -q` đạt, gồm 4 test hiện có và test mới cho: dừng đúng sau 5 epoch val_loss không giảm (dữ liệu giả); đủ 3 file log; có `_last.pt`
+- **Smoke run:** trong `outputs/_smoke/` có đủ 3 file; `.log` có dòng `=== RUN START`, ít nhất 1 dòng epoch, dòng `=== RUN END`; `_best.pt` nạp lại, dự đoán 1 batch ra logits `[B,10]`
+- **Normal run (baseline):** `stopped_epoch` ≤ 30; `stop_reason` là `early_stopping` hoặc `max_epochs`; `best_epoch` ≤ `stopped_epoch`; số dòng `_history.csv` = `stopped_epoch`
+- Không đặt ngưỡng accuracy ở `train`: mức test ≥ 88% nằm ở `lab1_description_v1.md` và được kiểm ở `evaluate`
+
+## Links
+- Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md) | Khuôn log: [../templates/LOG_TEMPLATE_v1.md](../templates/LOG_TEMPLATE_v1.md)
+- Module liên quan: [features_v1.md](features_v1.md), [model_v1.md](model_v1.md), [evaluate_v1.md](evaluate_v1.md), [experiment_v1.md](experiment_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (bản cũ 5 epoch: seed 42 val_loss 0,3018, val_acc 89,05%, dòng 50)
+- Code: `labs/lab1/train/train.py` | Test: `labs/lab1/tests/test_train.py`

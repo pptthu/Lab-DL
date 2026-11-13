@@ -1,55 +1,67 @@
-# Lab 1 / features: guide for AI agents
+# features — Chuẩn hoá và DataLoader (v1)
 
-## For AI agents (read first)
-
-| Field | Value |
-|---|---|
-| Module | `labs/lab1/features/features.py` |
-| Owner | Member A (Toàn), assigned by the team leader |
-| Status | done in `progress_status.md` (Run on the official data, 2026-11-04) |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `labs/lab1/features/features.py`, `labs/lab1/tests/test_features.py`, this guide |
-| Files you must not edit | other modules, raw data, committed split file, other owners' notebook cells |
-| Agreed signatures | `compute_mean_std(train_images) -> tuple`; `build_transform(mean: float, std: float)`; `class FashionDataset(images, labels, indices=None, transform=None)`; `make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64) -> tuple` (same as `project_description.md`) |
-| Depends on / used by | `preprocessing` output / `train`, `evaluate`, `visualize`, `experiment`, `main.py`, notebook |
-| Prohibited | computing mean/std on validation or test images (leakage); shuffling validation or test loaders; adding augmentation that the brief does not ask for |
-| Checks | Unit: `python -m pytest labs/lab1/tests/test_features.py -q`. Smoke: build the loaders from the real data and read one batch |
-| Done when | unit tests pass; output recorded in `progress_status.md`; this guide updated |
-
-## What the brief requires
-
-- Brief requirement: turn the images into normalized tensors and feed them to the network in batches.
-- Team choices: one global mean/std from the **training split only**; batch size 64; shuffle the training loader only.
-
-## How the module works (current code)
-
-- `compute_mean_std`: mean and std of the training images on the 0-1 scale.
-- `build_transform`: uint8 `[28,28]` -> float32 tensor `[1,28,28]`, `(x/255 - mean) / std`; `std == 0` raises an error.
-- `FashionDataset`: wraps the arrays, optional `indices` select the split, returns `(tensor, int label)`.
-- `make_loaders`: `shuffle=True` for train, `shuffle=False` for validation and test (fixed order keeps predictions aligned with images for the confusion matrix and the error analysis).
-
-## Inputs, outputs and pitfalls
-
-- Always pass the training indices to `compute_mean_std`; the same statistics are then used for all three splits.
-
-## How to verify
-
-| Type | Command | Expected |
-|---|---|---|
-| Unit test | `python -m pytest labs/lab1/tests/test_features.py -q` | all pass |
-| Smoke test | `compute_mean_std(images[train_idx])` on the official data | mean 0.2859, std 0.3530 (Run, 2026-11-04); a train batch is `[64,1,28,28]` float32 |
-| Real integration run | `python -m labs.lab1.main` stage 3 | "Train-only normalization statistics: mean=0.2859, std=0.3530" (Run, 2026-11-04) |
-
-## Open questions / limitations
-
-- None for this module.
+- **Created**: 2026-11-13T23:36:00+07:00
+- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Người phụ trách**: Member A (Toàn)
+- **Status**: Done
 
 ---
 
-**Tiếng Việt**
+## Name
+Features — mean/std từ train, transform, Dataset, DataLoader
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member A (Toàn), do nhóm trưởng giao. Được sửa `features.py`, `tests/test_features.py`, file này. Chữ ký 4 hàm/lớp khớp `project_description.md`. Cấm tính mean/std trên val hoặc test (rò rỉ dữ liệu), cấm xáo val/test, cấm thêm augmentation khi đề không yêu cầu.
-- **Đề:** chuyển ảnh thành tensor đã chuẩn hóa và đưa vào mạng theo batch. Nhóm chọn mean/std chỉ tính trên train, batch 64, chỉ xáo train.
-- **Cách hoạt động:** `(x/255 - mean) / std`; val và test không xáo để dự đoán khớp đúng ảnh khi làm confusion matrix và phân tích lỗi.
-- **Kiểm chứng:** mean 0,2859, std 0,3530; batch train `[64,1,28,28]` float32 (đã chạy, 04/11/2026).
+## Background
+Đề P1: "transforms" và đưa ảnh vào mạng theo batch. Module nhận mảng ảnh từ `preprocessing`,
+trả 3 DataLoader cho `train`, `evaluate`, `visualize`.
+
+## Goals / Purpose  [đề xuất]
+- `compute_mean_std` trên ảnh train trả mean 0,2859, std 0,3530 (thang 0–1)
+- `make_loaders` trả 3 loader: train 54.000 / val 6.000 / test 10.000; batch `[64,1,28,28]` float32, nhãn int64
+- Chỉ loader train được shuffle; val và test giữ thứ tự cố định
+- Không làm:
+  - Tính mean/std trên val hay test — rò rỉ thông tin
+  - Data augmentation — đề không yêu cầu
+  - Chia train/val — việc của `preprocessing`
+
+## Input / Output
+- **Input:** ảnh `[N,28,28]` uint8, nhãn `[N]` int64 và `train_idx`, `val_idx` từ [preprocessing_v1.md](preprocessing_v1.md)
+- **Output:** `train_loader`, `val_loader`, `test_loader` (đối tượng trong bộ nhớ, không ghi file)
+
+## How to do it (general plan)
+1. `compute_mean_std(images[train_idx])` — chỉ ảnh train
+2. `build_transform(mean, std)`: uint8 `[28,28]` → float32 `[1,28,28]`, `(x/255 − mean) / std`
+3. Tạo 3 `FashionDataset` (train, val dùng `indices`; test dùng toàn bộ file test)
+4. `make_loaders(..., batch_size=64)`
+5. Smoke run: lấy 1 batch train thật, kiểm shape và kiểu
+6. Normal run trong pipeline `main.py`
+
+## Pipeline
+```
+images, labels, train_idx, val_idx → compute_mean_std(train) → build_transform
+  → FashionDataset × 3 → make_loaders(batch 64) → train / evaluate / visualize
+```
+
+## Detailed plan
+- **Một mean/std toàn cục từ train:** dùng chung cho cả 3 tập — đúng cách làm, tránh rò rỉ
+- **Batch 64:** dùng chung cho mọi cấu hình của desc lab
+- **Không shuffle val/test:** dự đoán khớp thứ tự ảnh, cần cho confusion matrix và phân tích lỗi
+- **Hàm hiện có:**
+  - `compute_mean_std(train_images) -> tuple` (`features/features.py:18`)
+  - `build_transform(mean: float, std: float)` (`:38`)
+  - `class FashionDataset(images, labels, indices=None, transform=None)` (`:60`, `:71`)
+  - `make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64) -> tuple` (`:92`)
+- **Chỗ code chưa khớp plan:** không có
+- **Gotchas:**
+  - Luôn truyền ảnh train (`images[train_idx]`) vào `compute_mean_std` (`features.md` cũ; `main.py:94`)
+  - `std == 0` thì `ValueError` (`features/features.py:49`)
+
+## Success criteria  [đề xuất]
+- **Test:** `python -m pytest labs/lab1/tests/test_features.py -q` đạt (6 test)
+- **Smoke run:** 1 batch train thật có shape `[64,1,28,28]` float32, nhãn int64 trong 0–9
+- **Normal run:** mean 0,2859, std 0,3530; số mẫu 54.000 / 6.000 / 10.000
+
+## Links
+- Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
+- Module liên quan: [preprocessing_v1.md](preprocessing_v1.md), [train_v1.md](train_v1.md), [evaluate_v1.md](evaluate_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (mean/std trên dữ liệu chính thức dòng 43; shape loader dòng 88 — lần chạy cũ trên CSV Kaggle)
+- Code: `labs/lab1/features/features.py` | Test: `labs/lab1/tests/test_features.py`

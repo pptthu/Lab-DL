@@ -1,55 +1,62 @@
-# Lab 1 / eda: guide for AI agents
+# eda — Khám phá dữ liệu (v1)
 
-## For AI agents (read first)
-
-| Field | Value |
-|---|---|
-| Module | `labs/lab1/eda/eda.py` |
-| Owner | Member A (Toàn), assigned by the team leader |
-| Status | done in `progress_status.md` (Run on the official data, 2026-11-04) |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `labs/lab1/eda/eda.py`, `labs/lab1/tests/test_eda.py`, this guide |
-| Files you must not edit | other modules, raw data, committed split file, figures of real runs, other owners' notebook cells |
-| Agreed signatures | `run_eda(train_csv: str, out_dir: str) -> dict` (same as `project_description.md`) |
-| Depends on / used by | the training CSV in `raw_data_dir("lab1")` / `main.py` stage 1, notebook Stage 1 |
-| Prohibited | modifying the CSV; running EDA on the test file to make decisions; tests writing to the real `artifacts/figures/` (use `tmp_path`) |
-| Checks | Unit: `python -m pytest labs/lab1/tests/test_eda.py -q` (fake CSV). Smoke: `run_eda` on the real training CSV into a temporary folder |
-| Done when | unit tests pass; output recorded in `progress_status.md`; this guide updated |
-
-## What the brief requires
-
-- Brief requirement: load and explore the Fashion-MNIST data before training.
-- Team choice: official Fashion-MNIST from https://github.com/zalandoresearch/fashion-mnist (the dataset link list came from another group, not from the lecturer), written as CSV by `preprocessing/download_official.py`.
-
-## How the module works (current code)
-
-- Reads the CSV with pandas, checks the columns (`label` + 784 pixel columns).
-- Returns `n_rows`, `class_counts`, `pixel_min`, `pixel_max`, `n_missing`, `n_duplicates`.
-- Saves a class bar chart (`class_counts.png`) and a sample image grid (`sample_grid.png`) in `out_dir`.
-
-## Inputs, outputs and pitfalls
-
-- Wrong columns raise an error (`_check_columns`).
-- Duplicate rows are counted, not removed (decision: keep the data as released).
-
-## How to verify
-
-| Type | Command | Expected |
-|---|---|---|
-| Unit test | `python -m pytest labs/lab1/tests/test_eda.py -q` | all pass |
-| Smoke test | `python -c "import tempfile; from labs.lab1.eda.eda import run_eda; print(run_eda('labs/lab1/raw_data/fashion-mnist_train.csv', tempfile.mkdtemp()))"` | `n_rows` 60000, 6000 per class, pixels 0-255, `n_missing` 0, `n_duplicates` 0 (Run, 2026-11-04) |
-| Real integration run | `python -m labs.lab1.main` stage 1 | "EDA completed: 60000 rows, 10 classes, 0 duplicates." (Run, 2026-11-04) |
-
-## Open questions / limitations
-
-- None for this module.
+- **Created**: 2026-11-13T23:36:00+07:00
+- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Người phụ trách**: Member A (Toàn)
+- **Status**: Done (chờ đổi đường dẫn ở giai đoạn O5)
 
 ---
 
-**Tiếng Việt**
+## Name
+EDA — kiểm tra file train, phân bố lớp, ảnh mẫu
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member A (Toàn), do nhóm trưởng giao. Được sửa `eda.py`, `tests/test_eda.py`, file này; cấm sửa module khác, data, file split đã commit, hình của lần chạy thật. Chữ ký `run_eda(train_csv, out_dir) -> dict`, khớp `project_description.md`. Cấm sửa CSV, cấm dùng file test để ra quyết định, test phải ghi hình vào `tmp_path`.
-- **Đề:** nạp và khám phá dữ liệu trước khi train. Nhóm chọn Fashion-MNIST chính thức của Zalando (danh sách link do nhóm khác tổng hợp, không phải của cô).
-- **Cách hoạt động:** kiểm tra cột, trả về số dòng, số mẫu mỗi lớp, khoảng pixel, số giá trị thiếu, số dòng trùng; lưu 2 hình.
-- **Kiểm chứng:** 60.000 dòng, 6.000 mỗi lớp, 0 dòng trùng, 0 giá trị thiếu (đã chạy, 04/11/2026).
+## Background
+Đề P1: "load Fashion-MNIST". Trước khi train cần biết dữ liệu có đúng định dạng, đủ lớp, cân bằng không.
+EDA chỉ chạy trên file train để không đưa thông tin của test vào quyết định.
+
+## Goals / Purpose  [đề xuất]
+- `run_eda` trả dict: `n_rows`, `class_counts`, `pixel_min`, `pixel_max`, `n_missing`, `n_duplicates`
+- Lưu 2 hình: `class_counts.png` (số ảnh mỗi lớp) và `sample_grid.png` (ảnh mẫu)
+- Không làm:
+  - Sửa hay xoá dòng trùng trong CSV — chỉ đếm; dữ liệu giữ nguyên như bản phát hành (`eda.md` cũ)
+  - Chạy EDA trên file test để ra quyết định — tránh rò rỉ thông tin
+  - Chuẩn hoá, chia train/val — việc của `features`, `preprocessing`
+
+## Input / Output
+- **Input:** `fashion-mnist_train.csv` (60.000 dòng, cột `label` + 784 cột pixel) từ [preprocessing_v1.md](preprocessing_v1.md)
+- **Output:** dict thống kê; 2 file PNG
+  - Hiện code đọc `raw_data/fashion-mnist_train.csv`, ghi hình vào `artifacts/figures/` (`main.py:63-66`, `main.py:74`). Sẽ chuyển sang `data/raw/`, `outputs/figures/` ở giai đoạn O5.
+
+## How to do it (general plan)
+1. Đọc CSV bằng pandas, kiểm cột (`label` + 784 pixel)
+2. Đếm số dòng, số ảnh mỗi lớp, min/max pixel, ô thiếu, dòng trùng
+3. Vẽ biểu đồ cột số ảnh mỗi lớp và lưới ảnh mẫu
+4. Smoke run trên CSV train thật, ghi hình vào thư mục tạm
+5. Normal run trong pipeline `main.py`
+
+## Pipeline
+```
+fashion-mnist_train.csv → _check_columns → thống kê (dict)
+  → _plot_class_counts → class_counts.png
+  → _plot_sample_grid  → sample_grid.png
+```
+
+## Detailed plan
+- **Chỉ file train:** mọi quyết định về dữ liệu dựa trên train; test để dành cho `evaluate`
+- **Dòng trùng:** chỉ đếm, không xoá — giữ dữ liệu như bản chính thức để so sánh được với kết quả của người khác
+- **Hàm hiện có:** `run_eda(train_csv: str, out_dir: str) -> dict` (`eda/eda.py:25`); hàm phụ `_check_columns` (`:63`), `_plot_class_counts` (`:72`), `_plot_sample_grid` (`:85`)
+- **Chỗ code chưa khớp plan:** chỉ còn đường dẫn (`artifacts/`, `raw_data/`), chờ O5
+- **Gotchas:**
+  - Sai cột thì `ValueError` (`eda/eda.py:66`, `:69`)
+  - CSV Kaggle cũ có 43 dòng trùng; file chính thức có 0 (`progress_status.md:42`)
+
+## Success criteria  [đề xuất]
+- **Test:** `python -m pytest labs/lab1/tests/test_eda.py -q` đạt (3 test, CSV giả)
+- **Smoke run:** `run_eda` trên CSV train thật ghi đủ 2 PNG vào thư mục tạm
+- **Normal run:** `n_rows` = 60000, 6000 ảnh mỗi lớp, pixel 0–255, `n_missing` = 0, `n_duplicates` = 0
+
+## Links
+- Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
+- Module liên quan: [preprocessing_v1.md](preprocessing_v1.md), [features_v1.md](features_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (dữ liệu chính thức: 60000 dòng, 6000 mỗi lớp, 0 trùng, dòng 42)
+- Code: `labs/lab1/eda/eda.py` | Test: `labs/lab1/tests/test_eda.py`

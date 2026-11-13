@@ -1,58 +1,65 @@
-# Lab 1 / demo: how to run and present the lab
+# demo — Nạp model đã lưu và dự đoán ảnh test (v1)
 
-## For AI agents (read first)
-
-| Field | Value |
-|---|---|
-| Scope | `labs/lab1/main.py`, `labs/lab1/extended_study.py`, `labs/lab1/notebook/lab1_presentation.ipynb` |
-| Owner | team leader (Thư), assigned by the team leader |
-| Status | Run end to end on the official data, 2026-11-04 |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `main.py`, `extended_study.py`, the notebook, the README, this guide (team leader's files) |
-| Files you must not edit | the module files (owners in each module guide), raw data, committed split file |
-| Prohibited | starting `main.py` (35 runs) or `extended_study.py` (10 runs x 20 epochs) without the team leader; adding a CNN or other models (team decision: MLP only); writing numbers into the README or notebook text that do not come from a recorded run |
-| Checks | `python -m pytest labs/lab1/tests tests -q`; real runs only when the team agrees |
-| Done when | the README, the notebook text and `progress_status.md` show the numbers of the same recorded run |
-
-## Current (what runs today)
-
-| Step | Command (repository root) | Time on the team laptop (CPU, 4 threads) |
-|---|---|---|
-| Install | `pip install -r labs/lab1/requirements.txt` | |
-| Data | `python -m labs.lab1.preprocessing.download_official` (set `PYTHONIOENCODING=utf-8` on Windows with a Vietnamese path) | a few minutes (downloads about 30 MB) |
-| Tests | `python -m pytest labs/lab1/tests tests -q` | under 1 minute |
-| Full pipeline | `python -m labs.lab1.main` | 35 runs of 5 epochs; most runs take 1 to 2 minutes; 19 minutes for the whole run on the second try, 2 h 3 min on the first because one run stalled (cause not found); both runs gave identical results and checkpoints; 10 min 26 s on 2026-11-06 |
-| 20-epoch study | `python -m labs.lab1.extended_study` (after `main.py`) | 24 minutes on 2026-11-04; 11 min 42 s on 2026-11-06 |
-| Notebook | Restart & Run All `labs/lab1/notebook/lab1_presentation.ipynb` (reads the results of the two scripts, retrains only the seed-42 baseline) | about 1 minute |
-
-`main.py` stages: EDA -> load split -> train-only normalization and loaders -> MLP -> train (best checkpoint by validation loss) -> validation and one test evaluation -> figures -> 7 configurations x 5 seeds -> per-seed analysis.
-
-Results of the recorded run (official data, 2026-11-04, Run):
-
-- Saved model (seed 42): validation 89.05%, test 88.36%; notebook gives the same numbers.
-- Baseline across 5 seeds: train 90.92%, validation 88.62 +/- 0.36%, test 88.00 +/- 0.39%.
-- Clear effects (validation): no hidden layer -3.80, SGD vs Adam at lr 1e-3 -3.45, SGD lr 0.01 vs 1e-3 +3.14 points.
-- 20 epochs: baseline overfits (val loss 0.2988 at best, 0.3972 at the end); test 88.62 +/- 0.19%; dropout keeps the final val loss lower (0.3095).
-
-## Intended (what the brief needs)
-
-- Deliverables (team leader, 2026-11-04): the full source code of the three labs and one written report (PDF, written later). Lab 1 is complete when `main.py`, the notebook and the README agree on one recorded run, which is the case for the 2026-11-04 run.
-
-## What to show in the oral exam
-
-- Data: official Zalando files (MD5 checked); stratified split with seed 42; normalization from the training split only.
-- Model: MLP 784-256-128-10, logits and CrossEntropyLoss, 235,146 parameters.
-- Training: Adam, 5 epochs, checkpoint with the lowest validation loss; loss curves.
-- Evaluation: validation for every choice, test once; confusion matrix and the Shirt error analysis.
-- Experiments: one factor per pair, 5 seeds, rule fixed before reading the results, Holm correction; what "not significant" does and does not mean.
+- **Created**: 2026-11-13T23:36:00+07:00
+- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Người phụ trách**: Member B (Thư)
+- **Status**: To Do
 
 ---
 
-**Tiếng Việt**
+## Name
+Demo — nạp `_best.pt` không cần train lại, dự đoán ảnh test, lưu kết quả vào `outputs/demo/`
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** phần này của nhóm trưởng (Thư): `main.py`, `extended_study.py`, notebook, README. Cấm sửa file module của người khác, data, file split đã commit. Cấm tự chạy `main.py` (35 lần) hay `extended_study.py` khi chưa hỏi nhóm trưởng, cấm thêm CNN (nhóm đã chốt chỉ làm MLP), cấm ghi số không lấy từ một lần chạy đã ghi lại.
-- **Hiện tại:** tải data bằng `download_official` (vài phút, khoảng 30 MB), test dưới 1 phút, `main.py` gồm 35 lần chạy 5 epoch (lần hai ngày 04/11 mất 19 phút; lần một mất 2 giờ 3 phút vì có một lần chạy bị treo, chưa rõ nguyên nhân; hai lần cho kết quả và checkpoint y hệt; ngày 06/11 mất 10 phút 26 giây), `extended_study.py` 24 phút (ngày 06/11: 11 phút 42 giây), notebook khoảng 1 phút.
-- **Kết quả đã chạy (04/11/2026, data chính thức):** model seed 42: val 89,05%, test 88,36%, notebook ra cùng số; baseline 5 seed: test 88,00 ± 0,39%; tác động rõ: bỏ lớp ẩn −3,80, SGD so với Adam −3,45, SGD lr 0,01 +3,14 điểm; 20 epoch: baseline overfit, dropout giữ val loss cuối thấp hơn.
-- **Bài nộp:** toàn bộ source của 3 lab và một bài báo cáo (PDF, viết sau).
-- **Khi vấn đáp:** vì sao dùng data Zalando; chia phân tầng seed 42; chuẩn hóa chỉ trên train; MLP và logits; chọn checkpoint theo val loss; test chỉ dùng một lần; phân tích lỗi Shirt; mỗi cặp đổi một yếu tố, 5 seed, quy tắc chốt trước, hiệu chỉnh Holm.
+## Background
+Đề P1: "save/load model" và "hiển thị ảnh dự đoán vs thực tế". Demo chứng minh model đã lưu dùng lại được
+mà không chạy lại pipeline (O8: demo = nạp best checkpoint → dự đoán ảnh test → `outputs/demo/`, code đặt trong `visualize/`).
+Bản cũ (`demo.md`) chỉ mô tả cách chạy `main.py`, notebook, README; chưa có bước demo riêng.
+
+## Goals / Purpose  [đề xuất]
+- Một lệnh nạp `_best.pt` của cấu hình đã chọn, dự đoán N ảnh test, không gọi `train_model`
+- Lưu `outputs/demo/<ts>_predictions.png` (ảnh, nhãn dự đoán, nhãn thật, xác suất) và `<ts>_predictions.csv` (chỉ số ảnh, nhãn thật, nhãn dự đoán, xác suất)
+- Không làm:
+  - Ảnh ngoài dataset, upload ảnh, giao diện web — ngoài phạm vi desc lab
+  - Đo tốc độ inference — ngoài phạm vi desc lab
+  - Tính accuracy toàn tập test — việc của `evaluate`
+
+## Input / Output
+- **Input:** `_best.pt` từ [train_v1.md](train_v1.md); config của run (đọc từ `_config.json` để dựng lại đúng kiến trúc); `test_loader` từ [features_v1.md](features_v1.md)
+- **Output:** PNG + CSV trong `outputs/demo/`
+  - Hiện chưa có code demo; `main.py` chỉ vẽ `predictions_grid.png` trên val (`main.py:152`). Thư mục `outputs/demo/` có từ giai đoạn O5.
+
+## How to do it (general plan)
+1. Đọc `_config.json` của run đã chọn → `build_model(cfg)` dựng lại kiến trúc
+2. `load_checkpoint(model, "<ts>_<run>_best.pt", device)` → `model.eval()`
+3. Lấy N = 16 ảnh đầu của `test_loader` (không shuffle nên lần nào cũng giống nhau)
+4. Dự đoán, tính xác suất bằng softmax trên logits, ghi PNG và CSV
+5. Smoke run: dùng `_best.pt` của smoke run, ghi vào `outputs/_smoke/`
+6. Normal run sau khi `experiment` chọn cấu hình
+
+## Pipeline
+```
+_config.json → build_model → load_checkpoint(_best.pt) → test_loader (16 ảnh)
+  → logits → softmax → predictions.png + predictions.csv (outputs/demo/)
+```
+
+## Detailed plan
+- **Không train lại:** demo chỉ đọc file đã lưu — để chứng minh phần save/load của đề
+- **Softmax chỉ ở demo:** model trả logits; demo đổi sang xác suất để người xem dễ hiểu
+- **Hàm dùng lại:** `load_checkpoint` (`train/train.py:34`), `build_model` (`experiment/experiment.py:26`), `show_predictions` (`visualize/visualize.py:55`)
+- **Chạy toàn bộ pipeline (`main.py`):** thứ tự hiện tại EDA → split → chuẩn hoá + loader → MLP → train → đánh giá val, test → hình → thí nghiệm (`main.py:48-176`); sẽ đổi theo 5 cấu hình khi sửa `experiment`
+- **Chỗ code chưa khớp plan:** chưa có hàm demo; chưa có `_config.json` để dựng lại kiến trúc
+- **Gotchas:**
+  - Kiến trúc dựng lại phải khớp lúc lưu, nếu không `load_state_dict` báo lỗi (`train/train.py:47`)
+  - Windows + đường dẫn tiếng Việt: đặt `PYTHONIOENCODING=utf-8` khi chạy script (`demo.md` cũ)
+  - Thời gian chạy `main.py` dao động mạnh giữa các lần (19 phút và 2 giờ 3 phút cho cùng kết quả) (`demo.md` cũ)
+
+## Success criteria  [đề xuất]
+- **Test:** test mới trong `labs/lab1/tests/test_visualize.py`: demo với model giả ghi đủ PNG và CSV 16 dòng vào `tmp_path`
+- **Smoke run:** demo trên `_best.pt` của smoke chạy hết, có PNG và CSV trong `outputs/_smoke/`
+- **Normal run:** `outputs/demo/` có PNG và CSV 16 dòng; nhãn trong CSV khớp nhãn thật của 16 ảnh test đầu
+
+## Links
+- Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
+- Module liên quan: [train_v1.md](train_v1.md), [experiment_v1.md](experiment_v1.md), [visualize_v1.md](visualize_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (chưa chạy demo)
+- Code: `labs/lab1/visualize/visualize.py` (sẽ thêm hàm demo) | Test: `labs/lab1/tests/test_visualize.py`
