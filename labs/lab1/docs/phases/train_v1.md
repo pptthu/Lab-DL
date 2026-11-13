@@ -1,7 +1,7 @@
 # train — Huấn luyện MLP (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:03:08+07:00 (Thư)
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -15,7 +15,7 @@ Training — vòng lặp train, log theo lần chạy, quy tắc dừng
 Module này là vòng lặp train dùng chung cho baseline (`main.py`) và 5 cấu hình (`experiment`).
 Bản cũ chạy cố định 5 epoch, không có file log theo lần chạy; cần sửa theo `templates/LOG_TEMPLATE_v1.md`.
 
-## Goals / Purpose  [đề xuất]
+## Goals / Purpose
 - `train_model` train một cấu hình tới khi dừng theo quy tắc ở Detailed plan và trả `best_epoch`, `stopped_epoch`, `stop_reason`
 - Mỗi lần chạy sinh đủ 3 file log theo `templates/LOG_TEMPLATE_v1.md`; `_history.csv` có đủ 7 cột, mỗi epoch một dòng
 - Sinh `_best.pt` (val_loss thấp nhất) và `_last.pt`, cả hai nạp lại được bằng `load_checkpoint`
@@ -63,11 +63,11 @@ features.make_loaders + model.MLP → train_model:
   - `load_checkpoint` cần model cùng kiến trúc; dùng `weights_only=True` (`train/train.py:46`)
   - Thời gian CPU dao động mạnh, có lần 5 epoch mất 1,5 giờ, chưa rõ nguyên nhân (`train.md` cũ; `progress_status.md:52`)
 
-## Success criteria  [đề xuất]
+## Success criteria
 - **Test:** `python -m pytest labs/lab1/tests/test_train.py -q` đạt, gồm 4 test hiện có và test mới cho: dừng đúng sau 5 epoch val_loss không giảm (dữ liệu giả); đủ 3 file log; có `_last.pt`
 - **Smoke run:** trong `outputs/_smoke/` có đủ 3 file; `.log` có dòng `=== RUN START`, ít nhất 1 dòng epoch, dòng `=== RUN END`; `_best.pt` nạp lại, dự đoán 1 batch ra logits `[B,10]`
 - **Normal run (baseline):** `stopped_epoch` ≤ 30; `stop_reason` là `early_stopping` hoặc `max_epochs`; `best_epoch` ≤ `stopped_epoch`; số dòng `_history.csv` = `stopped_epoch`
-- Không đặt ngưỡng accuracy ở `train`: mức test ≥ 88% nằm ở `lab1_description_v1.md` và được kiểm ở `evaluate`
+- Không đặt ngưỡng accuracy ở `train`: mức test ≥ 87% nằm ở `lab1_description_v1.md` và được kiểm ở `evaluate`
 
 ## Links
 - Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md) | Khuôn log: [../templates/LOG_TEMPLATE_v1.md](../templates/LOG_TEMPLATE_v1.md)
