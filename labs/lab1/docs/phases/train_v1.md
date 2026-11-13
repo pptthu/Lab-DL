@@ -1,9 +1,9 @@
 # train — Huấn luyện MLP (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:40:57+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
-- **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
+- **Status**: Done
 
 ---
 
@@ -30,7 +30,7 @@ Bản cũ chạy cố định 5 epoch, không có file log theo lần chạy; c�
 - **Output:**
   - Checkpoint `<ts>_<run>_best.pt` (val_loss thấp nhất) và `<ts>_<run>_last.pt`
   - Log `<ts>_<run>.log`, `<ts>_<run>_history.csv`, `<ts>_<run>_config.json`
-  - Hiện code lưu ở `outputs/models/mlp_baseline.pt` (`main.py:114`), `outputs/models/exp_run_<i>.pt` (`experiment/experiment.py:77`), chưa ghi log vào `outputs/logs/`.
+  - Code lưu checkpoint ở `outputs/models/`, log ở `outputs/logs/` (`main.py`, `_out_dirs`); smoke run ghi vào `outputs/_smoke/models|logs/`.
 
 ## How to do it (general plan)
 1. Loss: `nn.CrossEntropyLoss()` trên logits (model không có softmax)
@@ -54,13 +54,13 @@ features.make_loaders + model.MLP → train_model:
 - **Quy tắc dừng (training xong khi nào):** tối đa 30 epoch cho mọi cấu hình; theo dõi `val_loss`; giảm ít nhất `1e-4` so với best thì lưu `_best.pt` và reset bộ đếm, không thì bộ đếm +1; bộ đếm = 5 thì dừng (`early_stopping`), hết 30 epoch thì dừng (`max_epochs`)
 - **Training loss để làm gì:** cho biết model có đang học không (train loss phải giảm). Đặt cạnh val loss để thấy overfit: train loss vẫn giảm mà val loss tăng nghĩa là model đang học thuộc tập train. Chênh `train_acc − val_acc` chỉ báo cáo, không làm ngưỡng
 - **Vì sao theo dõi `val_loss` chứ không phải acc:** `val_loss` nhạy hơn; `val_acc` vẫn log và báo cáo
-- **Hàm hiện có:** `train_model(model, train_loader, val_loader, epochs, lr, device, ckpt_path, optimizer_name="adam", weight_decay=0.0)` (`train/train.py:53-63`); `save_checkpoint` (`:17`); `load_checkpoint` (`:34`)
-- **Chỗ code chưa khớp plan:** history thiếu `train_acc`, `lr`, `time_s` (`train/train.py:90-94`); so sánh `<` chưa có `min_delta` (`:161`); chưa có early stopping, `_last.pt`, file log
+- **Hàm hiện có:** `train_model(model, train_loader, val_loader, epochs, lr, device, ckpt_path, optimizer_name="adam", weight_decay=0.0, patience=None, min_delta=0.0, last_ckpt_path=None, log_dir=None, run_name="run", run_info=None, max_batches=None, verbose=False) -> Dict[str, Any]` (`train/train.py:98`); `save_checkpoint` (`:22`); `load_checkpoint` (`:39`). Các tham số mới đều có mặc định nên lời gọi cũ vẫn chạy
+- **Chỗ code chưa khớp plan:** không có (sửa 2026-11-14: history đủ 7 cột, `min_delta`, early stopping, `_last.pt`, 3 file log; `max_batches` cho smoke run)
 - **Gotchas:**
   - Val acc báo cáo phải lấy ở epoch của `_best.pt`, không lấy `max(val_acc)` (`train.md` cũ)
-  - Đổi key của `history` phải giữ `train_loss`, `val_loss`, `val_acc` vì `experiment` đang đọc (`experiment/experiment.py:170-172`)
-  - `ckpt_path` bị ghi đè mỗi lần val_loss giảm; tên có `<ts>` để không mất checkpoint cũ (`train/train.py:161-163`)
-  - `load_checkpoint` cần model cùng kiến trúc; dùng `weights_only=True` (`train/train.py:46`)
+  - Đổi key của `history` phải giữ `train_loss`, `val_loss`, `val_acc` vì `experiment` đang đọc (`experiment/experiment.py:161-163`)
+  - `ckpt_path` bị ghi đè mỗi lần val_loss giảm; tên có `<ts>` để không mất checkpoint cũ (`train/train.py:265`; tên đặt ở `experiment/experiment.py`)
+  - `load_checkpoint` cần model cùng kiến trúc; dùng `weights_only=True` (`train/train.py:51`)
   - Thời gian CPU dao động mạnh, có lần 5 epoch mất 1,5 giờ, chưa rõ nguyên nhân (`train.md` cũ; `progress_status.md:52`)
 
 ## Success criteria
@@ -69,8 +69,13 @@ features.make_loaders + model.MLP → train_model:
 - **Normal run (baseline):** `stopped_epoch` ≤ 30; `stop_reason` là `early_stopping` hoặc `max_epochs`; `best_epoch` ≤ `stopped_epoch`; số dòng `_history.csv` = `stopped_epoch`
 - Không đặt ngưỡng accuracy ở `train`: mức test ≥ 87% nằm ở `lab1_description_v1.md` và được kiểm ở `evaluate`
 
+## Kết quả audit (2026-11-14)
+- **Test:** `pytest labs/lab1/tests/test_train.py` → 7 passed (4 test cũ + dừng sớm đúng ở epoch 6 khi val_loss đứng yên, đủ 3 file log, `max_batches`) ✔
+- **Smoke run** (`python -m labs.lab1.main --smoke`, 21 giây): `outputs/_smoke/logs/` có 15 file (5 run × 3); `.log` có `=== RUN START`, dòng epoch, `=== RUN END`; `_best.pt` nạp lại và dự đoán được ở bước evaluate, demo ✔
+- **Normal run (baseline)**, normal run 2026-11-14 01:30–01:37 (`outputs/results/run_summary.json`): `stopped_epoch` 13 ≤ 30, `stop_reason` early_stopping, `best_epoch` 8 ≤ 13, `_history.csv` có 13 dòng epoch ✔ — log `outputs/logs/20261114_013050_baseline.log`
+
 ## Links
 - Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md) | Khuôn log: [../templates/LOG_TEMPLATE_v1.md](../templates/LOG_TEMPLATE_v1.md)
 - Module liên quan: [features_v1.md](features_v1.md), [model_v1.md](model_v1.md), [evaluate_v1.md](evaluate_v1.md), [experiment_v1.md](experiment_v1.md)
-- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (bản cũ 5 epoch: seed 42 val_loss 0,3018, val_acc 89,05%, dòng 50)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (mục 2026-11-14 normal run; bản cũ 5 epoch ở phần lịch sử)
 - Code: `labs/lab1/train/train.py` | Test: `labs/lab1/tests/test_train.py`

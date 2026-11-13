@@ -1,9 +1,9 @@
 # experiment — So sánh 5 cấu hình (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:41:23+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
-- **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
+- **Status**: Done
 
 ---
 
@@ -25,9 +25,9 @@ Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 —
   - Optuna hay tìm siêu tham số tự động — ngoài đề
 
 ## Input / Output
-- **Input:** 5 config (dict) — hiện nằm trong `VARIANTS` (`main.py:37-45`); loaders từ [features_v1.md](features_v1.md)
+- **Input:** 5 config (dict) — nằm trong `VARIANTS` (`experiment/experiment.py:29`), tạo bằng `make_configs`; loaders từ [features_v1.md](features_v1.md)
 - **Output:** 5 bộ checkpoint + log (do `train` sinh); bảng so sánh CSV
-  - Hiện code ghi `outputs/results/experiment_results.csv`, `epoch_history.csv` (`main.py:167-169`), checkpoint `outputs/models/exp_run_<i>.pt` (`experiment/experiment.py:77`).
+  - Code ghi `outputs/results/experiment_results.csv`, `epoch_history.csv`; checkpoint `outputs/models/<ts>_<name>_best.pt`, `_last.pt`; lựa chọn ghi trong `outputs/results/run_summary.json` (`selection`).
 
 ## How to do it (general plan)
 1. Giảm `VARIANTS` còn 5 cấu hình, `SEEDS` còn `(42,)`; mỗi cấu hình khác baseline đúng một yếu tố
@@ -49,11 +49,12 @@ Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 —
 - **Chọn theo val, không theo test:** tránh rò rỉ thông tin từ test vào lựa chọn
 - **Cột `train_acc − val_acc`:** chỉ để báo cáo mức overfit, không làm ngưỡng đạt
 - **Hàm hiện có:**
-  - `build_model(cfg: Dict[str, Any], num_classes: int = 10) -> nn.Module` (`experiment/experiment.py:26`)
-  - `run_experiments(configs, loaders, device: str, ckpt_prefix: str = "exp_run") -> List[Dict[str, Any]]` (`:43-48`)
-  - `save_results(results, csv_path: str) -> None` (`:118`); `save_history(results, csv_path: str) -> None` (`:151`)
-  - `analyze_seed_runs(...)` (`:181`), `compare_pairs(...)` (`:273`) — phục vụ đa seed và kiểm định, sẽ không dùng nữa
-- **Chỗ code chưa khớp plan:** `VARIANTS` có 7 cấu hình (`main.py:37-45`), `SEEDS` có 5 seed (`main.py:33`); bảng kết quả chưa có `train_acc` và `stopped_epoch`; `analyze_seed_runs` còn đánh giá test cho từng seed (`main.py:175`)
+  - `BASELINE_CONFIG`, `VARIANTS` (5 cấu hình) (`experiment/experiment.py:25`, `:29`); `make_configs(epochs=30, seed=42)` (`:38`)
+  - `build_model(cfg, num_classes=10) -> nn.Module` (`:48`); `describe_architecture(cfg)` (`:65`)
+  - `run_experiments(configs, loaders, device, ckpt_prefix="exp_run", log_dir=None, models_dir=None, patience=None, min_delta=0.0, max_batches=None, run_info=None, verbose=False)` (`:76`)
+  - `save_results(results, csv_path)` (`:198`); `save_history(results, csv_path)` (`:239`); `select_config(results)` (`:274`)
+  - Đã bỏ `analyze_seed_runs`, `compare_pairs` và `extended_study.py` (O10: bỏ đa seed và kiểm định)
+- **Chỗ code chưa khớp plan:** không có (sửa 2026-11-14)
 - **Gotchas:**
   - `best_val_acc` phải lấy ở epoch có val_loss thấp nhất, không lấy `max(val_acc)` (`experiment.md` cũ)
   - Một cấu hình thua baseline với 1 seed chưa chứng minh nó kém hơn — chỉ ghi nhận, không kết luận chắc (`experiment.md` cũ: "5 seeds and one split…")
@@ -64,8 +65,25 @@ Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 —
 - **Smoke run:** 5 cấu hình chạy hết; bảng so sánh có đúng 5 dòng; mỗi cấu hình có 3 file log trong `outputs/_smoke/`
 - **Normal run:** bảng so sánh 5 dòng đủ cột; baseline có `val_acc` cao hơn `softmax_regression` (desc lab); cấu hình được chọn có ghi lý do
 
+## Kết quả audit (2026-11-14)
+- **Test:** `pytest labs/lab1/tests/test_experiment.py` → 10 passed (gồm 5 cấu hình đúng desc lab, bảng đủ cột mới, `select_config`) ✔
+- **Smoke run:** 5 cấu hình chạy hết, bảng `outputs/_smoke/results/experiment_results.csv` có 5 dòng, mỗi cấu hình 3 file log ✔
+- **Normal run**, normal run 2026-11-14 01:30–01:37 (`outputs/results/run_summary.json`):
+
+| Cấu hình | Param | best / dừng | val_loss | val_acc | train_acc | train − val | Thời gian |
+|---|---:|:---:|---:|---:|---:|---:|---:|
+| baseline | 235.146 | 8 / 13 | 0,2943 | 88,97% | 91,55% | 2,59 | 87 s |
+| softmax_regression | 7.850 | 10 / 15 | 0,4243 | 85,15% | 86,22% | 1,07 | 56 s |
+| larger_network | 567.434 | 7 / 12 | 0,3009 | **89,28%** | 90,98% | 1,70 | 107 s |
+| sgd_lr_0.01 | 235.146 | 10 / 15 | 0,2852 | 89,13% | 92,02% | 2,89 | 68 s |
+| dropout_0.2 | 235.146 | 6 / 11 | 0,2996 | 89,00% | 88,76% | −0,24 | 66 s |
+
+  - Baseline val_acc 88,97% > softmax_regression 85,15% ✔
+  - Chọn `larger_network`: val_acc cao nhất tại best_epoch, hơn `sgd_lr_0.01` 0,15 điểm — chênh nhỏ, một seed, chỉ ghi nhận (Gotcha 2) ✔
+  - Cả 5 cấu hình dừng sớm (`early_stopping`), không cấu hình nào chạm 30 epoch
+
 ## Links
 - Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
 - Module liên quan: [model_v1.md](model_v1.md), [train_v1.md](train_v1.md), [evaluate_v1.md](evaluate_v1.md), [visualize_v1.md](visualize_v1.md)
-- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (bản cũ 35 lần chạy, 2026-11-04, dòng 50–59)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (mục 2026-11-14 normal run; bản cũ 35 lần chạy ở phần lịch sử)
 - Code: `labs/lab1/experiment/experiment.py`, `labs/lab1/main.py` | Test: `labs/lab1/tests/test_experiment.py`

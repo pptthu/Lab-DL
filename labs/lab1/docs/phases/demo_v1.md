@@ -1,9 +1,9 @@
 # demo — Nạp model đã lưu và dự đoán ảnh test (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:41:23+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
-- **Status**: To Do
+- **Status**: Done
 
 ---
 
@@ -26,7 +26,7 @@ Bản cũ (`demo.md`) chỉ mô tả cách chạy `main.py`, notebook, README; c
 ## Input / Output
 - **Input:** `_best.pt` từ [train_v1.md](train_v1.md); config của run (đọc từ `_config.json` để dựng lại đúng kiến trúc); `test_loader` từ [features_v1.md](features_v1.md)
 - **Output:** PNG + CSV trong `outputs/demo/`
-  - Hiện chưa có code demo; `main.py` chỉ vẽ `predictions_grid.png` trên val (`main.py:152`). Thư mục `outputs/demo/` đã tạo ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/` (2026-11-14), đang rỗng.
+  - Code ghi `outputs/demo/<ts>_predictions.png` và `<ts>_predictions.csv` (bước 7 của `main.py`).
 
 ## How to do it (general plan)
 1. Đọc `_config.json` của run đã chọn → `build_model(cfg)` dựng lại kiến trúc
@@ -45,11 +45,12 @@ _config.json → build_model → load_checkpoint(_best.pt) → test_loader (16 �
 ## Detailed plan
 - **Không train lại:** demo chỉ đọc file đã lưu — để chứng minh phần save/load của đề
 - **Softmax chỉ ở demo:** model trả logits; demo đổi sang xác suất để người xem dễ hiểu
-- **Hàm dùng lại:** `load_checkpoint` (`train/train.py:34`), `build_model` (`experiment/experiment.py:26`), `show_predictions` (`visualize/visualize.py:55`)
-- **Chạy toàn bộ pipeline (`main.py`):** thứ tự hiện tại EDA → split → chuẩn hoá + loader → MLP → train → đánh giá val, test → hình → thí nghiệm (`main.py:48-176`); sẽ đổi theo 5 cấu hình khi sửa `experiment`
-- **Chỗ code chưa khớp plan:** chưa có hàm demo; chưa có `_config.json` để dựng lại kiến trúc
+- **Hàm dùng lại:** `load_checkpoint` (`train/train.py:39`), `build_model` (`experiment/experiment.py:48`), `show_predictions` (`visualize/visualize.py:103`)
+- **Chạy toàn bộ pipeline (`main.py`):** thứ tự EDA → split → chuẩn hoá + loader → train 5 cấu hình → chọn trên val → test baseline và cấu hình chọn → hình → demo → `run_summary.json` (`main.py:77`, hàm `main`); `--smoke` ghi mọi thứ vào `outputs/_smoke/`
+- **Hàm demo:** `demo_predictions(model, loader, class_names, device, out_png, out_csv, n=16) -> pd.DataFrame` (`visualize/visualize.py:247`)
+- **Chỗ code chưa khớp plan:** dựng lại kiến trúc bằng config của `experiment` (`build_model(cfg)`), không đọc `_config.json`; `_config.json` có cùng `hidden_sizes`, `dropout` nên kết quả như nhau. Giữ cách này vì `main.py` và notebook đã có config trong bộ nhớ
 - **Gotchas:**
-  - Kiến trúc dựng lại phải khớp lúc lưu, nếu không `load_state_dict` báo lỗi (`train/train.py:47`)
+  - Kiến trúc dựng lại phải khớp lúc lưu, nếu không `load_state_dict` báo lỗi (`train/train.py:52`)
   - Windows + đường dẫn tiếng Việt: đặt `PYTHONIOENCODING=utf-8` khi chạy script (`demo.md` cũ)
   - Thời gian chạy `main.py` dao động mạnh giữa các lần (19 phút và 2 giờ 3 phút cho cùng kết quả) (`demo.md` cũ)
 
@@ -58,8 +59,13 @@ _config.json → build_model → load_checkpoint(_best.pt) → test_loader (16 �
 - **Smoke run:** demo trên `_best.pt` của smoke chạy hết, có PNG và CSV trong `outputs/_smoke/`
 - **Normal run:** `outputs/demo/` có PNG và CSV 16 dòng; nhãn trong CSV khớp nhãn thật của 16 ảnh test đầu
 
+## Kết quả audit (2026-11-14)
+- **Test:** `test_demo_predictions_writes_png_and_csv` trong `labs/lab1/tests/test_visualize.py` → đạt (16 dòng, PNG + CSV, prob trong (0,1]) ✔
+- **Smoke run:** demo trên `_best.pt` của smoke chạy hết, có PNG và CSV trong `outputs/_smoke/demo/` ✔
+- **Normal run**, normal run 2026-11-14 01:30–01:37 (`outputs/results/run_summary.json`): `outputs/demo/20261114_013036_predictions.png` và `.csv` 16 dòng, 15/16 đúng (sai 1: Sneaker đoán thành Sandal 96%); notebook Stage 10 nạp lại `_best.pt` vào model mới, dự đoán trùng CSV ✔
+
 ## Links
 - Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
 - Module liên quan: [train_v1.md](train_v1.md), [experiment_v1.md](experiment_v1.md), [visualize_v1.md](visualize_v1.md)
-- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (chưa chạy demo)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (mục 2026-11-14 normal run)
 - Code: `labs/lab1/visualize/visualize.py` (sẽ thêm hàm demo) | Test: `labs/lab1/tests/test_visualize.py`

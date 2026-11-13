@@ -1,7 +1,7 @@
 # features — Chuẩn hoá và DataLoader (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:41:23+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done
 
@@ -52,7 +52,7 @@ images, labels, train_idx, val_idx → compute_mean_std(train) → build_transfo
   - `make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64) -> tuple` (`:92`)
 - **Chỗ code chưa khớp plan:** không có
 - **Gotchas:**
-  - Luôn truyền ảnh train (`images[train_idx]`) vào `compute_mean_std` (`features.md` cũ; `main.py:94`)
+  - Luôn truyền ảnh train (`images[train_idx]`) vào `compute_mean_std` (`features.md` cũ; `main.py:120`)
   - `std == 0` thì `ValueError` (`features/features.py:49`)
 
 ## Success criteria

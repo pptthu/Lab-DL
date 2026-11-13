@@ -1,9 +1,9 @@
 # evaluate — Đánh giá model (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:41:23+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
-- **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
+- **Status**: Done
 
 ---
 
@@ -27,7 +27,7 @@ Module này trả lời câu đó: đo gì, trên tập nào, mấy lần, ghi r
 ## Input / Output
 - **Input:** `_best.pt` từ [train_v1.md](train_v1.md) nạp bằng `load_checkpoint`; `val_loader`, `test_loader` từ [features_v1.md](features_v1.md) (không shuffle)
 - **Output:** `(loss, acc)` val và test; mảng confusion matrix; CSV báo cáo từng lớp
-  - Hiện code ghi `outputs/results/classification_report.csv` (`main.py:137-138`), test in ra màn hình (`main.py:141-142`), chưa ghi file.
+  - Code ghi `outputs/results/test_results.csv` (val + test của baseline và cấu hình chọn) và `classification_report_val_<tên>.csv`.
 
 ## How to do it (general plan)
 1. Nạp `_best.pt` của baseline và của cấu hình đã chọn vào model mới cùng kiến trúc, `model.eval()`
@@ -46,13 +46,13 @@ _best.pt + model mới → load_checkpoint → evaluate(val) → confusion_matri
 ## Detailed plan
 - **Metric chính:** accuracy trên test chính thức 10.000 ảnh — đề P1 yêu cầu accuracy; dữ liệu cân bằng 1.000 ảnh mỗi lớp nên accuracy dùng được
 - **Metric phụ:** loss; precision, recall, specificity, F1 từng lớp — để thấy model yếu ở lớp nào
-- **Confusion matrix:** hàng = lớp thật, cột = lớp dự đoán (`evaluate/evaluate.py:66`)
+- **Confusion matrix:** hàng = lớp thật, cột = lớp dự đoán (`evaluate/evaluate.py:69`)
 - **Hàm hiện có:**
-  - `evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[float, float]` (`evaluate/evaluate.py:19`)
-  - `confusion_matrix(model: nn.Module, loader, device: str | torch.device, num_classes: int = 10) -> np.ndarray` (`:60-62`)
-  - `per_class_accuracy(cm: np.ndarray) -> Dict[int, float]` (`:91`)
-  - `save_classification_report(cm: np.ndarray, class_names: Sequence[str], csv_path: str) -> pd.DataFrame` (`:117`)
-- **Chỗ code chưa khớp plan:** test chỉ in ra màn hình, chưa lưu file; `main.py` đánh giá baseline cố định, chưa nhận cấu hình đã chọn từ `experiment`
+  - `evaluate(model, loader, device) -> Tuple[float, float]` (`evaluate/evaluate.py:22`)
+  - `confusion_matrix(model, loader, device, num_classes=10) -> np.ndarray` (`:63`); `per_class_accuracy(cm)` (`:94`)
+  - `save_classification_report(cm, class_names, csv_path) -> pd.DataFrame` (`:120`)
+  - `TEST_ACC_THRESHOLD = 0.87` (`:19`); `save_test_results(rows, csv_path, threshold=0.87) -> pd.DataFrame` (`:161`)
+- **Chỗ code chưa khớp plan:** không có (sửa 2026-11-14: test ghi ra `outputs/results/test_results.csv`; `main.py` nhận cấu hình đã chọn từ `select_config`)
 - **Test cho cả hai model (2026-11-14):** baseline để kiểm mốc ≥ 87% đã chốt trước; cấu hình được chọn trên val là kết quả cuối. Mỗi model chạy test đúng một lần; nếu cấu hình được chọn chính là baseline thì chỉ chạy một lần
 - **Gotchas:**
   - Tập test đã được xem nhiều lần trong lúc phát triển, dù không lựa chọn nào dựa vào nó (`evaluate.md` cũ)
@@ -64,8 +64,16 @@ _best.pt + model mới → load_checkpoint → evaluate(val) → confusion_matri
 - **Smoke run:** chạy hết trên checkpoint smoke; CSV báo cáo có đúng 10 dòng lớp; confusion matrix có tổng = số ảnh val
 - **Normal run:** `val_acc` từ `evaluate` khớp `val_acc` ở `best_epoch` trong `_history.csv`; baseline test accuracy ≥ 87% trên 10.000 ảnh (mức của desc lab); có kết quả test của cả baseline và cấu hình được chọn, ghi ra file trong `outputs/results/`
 
+## Kết quả audit (2026-11-14)
+- **Test:** `pytest labs/lab1/tests/test_evaluate.py` → 6 passed (5 test cũ + `save_test_results`) ✔
+- **Smoke run:** chạy hết trên checkpoint smoke; báo cáo lớp có 10 dòng ✔
+- **Normal run**, normal run 2026-11-14 01:30–01:37 (`outputs/results/run_summary.json`) (`outputs/results/test_results.csv`):
+  - val_acc tính lại từ `_best.pt` khớp log: baseline 88,97% = 88,97%, larger_network 89,28% = 89,28% ✔
+  - **Baseline test 88,60%** (loss 0,3239) ≥ 87% ✔; cấu hình chọn `larger_network` test 88,46% (loss 0,3315) — mỗi model test đúng một lần ✔
+  - Theo lớp (val, larger_network): Shirt recall 68,67% thấp nhất; Trouser 98,67%, Bag 97,50%
+
 ## Links
 - Desc lab: [../lab1_description_v1.md](../lab1_description_v1.md)
 - Module liên quan: [train_v1.md](train_v1.md), [experiment_v1.md](experiment_v1.md), [visualize_v1.md](visualize_v1.md)
-- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (bản cũ 5 epoch, seed 42: val 89,05%, test 88,36%, dòng 50)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (mục 2026-11-14 normal run; bản cũ ở phần lịch sử)
 - Code: `labs/lab1/evaluate/evaluate.py` | Test: `labs/lab1/tests/test_evaluate.py`

@@ -1,7 +1,7 @@
 # eda — Khám phá dữ liệu (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:41:23+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done
 
@@ -25,7 +25,7 @@ EDA chỉ chạy trên file train để không đưa thông tin của test vào 
 ## Input / Output
 - **Input:** `fashion-mnist_train.csv` (60.000 dòng, cột `label` + 784 cột pixel) từ [preprocessing_v1.md](preprocessing_v1.md)
 - **Output:** dict thống kê; 2 file PNG
-  - Code đọc `data/raw/fashion-mnist_train.csv`, ghi hình vào `outputs/figures/` (`main.py:63-66`, `main.py:74`).
+  - Code đọc `data/raw/fashion-mnist_train.csv`, ghi hình vào `outputs/figures/` (`main.py:96-97`, `main.py:104`).
 
 ## How to do it (general plan)
 1. Đọc CSV bằng pandas, kiểm cột (`label` + 784 pixel)
