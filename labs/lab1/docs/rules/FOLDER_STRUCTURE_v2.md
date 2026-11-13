@@ -1,7 +1,7 @@
 # Cấu trúc thư mục Lab 1 (v2)
 
-- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T00:55:48+07:00
-- Trạng thái: cây **đích**. Code hiện vẫn ghi vào `artifacts/`, `raw_data/`; chỉ chuyển khi Thư cho phép, làm một PR bằng `git mv` (O5). Khi chuyển phải sửa cả `.gitignore` (hiện đang bỏ qua `labs/*/raw_data/*` và `labs/*/artifacts/*`).
+- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T01:18:05+07:00
+- Trạng thái: đã chuyển sang cây này ngày 2026-11-14 (O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`), bằng `git mv`, kèm sửa `.gitignore`. `artifacts/`, `raw_data/` của Lab 1 đã bỏ; Lab 2, 3 vẫn dùng `artifacts/` (`shared/paths.py` giữ `artifact_dir`).
 
 ## 1. Cây thư mục `labs/lab1/`
 
@@ -21,7 +21,7 @@
     ├── notebook/  tests/
     └── main.py  README.md  requirements.txt  progress_status.md  project_description.md
 
-Bỏ khỏi gốc lab khi chuyển: `artifacts/`, `raw_data/`, `extended_study.py`. `logbook/` đã chuyển vào `docs/experiments/` (PR #65).
+Đã bỏ khỏi gốc lab: `artifacts/`, `raw_data/`. `extended_study.py` còn giữ tới khi sửa `experiment` (O10). `logbook/` đã chuyển vào `docs/experiments/` (PR #65).
 
 ## 2. Cây thư mục `labs/lab1/docs/`
 
@@ -40,14 +40,14 @@ Bỏ khỏi gốc lab khi chuyển: `artifacts/`, `raw_data/`, `extended_study.p
 
 ## 3. Loại kết quả → đường dẫn
 
-| Loại | Đường dẫn đích | Hiện tại |
+| Loại | Đường dẫn đích | Code hiện tại (sau O5) |
 |---|---|---|
-| Dữ liệu gốc | `data/raw/` | `raw_data/` |
-| Split train/val | `data/splits/train_val_split.json` | `artifacts/splits/train_val_split.json` |
-| Checkpoint | `outputs/models/<ts>_<run>_best.pt`, `_last.pt` | `artifacts/models/` (`exp_run_N.pt`, `mlp_baseline.pt`) |
-| Log mỗi lần chạy | `outputs/logs/<ts>_<run>.log`, `_history.csv`, `_config.json` | `artifacts/logs/` (đang rỗng); history nằm trong `artifacts/runs/epoch_history.csv` |
-| Biểu đồ | `outputs/figures/` | `artifacts/figures/` |
-| Bảng đánh giá, so sánh | `outputs/results/` | `artifacts/runs/` |
+| Dữ liệu gốc | `data/raw/` | `data/raw/` |
+| Split train/val | `data/splits/train_val_split.json` | `data/splits/train_val_split.json` |
+| Checkpoint | `outputs/models/<ts>_<run>_best.pt`, `_last.pt` | `outputs/models/` (`exp_run_N.pt`, `mlp_baseline.pt`), chưa đổi tên theo `<ts>_<run>` |
+| Log mỗi lần chạy | `outputs/logs/<ts>_<run>.log`, `_history.csv`, `_config.json` | `outputs/logs/` (rỗng, chưa ghi log); history nằm trong `outputs/results/epoch_history.csv` |
+| Biểu đồ | `outputs/figures/` | `outputs/figures/` |
+| Bảng đánh giá, so sánh | `outputs/results/` | `outputs/results/` |
 | Ảnh demo | `outputs/demo/` | chưa có |
 | Đầu ra smoke run (log, checkpoint, hình) | `outputs/_smoke/` | chưa có |
 | Model card (có sơ đồ kiến trúc mermaid) | `docs/models/<tên>_v<N>.md` | chưa có |

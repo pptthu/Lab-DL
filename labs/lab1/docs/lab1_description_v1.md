@@ -1,5 +1,5 @@
 # Lab 1 — Phân loại Fashion-MNIST bằng MLP  (v1)
-- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-14T00:55:48+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-14T01:18:05+07:00
 - Trạng thái: To Do (train lại theo log và quy tắc dừng mới)
 ## Background
 Đề P1: load Fashion-MNIST, build NN, train, đánh giá accuracy, save/load, thử network/hyperparameter, vẽ loss, hiện ảnh dự đoán. Bản cũ chạy 5 epoch cố định, không có log theo lần chạy, lưu model trong `artifacts/`, nên train lại theo luật mới.
@@ -17,7 +17,7 @@
 - Code: `labs/lab1/main.py` gọi 8 module `labs/lab1/<module>/<module>.py`.
 ## Success criteria
 - Mọi run có đủ 3 file log và `_best.pt` nạp lại dự đoán được.
-- Baseline đạt test ≥ 87% trên tập test chính thức 10k — mốc MLP tốt nhất trong bài báo gốc Fashion-MNIST (Xiao et al. 2017, Bảng 3: 0,871). Bản cũ của nhóm: 88,00 ± 0,39% (`artifacts/runs/seed_results.csv`).
+- Baseline đạt test ≥ 87% trên tập test chính thức 10k — mốc MLP tốt nhất trong bài báo gốc Fashion-MNIST (Xiao et al. 2017, Bảng 3: 0,871). Bản cũ của nhóm: 88,00 ± 0,39% (lần chạy 04/11, `progress_status.md:57`).
 - Baseline có val_acc cao hơn softmax_regression (bài báo gốc: MLP 0,871 so với LogisticRegression 0,842).
 - Có đủ: sơ đồ kiến trúc trong model card, loss curve train+val vẽ từ `_history.csv`, ảnh dự đoán trên test, confusion matrix, bảng so sánh 5 cấu hình (có cột train_acc − val_acc, chỉ để báo cáo).
 ## How-to-do

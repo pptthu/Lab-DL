@@ -1,7 +1,7 @@
 # experiment — So sánh 5 cấu hình (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -27,7 +27,7 @@ Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 —
 ## Input / Output
 - **Input:** 5 config (dict) — hiện nằm trong `VARIANTS` (`main.py:37-45`); loaders từ [features_v1.md](features_v1.md)
 - **Output:** 5 bộ checkpoint + log (do `train` sinh); bảng so sánh CSV
-  - Hiện code ghi `artifacts/runs/experiment_results.csv`, `epoch_history.csv` (`main.py:167-169`), checkpoint `artifacts/models/exp_run_<i>.pt` (`experiment/experiment.py:77`). Sẽ chuyển sang `outputs/results/`, `outputs/models/` ở giai đoạn O5.
+  - Hiện code ghi `outputs/results/experiment_results.csv`, `epoch_history.csv` (`main.py:167-169`), checkpoint `outputs/models/exp_run_<i>.pt` (`experiment/experiment.py:77`).
 
 ## How to do it (general plan)
 1. Giảm `VARIANTS` còn 5 cấu hình, `SEEDS` còn `(42,)`; mỗi cấu hình khác baseline đúng một yếu tố

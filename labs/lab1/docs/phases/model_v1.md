@@ -1,7 +1,7 @@
 # model — Kiến trúc MLP (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -49,7 +49,7 @@ config (experiment) → build_model(cfg) → MLP(hidden_sizes, dropout)
 - **5 kiến trúc trong desc lab:** baseline (256,128); softmax_regression `()` — 1 lớp Linear, làm mốc tuyến tính; larger_network (512,256,128) — 4 lớp Linear; `sgd_lr_0.01` và `dropout_0.2` dùng kiến trúc baseline (dropout 0.2 sau mỗi ReLU)
 - **Model builder (xây từ đâu):** tự viết bằng `nn.Sequential`, không backbone, không pretrained. `experiment.build_model(cfg)` đọc `hidden_sizes`, `dropout` từ config rồi gọi `MLP` (`experiment/experiment.py:26-40`)
 - **Hàm hiện có:** `MLP(hidden_sizes=(256, 128), num_classes: int = 10, dropout: float = 0.0)` (`model/model.py:28`); `forward(x)` (`:45`); `count_parameters(model) -> int` (`:49`)
-- **Số param:** cột `n_params` trong `artifacts/runs/experiment_results.csv` (235146 / 567434 / 7850)
+- **Số param:** cột `n_params` trong `experiment_results.csv` của lần chạy 04/11 (235146 / 567434 / 7850; file đã xoá ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`, số ghi lại ở `progress_status.md`), sẽ kiểm lại ở lần chạy mới
 - **Sơ đồ kiến trúc (2026-11-14):** mermaid trong model card — GitHub và VS Code tự hiển thị, không cần code; notebook ô 9 (Stage 4) có cùng sơ đồ
 - **Chỗ code chưa khớp plan:** không có; chỉ còn thiếu model card (tài liệu)
 - **Gotchas:**

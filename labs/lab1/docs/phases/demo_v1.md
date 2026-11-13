@@ -1,7 +1,7 @@
 # demo — Nạp model đã lưu và dự đoán ảnh test (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: To Do
 
@@ -26,7 +26,7 @@ Bản cũ (`demo.md`) chỉ mô tả cách chạy `main.py`, notebook, README; c
 ## Input / Output
 - **Input:** `_best.pt` từ [train_v1.md](train_v1.md); config của run (đọc từ `_config.json` để dựng lại đúng kiến trúc); `test_loader` từ [features_v1.md](features_v1.md)
 - **Output:** PNG + CSV trong `outputs/demo/`
-  - Hiện chưa có code demo; `main.py` chỉ vẽ `predictions_grid.png` trên val (`main.py:152`). Thư mục `outputs/demo/` có từ giai đoạn O5.
+  - Hiện chưa có code demo; `main.py` chỉ vẽ `predictions_grid.png` trên val (`main.py:152`). Thư mục `outputs/demo/` đã tạo ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/` (2026-11-14), đang rỗng.
 
 ## How to do it (general plan)
 1. Đọc `_config.json` của run đã chọn → `build_model(cfg)` dựng lại kiến trúc

@@ -1,9 +1,9 @@
 # eda — Khám phá dữ liệu (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
-- **Status**: Done (chờ đổi đường dẫn ở giai đoạn O5)
+- **Status**: Done
 
 ---
 
@@ -25,7 +25,7 @@ EDA chỉ chạy trên file train để không đưa thông tin của test vào 
 ## Input / Output
 - **Input:** `fashion-mnist_train.csv` (60.000 dòng, cột `label` + 784 cột pixel) từ [preprocessing_v1.md](preprocessing_v1.md)
 - **Output:** dict thống kê; 2 file PNG
-  - Hiện code đọc `raw_data/fashion-mnist_train.csv`, ghi hình vào `artifacts/figures/` (`main.py:63-66`, `main.py:74`). Sẽ chuyển sang `data/raw/`, `outputs/figures/` ở giai đoạn O5.
+  - Code đọc `data/raw/fashion-mnist_train.csv`, ghi hình vào `outputs/figures/` (`main.py:63-66`, `main.py:74`).
 
 ## How to do it (general plan)
 1. Đọc CSV bằng pandas, kiểm cột (`label` + 784 pixel)
@@ -45,7 +45,7 @@ fashion-mnist_train.csv → _check_columns → thống kê (dict)
 - **Chỉ file train:** mọi quyết định về dữ liệu dựa trên train; test để dành cho `evaluate`
 - **Dòng trùng:** chỉ đếm, không xoá — giữ dữ liệu như bản chính thức để so sánh được với kết quả của người khác
 - **Hàm hiện có:** `run_eda(train_csv: str, out_dir: str) -> dict` (`eda/eda.py:25`); hàm phụ `_check_columns` (`:63`), `_plot_class_counts` (`:72`), `_plot_sample_grid` (`:85`)
-- **Chỗ code chưa khớp plan:** chỉ còn đường dẫn (`artifacts/`, `raw_data/`), chờ O5
+- **Chỗ code chưa khớp plan:** không có (đường dẫn đã đổi ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`, 2026-11-14)
 - **Gotchas:**
   - Sai cột thì `ValueError` (`eda/eda.py:66`, `:69`)
   - CSV Kaggle cũ có 43 dòng trùng; file chính thức có 0 (`progress_status.md:42`)

@@ -1,7 +1,7 @@
 # evaluate — Đánh giá model (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -27,7 +27,7 @@ Module này trả lời câu đó: đo gì, trên tập nào, mấy lần, ghi r
 ## Input / Output
 - **Input:** `_best.pt` từ [train_v1.md](train_v1.md) nạp bằng `load_checkpoint`; `val_loader`, `test_loader` từ [features_v1.md](features_v1.md) (không shuffle)
 - **Output:** `(loss, acc)` val và test; mảng confusion matrix; CSV báo cáo từng lớp
-  - Hiện code ghi `artifacts/runs/classification_report.csv` (`main.py:137-138`), test in ra màn hình (`main.py:141-142`), chưa ghi file. Sẽ chuyển sang `outputs/results/` ở giai đoạn O5.
+  - Hiện code ghi `outputs/results/classification_report.csv` (`main.py:137-138`), test in ra màn hình (`main.py:141-142`), chưa ghi file.
 
 ## How to do it (general plan)
 1. Nạp `_best.pt` của baseline và của cấu hình đã chọn vào model mới cùng kiến trúc, `model.eval()`

@@ -1,7 +1,7 @@
 # visualize — Biểu đồ từ log và ảnh dự đoán (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -27,7 +27,7 @@ Bản cũ vẽ loss từ dict `history` trong bộ nhớ, ảnh dự đoán lấ
 ## Input / Output
 - **Input:** `_history.csv` từ [train_v1.md](train_v1.md); `_best.pt` + `test_loader`; confusion matrix từ [evaluate_v1.md](evaluate_v1.md)
 - **Output:** `<ts>_<run>_loss.png`, `<ts>_<run>_acc.png`, `predictions_grid.png`, `confusion_matrix.png`
-  - Hiện code ghi `artifacts/figures/loss_curves.png`, `predictions_grid.png`, `confusion_matrix.png` (`main.py:147-153`). Sẽ chuyển sang `outputs/figures/` ở giai đoạn O5.
+  - Hiện code ghi `outputs/figures/loss_curves.png`, `predictions_grid.png`, `confusion_matrix.png` (`main.py:147-153`).
 
 ## How to do it (general plan)
 1. Đổi `plot_loss_curves` đọc từ `_history.csv` thay vì dict trong bộ nhớ
