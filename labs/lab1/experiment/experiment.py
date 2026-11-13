@@ -8,19 +8,41 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Sequence, Tuple
-import numpy as np
+from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
-from scipy import stats
 from torch import nn
 
 from shared.paths import output_dir
 from shared.seed import set_seed
 from labs.lab1.model.model import MLP, count_parameters
-from labs.lab1.train.train import load_checkpoint, train_model
-from labs.lab1.evaluate.evaluate import confusion_matrix, evaluate, per_class_accuracy
+from labs.lab1.train.train import train_model
+
+# 5 cấu hình của desc lab (docs/lab1_description_v1.md), mỗi cấu hình khác baseline đúng một yếu tố.
+# SGD luôn có momentum 0.9 (train/train.py).
+BASELINE_CONFIG: Dict[str, Any] = {
+    "hidden_sizes": (256, 128), "lr": 1e-3, "dropout": 0.0,
+    "optimizer_name": "adam", "weight_decay": 0.0, "epochs": 30, "seed": 42,
+}
+VARIANTS: Dict[str, Dict[str, Any]] = {
+    "baseline": {},
+    "softmax_regression": {"hidden_sizes": ()},
+    "larger_network": {"hidden_sizes": (512, 256, 128)},
+    "sgd_lr_0.01": {"optimizer_name": "sgd", "lr": 0.01},
+    "dropout_0.2": {"dropout": 0.2},
+}
+
+
+def make_configs(epochs: int = 30, seed: int = 42) -> List[Dict[str, Any]]:
+    """Tạo danh sách 5 config theo thứ tự của desc lab.
+
+    Vào : epochs (số epoch tối đa), seed
+    Ra  : list dict, mỗi dict có thêm khoá "name"
+    """
+    return [{**BASELINE_CONFIG, **change, "epochs": epochs, "seed": seed, "name": name}
+            for name, change in VARIANTS.items()]
 
 
 def build_model(cfg: Dict[str, Any], num_classes: int = 10) -> nn.Module:
@@ -40,25 +62,47 @@ def build_model(cfg: Dict[str, Any], num_classes: int = 10) -> nn.Module:
     )
 
 
+def describe_architecture(cfg: Dict[str, Any], num_classes: int = 10) -> str:
+    """Chuỗi mô tả kiến trúc cho log, ví dụ 'MLP 784-256-128-10 (ReLU)'."""
+    sizes = [784, *cfg.get("hidden_sizes", (256, 128)), num_classes]
+    text = "MLP " + "-".join(str(s) for s in sizes)
+    if cfg.get("hidden_sizes", (256, 128)):
+        text += " (ReLU)"
+    if float(cfg.get("dropout", 0.0)) > 0:
+        text += f" + dropout {cfg['dropout']}"
+    return text
+
+
 def run_experiments(
     configs: List[Dict[str, Any]],
     loaders: Tuple[Any, Any, Any],
     device: str,
     ckpt_prefix: str = "exp_run",
+    log_dir: Optional[str] = None,
+    models_dir: Optional[str] = None,
+    patience: Optional[int] = None,
+    min_delta: float = 0.0,
+    max_batches: Optional[int] = None,
+    run_info: Optional[Dict[str, Any]] = None,
+    verbose: bool = False,
 ) -> List[Dict[str, Any]]:
     """Train one model per config (e.g. hidden sizes, lr, dropout, optimizer) and compare on VALIDATION data.
 
     Input : configs: list of dicts; loaders: (train, val, test); device; ckpt_prefix: checkpoint file name prefix
     Output: list of result dicts: config, best_val_acc, best_val_loss, best_epoch, final_val_loss, n_params, train_seconds, ckpt_path, history
 
-    VI: Huấn luyện mỗi config một model (hidden sizes, lr, dropout, optimizer...) và so sánh trên VALIDATION.
-    Vào : configs: danh sách dict; loaders: (train, val, test); device; ckpt_prefix: tiền tố tên file checkpoint
-    Ra  : danh sách dict kết quả: config, best_val_acc, best_val_loss, best_epoch, final_val_loss, n_params, train_seconds, ckpt_path, history
+    VI: Huấn luyện mỗi config một model và so sánh trên VALIDATION (không dùng tập test).
+    Vào : configs; loaders: (train, val, test); device; ckpt_prefix (dùng khi không có log_dir)
+          log_dir: có thì mỗi run ghi 3 file log, tên `<ts>_<name>`; checkpoint `<ts>_<name>_best.pt`, `_last.pt`
+          models_dir: thư mục checkpoint (mặc định outputs/models); patience, min_delta, max_batches: chuyển cho train_model
+          run_info: thông tin chung cho phần đầu log (batch_size, data, split)
+    Ra  : list dict kết quả: config, run_name, best_val_acc, best_val_loss, best_train_acc, best_epoch, stopped_epoch,
+          stop_reason, final_val_loss, n_params, train_seconds, ckpt_path, last_ckpt_path, log/history/config path, history
     """
     train_loader, val_loader, _test_loader = loaders
     results: List[Dict[str, Any]] = []
 
-    models_dir = output_dir("lab1", "models")
+    models_path = Path(models_dir) if models_dir is not None else output_dir("lab1", "models")
 
     for idx, cfg in enumerate(configs):
         # Same seed -> same initial weights and same shuffling, so the runs can be repeated.
@@ -74,7 +118,23 @@ def run_experiments(
         model = build_model(cfg)
         n_params = count_parameters(model)
 
-        ckpt_path = str(models_dir / f"{ckpt_prefix}_{idx}.pt")
+        # Có log_dir: đặt tên theo giờ bắt đầu + tên cấu hình để không ghi đè lần chạy cũ.
+        if log_dir is not None:
+            run_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{cfg.get('name', f'run{idx}')}"
+            ckpt_path = str(models_path / f"{run_name}_best.pt")
+            last_ckpt_path: Optional[str] = str(models_path / f"{run_name}_last.pt")
+        else:
+            run_name = f"{ckpt_prefix}_{idx}"
+            ckpt_path = str(models_path / f"{ckpt_prefix}_{idx}.pt")
+            last_ckpt_path = None
+
+        info = {
+            **(run_info or {}),
+            "seed": seed,
+            "config": {k: (list(v) if isinstance(v, tuple) else v) for k, v in cfg.items()},
+            "architecture": describe_architecture(cfg),
+            "params": n_params,
+        }
 
         t0 = time.perf_counter()
         history = train_model(
@@ -87,26 +147,46 @@ def run_experiments(
             ckpt_path=ckpt_path,
             optimizer_name=optimizer_name,
             weight_decay=weight_decay,
+            patience=patience,
+            min_delta=min_delta,
+            last_ckpt_path=last_ckpt_path,
+            log_dir=log_dir,
+            run_name=run_name,
+            run_info=info,
+            max_batches=max_batches,
+            verbose=verbose,
         )
         train_seconds = float(time.perf_counter() - t0)
 
         val_accs = history.get("val_acc", [])
         val_losses = history.get("val_loss", [])
+        train_accs = history.get("train_acc", [])
         # Report the epoch whose checkpoint was kept (lowest val loss).
         # VI: Báo cáo đúng epoch được lưu checkpoint (val loss thấp nhất).
         best_idx = val_losses.index(min(val_losses)) if val_losses else 0
+        if history.get("best_epoch"):
+            best_idx = int(history["best_epoch"]) - 1
         best_val_acc = float(val_accs[best_idx]) if val_accs else 0.0
         best_val_loss = float(val_losses[best_idx]) if val_losses else 0.0
+        best_train_acc = float(train_accs[best_idx]) if train_accs else None
 
         results.append({
             "config": cfg,
+            "run_name": run_name,
             "best_val_acc": best_val_acc,
             "best_val_loss": best_val_loss,
+            "best_train_acc": best_train_acc,
             "best_epoch": best_idx + 1,
+            "stopped_epoch": int(history.get("stopped_epoch", len(val_losses))),
+            "stop_reason": history.get("stop_reason", "max_epochs"),
             "final_val_loss": float(val_losses[-1]) if val_losses else 0.0,
             "n_params": n_params,
             "train_seconds": train_seconds,
             "ckpt_path": ckpt_path,
+            "last_ckpt_path": last_ckpt_path,
+            "log_path": history.get("log_path"),
+            "history_path": history.get("history_path"),
+            "config_path": history.get("config_path"),
             # Per-epoch curves, kept as evidence for the plots.
             # VI: Đường cong theo từng epoch, giữ làm bằng chứng cho các hình.
             "history": history,
@@ -121,9 +201,9 @@ def save_results(results: List[Dict[str, Any]], csv_path: str) -> None:
     Input : results, csv_path
     Output: CSV file
 
-    VI: Lưu bảng so sánh.
+    VI: Lưu bảng so sánh (mỗi run một dòng).
     Vào : results, csv_path
-    Ra  : file CSV
+    Ra  : file CSV; có cột train_minus_val_acc = train_acc − val_acc ở best_epoch (chỉ để báo cáo)
     """
     rows = []
     for r in results:
@@ -134,12 +214,20 @@ def save_results(results: List[Dict[str, Any]], csv_path: str) -> None:
                 row[k] = "-".join(str(x) for x in v) or "none"
             else:
                 row[k] = v
-        row["best_val_acc"] = r.get("best_val_acc")
-        row["best_val_loss"] = r.get("best_val_loss")
-        row["best_epoch"] = r.get("best_epoch")
-        row["final_val_loss"] = r.get("final_val_loss")
+        row["run_name"] = r.get("run_name")
         row["n_params"] = r.get("n_params")
+        row["best_epoch"] = r.get("best_epoch")
+        row["stopped_epoch"] = r.get("stopped_epoch")
+        row["stop_reason"] = r.get("stop_reason")
+        row["best_val_loss"] = r.get("best_val_loss")
+        row["best_val_acc"] = r.get("best_val_acc")
+        row["best_train_acc"] = r.get("best_train_acc")
+        tr, va = r.get("best_train_acc"), r.get("best_val_acc")
+        row["train_minus_val_acc"] = (tr - va) if tr is not None and va is not None else None
+        row["final_val_loss"] = r.get("final_val_loss")
         row["train_seconds"] = r.get("train_seconds")
+        row["ckpt_path"] = r.get("ckpt_path")
+        row["log_path"] = r.get("log_path")
         rows.append(row)
 
     df = pd.DataFrame(rows)
@@ -152,168 +240,60 @@ def save_history(results: List[Dict[str, Any]], csv_path: str) -> None:
     """Save the per-epoch history of every run, one row per run and epoch.
 
     Input : results from run_experiments (each with config name, seed and history), csv_path
-    Output: CSV file with columns name, seed, epoch, train_loss, val_loss, val_acc
+    Output: CSV file with columns name, seed, epoch, train_loss, val_loss, val_acc (+ train_acc if present)
 
-    VI: Lưu lịch sử theo từng epoch của mọi lần chạy, mỗi dòng là một lần chạy và một epoch.
-    Vào : results từ run_experiments (mỗi kết quả có tên config, seed và history), csv_path
-    Ra  : file CSV gồm các cột name, seed, epoch, train_loss, val_loss, val_acc
+    VI: Gộp lịch sử theo epoch của mọi lần chạy vào một file, mỗi dòng là một lần chạy và một epoch.
+    Vào : results từ run_experiments, csv_path
+    Ra  : file CSV gồm các cột name, seed, epoch, train_loss, val_loss, val_acc (+ train_acc nếu có)
     """
     rows = []
+    has_train_acc = all(r.get("history", {}).get("train_acc") for r in results) and bool(results)
     for r in results:
         cfg = r.get("config", {})
         history = r.get("history", {})
         for i, val_loss in enumerate(history.get("val_loss", [])):
-            rows.append({
+            row = {
                 "name": cfg.get("name"),
                 "seed": cfg.get("seed"),
                 "epoch": i + 1,
                 "train_loss": history["train_loss"][i],
                 "val_loss": val_loss,
                 "val_acc": history["val_acc"][i],
-            })
+            }
+            if has_train_acc:
+                row["train_acc"] = history["train_acc"][i]
+            rows.append(row)
 
-    df = pd.DataFrame(rows, columns=["name", "seed", "epoch", "train_loss", "val_loss", "val_acc"])
+    columns = ["name", "seed", "epoch", "train_loss", "val_loss", "val_acc"] + (["train_acc"] if has_train_acc else [])
+    df = pd.DataFrame(rows, columns=columns)
     p = Path(csv_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(p, index=False)
 
 
-def analyze_seed_runs(
-    runs: List[Dict[str, Any]],
-    loaders: Tuple[Any, Any, Any],
-    class_names: Sequence[str],
-    device: str,
-    out_dir: str,
-    top_k: int = 10,
-    prefix: str = "",
-    use_test: bool = True,
-) -> Dict[str, float]:
-    """Measure one fixed configuration across seeds. Use it only for the configuration chosen beforehand, never to choose one by test score.
+def select_config(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Chọn cấu hình theo val_acc tại best_epoch (bằng nhau thì lấy val_loss thấp hơn). Không dùng tập test.
 
-    Input : runs: results of one configuration (one per seed); loaders: (train, val, test); class_names; device; out_dir; top_k; prefix of the file names; use_test: False skips the test set
-    Output: dict: train_acc_mean, val_acc_mean, and test_acc_mean, test_acc_std when use_test; CSV files in out_dir: seed_results.csv, recall_by_class.csv (validation), top_confusions.csv (validation)
-
-    VI: Đo một cấu hình cố định qua nhiều seed. Chỉ dùng cho cấu hình đã chốt trước, không dùng để chọn cấu hình theo điểm test.
-    Vào : runs: kết quả của một cấu hình (mỗi seed một dòng); loaders: (train, val, test); class_names; device; out_dir; top_k; prefix của tên file; use_test: False thì bỏ qua tập test
-    Ra  : dict: train_acc_mean, val_acc_mean, và test_acc_mean, test_acc_std khi use_test; file CSV trong out_dir: seed_results.csv, recall_by_class.csv (validation), top_confusions.csv (validation)
+    Vào : results từ run_experiments
+    Ra  : dict: name, run_name, index, best_val_acc, best_val_loss, reason (câu giải thích)
     """
-    train_loader, val_loader, test_loader = loaders
-    num_classes = len(class_names)
-    seed_rows = []
-    recalls = []
-    cm_sum = np.zeros((num_classes, num_classes), dtype=np.int64)
-
-    for run in runs:
-        cfg = run["config"]
-        model = load_checkpoint(build_model(cfg, num_classes), run["ckpt_path"], device=device)
-
-        train_loss, train_acc = evaluate(model, train_loader, device=device)
-        val_loss, val_acc = evaluate(model, val_loader, device=device)
-        cm = confusion_matrix(model, val_loader, device=device, num_classes=num_classes)
-        cm_sum += cm
-        # Recall per class on validation, one list per seed.
-        # VI: Recall từng lớp trên validation, mỗi seed một danh sách.
-        recalls.append(list(per_class_accuracy(cm).values()))
-        row = {
-            "seed": cfg.get("seed"),
-            "best_epoch": run.get("best_epoch"),
-            "train_loss": train_loss,
-            "train_acc": train_acc,
-            "val_loss": val_loss,
-            "val_acc": val_acc,
-        }
-        if use_test:
-            row["test_loss"], row["test_acc"] = evaluate(model, test_loader, device=device)
-        seed_rows.append(row)
-
-    recall_arr = np.asarray(recalls)
-    # ddof=1 is undefined for one seed, so report 0 there.
-    # VI: ddof=1 không xác định khi chỉ có một seed nên báo 0.
-    ddof = 1 if len(runs) > 1 else 0
-    lowest = recall_arr.argmin(axis=1)
-    recall_df = pd.DataFrame({
-        "class": list(class_names),
-        "recall_mean": recall_arr.mean(axis=0),
-        "recall_std": recall_arr.std(axis=0, ddof=ddof),
-        "recall_min": recall_arr.min(axis=0),
-        "recall_max": recall_arr.max(axis=0),
-        "n_seeds_lowest": [int((lowest == i).sum()) for i in range(num_classes)],
-    })
-
-    confusion_rows = [
-        {
-            "true_class": class_names[i],
-            "predicted_class": class_names[j],
-            "total": int(cm_sum[i, j]),
-            "mean_per_seed": float(cm_sum[i, j]) / len(runs),
-        }
-        for i in range(num_classes)
-        for j in range(num_classes)
-        if i != j
-    ]
-    confusion_df = pd.DataFrame(confusion_rows).sort_values("total", ascending=False).head(top_k)
-
-    seed_df = pd.DataFrame(seed_rows)
-    out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    seed_df.to_csv(out / f"{prefix}seed_results.csv", index=False)
-    recall_df.to_csv(out / f"{prefix}recall_by_class.csv", index=False)
-    confusion_df.to_csv(out / f"{prefix}top_confusions.csv", index=False)
-
-    summary = {
-        "train_acc_mean": float(seed_df["train_acc"].mean()),
-        "val_acc_mean": float(seed_df["val_acc"].mean()),
+    if not results:
+        raise ValueError("results is empty")
+    order = sorted(range(len(results)),
+                   key=lambda i: (-results[i]["best_val_acc"], results[i]["best_val_loss"]))
+    best = results[order[0]]
+    name = best["config"].get("name", best.get("run_name"))
+    reason = f"{name} có val_acc cao nhất tại best_epoch ({best['best_val_acc'] * 100:.2f}%)"
+    if len(order) > 1:
+        second = results[order[1]]
+        gap = (best["best_val_acc"] - second["best_val_acc"]) * 100
+        reason += (f", hơn cấu hình thứ hai {second['config'].get('name')} {gap:.2f} điểm"
+                   f" ({second['best_val_acc'] * 100:.2f}%)")
+    return {
+        "name": name,
+        "run_name": best.get("run_name"),
+        "index": order[0],
+        "best_val_acc": best["best_val_acc"],
+        "best_val_loss": best["best_val_loss"],
+        "reason": reason,
     }
-    if use_test:
-        summary["test_acc_mean"] = float(seed_df["test_acc"].mean())
-        summary["test_acc_std"] = float(seed_df["test_acc"].std(ddof=ddof))
-    return summary
-
-
-def compare_pairs(values: pd.DataFrame, pairs: Sequence[Tuple[str, str, str]]) -> pd.DataFrame:
-    """Paired comparison across shared seeds, with a t-test and Holm correction for several pairs.
-
-    Input : values: table with one row per seed, one column per configuration (points); pairs: (variant, reference, factor)
-    Output: DataFrame: factor, variant, reference, mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm
-
-    VI: So sánh theo cặp trên cùng các seed, có kiểm định t và hiệu chỉnh Holm khi so nhiều cặp.
-    Vào : values: bảng mỗi seed một dòng, mỗi cấu hình một cột (đơn vị điểm); pairs: (biến thể, mốc, yếu tố)
-    Ra  : DataFrame: factor, variant, reference, mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm
-    """
-    rows = []
-    for variant, reference, factor in pairs:
-        # Difference per seed: both configurations were trained with the same 5 seeds.
-        # VI: Chênh lệch theo từng seed: hai cấu hình được train với cùng 5 seed.
-        diff = values[variant] - values[reference]
-        n = len(diff)
-        mean, std = float(diff.mean()), float(diff.std(ddof=1))
-        half_width = float(stats.t.ppf(0.975, n - 1)) * std / np.sqrt(n)
-        # Condition 1 of the rule: all seeds point the same way.
-        # VI: Điều kiện 1 của quy tắc: mọi seed cùng chiều.
-        same_direction = bool((diff > 0).all() or (diff < 0).all())
-        rows.append({
-            "factor": factor,
-            "variant": variant,
-            "reference": reference,
-            "mean_diff": mean,
-            "std_diff": std,
-            "ci95_low": mean - half_width,
-            "ci95_high": mean + half_width,
-            "seeds_higher": int((diff > 0).sum()),
-            # Rule fixed before reading the results: condition 1 and |mean| >= 2 std (condition 2).
-            # VI: Quy tắc chốt trước khi đọc kết quả: điều kiện 1 và |trung bình| >= 2 std (điều kiện 2).
-            "rule_clear": same_direction and abs(mean) >= 2 * std,
-            "p_value": float(stats.ttest_rel(values[variant], values[reference]).pvalue),
-        })
-
-    df = pd.DataFrame(rows)
-    # Holm: multiply the smallest p by m, the next by m-1, and keep the values increasing.
-    # VI: Holm: nhân p nhỏ nhất với m, p kế tiếp với m-1, và giữ dãy không giảm.
-    order = df["p_value"].to_numpy().argsort()
-    adjusted = np.empty(len(df))
-    running_max = 0.0
-    for rank, i in enumerate(order):
-        running_max = max(running_max, float(df["p_value"].iloc[i]) * (len(df) - rank))
-        adjusted[i] = min(running_max, 1.0)
-    df["p_holm"] = adjusted
-    return df

@@ -1,7 +1,7 @@
 # preprocessing — Tải dữ liệu và chia train/val (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:41:23+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done
 
@@ -27,13 +27,13 @@ Val phải tách từ train, test giữ nguyên 10.000 ảnh để đánh giá c
 ## Input / Output
 - **Input:** 4 file IDX gốc tải bằng `torchvision.datasets.FashionMNIST(download=True)`
 - **Output:** `fashion-mnist_train.csv`, `fashion-mnist_test.csv`; `train_val_split.json` (`train_idx`, `val_idx`)
-  - Code ghi CSV vào `data/raw/` (`preprocessing/download_official.py:31`), split vào `data/splits/train_val_split.json` (`main.py:67`, `:83`).
+  - Code ghi CSV vào `data/raw/` (`preprocessing/download_official.py:31`), split vào `data/splits/train_val_split.json` (`main.py:99`, `:115`).
 
 ## How to do it (general plan)
 1. Chạy `python -m labs.lab1.preprocessing.download_official` để tải và ghi 2 CSV, script tự đọc lại để so từng pixel
 2. `load_csv` đọc CSV, kiểm cột và miền giá trị 0–255
 3. `make_split(labels, val_ratio=0.1, seed=42)` chia phân tầng theo lớp
-4. `save_split` ghi JSON; `main.py` dùng lại file đã commit nếu có (`main.py:84-88`)
+4. `save_split` ghi JSON; `main.py` dùng lại file đã commit nếu có (`main.py:111-115`)
 5. Smoke run: tạo lại split từ CSV và so với file đã commit
 6. Normal run trong pipeline `main.py`
 

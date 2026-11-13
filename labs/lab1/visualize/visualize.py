@@ -10,23 +10,42 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Union
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 from matplotlib.figure import Figure
 
 
-def plot_loss_curves(history: dict, out_path: str) -> None:
+def load_history(csv_path: str) -> dict:
+    """Đọc `<ts>_<run>_history.csv` (log của train) thành dict, mỗi cột một list.
+
+    Vào : csv_path
+    Ra  : dict: epoch, train_loss, train_acc, val_loss, val_acc, lr, time_s
+    """
+    df = pd.read_csv(csv_path)
+    return {col: df[col].tolist() for col in df.columns}
+
+
+def _as_history(history: Union[dict, str, Path]) -> dict:
+    # Nhận dict trong bộ nhớ hoặc đường dẫn tới _history.csv.
+    if isinstance(history, (str, Path)):
+        return load_history(str(history))
+    return history
+
+
+def plot_loss_curves(history: Union[dict, str], out_path: str, title: str = "Training and Validation Loss") -> None:
     """Plot training vs validation loss.
 
     Input : history from train_model; out_path (.png)
     Output: PNG file
 
     VI: Vẽ loss train và validation.
-    Vào : history từ train_model; out_path (.png)
+    Vào : history (dict từ train_model hoặc đường dẫn `_history.csv`); out_path (.png); title
     Ra  : file PNG
     """
+    history = _as_history(history)
     train_loss = history.get("train_loss", [])
     val_loss = history.get("val_loss", [])
     epochs = range(1, len(train_loss) + 1)
@@ -40,10 +59,39 @@ def plot_loss_curves(history: dict, out_path: str) -> None:
     if val_loss:
         ax.plot(epochs, val_loss, label="Validation Loss", marker="s", color="#ff7f0e")
 
-    ax.set_title("Training and Validation Loss", fontsize=12)
+    ax.set_title(title, fontsize=12)
     ax.set_xlabel("Epoch", fontsize=10)
     ax.set_ylabel("Cross Entropy Loss", fontsize=10)
     ax.legend(loc="upper right")
+    ax.grid(True, linestyle="--", alpha=0.6)
+
+    fig.tight_layout()
+    p = Path(out_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(p, dpi=100)
+
+
+def plot_accuracy_curves(history: Union[dict, str], out_path: str,
+                         title: str = "Training and Validation Accuracy") -> None:
+    """Vẽ accuracy train và validation theo epoch.
+
+    Vào : history (dict hoặc đường dẫn `_history.csv`, cần train_acc và val_acc); out_path (.png); title
+    Ra  : file PNG
+    """
+    history = _as_history(history)
+    train_acc = [a * 100 for a in history.get("train_acc", [])]
+    val_acc = [a * 100 for a in history.get("val_acc", [])]
+    epochs = range(1, len(val_acc) + 1)
+
+    fig = Figure(figsize=(7, 5))
+    ax = fig.subplots()
+    if train_acc:
+        ax.plot(epochs, train_acc, label="Train Accuracy", marker="o", color="#1f77b4")
+    ax.plot(epochs, val_acc, label="Validation Accuracy", marker="s", color="#ff7f0e")
+    ax.set_title(title, fontsize=12)
+    ax.set_xlabel("Epoch", fontsize=10)
+    ax.set_ylabel("Accuracy (%)", fontsize=10)
+    ax.legend(loc="lower right")
     ax.grid(True, linestyle="--", alpha=0.6)
 
     fig.tight_layout()
@@ -194,3 +242,66 @@ def plot_confusion_matrix(cm, class_names: Sequence[str], out_path: str) -> None
     p = Path(out_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(p, dpi=100)
+
+
+def demo_predictions(
+    model: nn.Module,
+    loader,
+    class_names: Sequence[str],
+    device: str | torch.device,
+    out_png: str,
+    out_csv: str,
+    n: int = 16,
+) -> pd.DataFrame:
+    """Demo: dự đoán n ảnh đầu của loader bằng model đã nạp checkpoint (không train).
+
+    Vào : model (đã load_checkpoint), loader (test, không xáo), class_names (10 tên), device, out_png, out_csv, n
+    Ra  : DataFrame n dòng: index, true, pred, prob, correct; file PNG (ảnh + nhãn + xác suất) và CSV
+    """
+    if len(class_names) != 10:
+        raise ValueError(f"Expected 10 class_names, got {len(class_names)}")
+
+    model.to(device)
+    model.eval()
+    images, rows = [], []
+    with torch.no_grad():
+        for x_batch, y_batch in loader:
+            # Xác suất = softmax trên logits; model không có softmax trong forward.
+            probs = torch.softmax(model(x_batch.to(device)), dim=1).cpu()
+            for img, t, pr in zip(x_batch, y_batch, probs):
+                k = int(torch.argmax(pr))
+                rows.append({"index": len(rows), "true": class_names[int(t)], "pred": class_names[k],
+                             "prob": float(pr[k]), "correct": k == int(t)})
+                images.append(img.squeeze().float().numpy())
+                if len(rows) >= n:
+                    break
+            if len(rows) >= n:
+                break
+
+    df = pd.DataFrame(rows, columns=["index", "true", "pred", "prob", "correct"])
+    if df.empty:
+        return df
+    p_csv = Path(out_csv)
+    p_csv.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(p_csv, index=False)
+
+    ncols = int(math.ceil(math.sqrt(len(df))))
+    nrows = int(math.ceil(len(df) / ncols))
+    fig = Figure(figsize=(3 * ncols, 3.3 * nrows))
+    axes = np.atleast_1d(fig.subplots(nrows, ncols)).ravel()
+    for i, ax in enumerate(axes):
+        ax.axis("off")
+        if i >= len(df):
+            continue
+        img = images[i]
+        lo, hi = float(img.min()), float(img.max())
+        ax.imshow((img - lo) / (hi - lo) if hi > lo else np.zeros_like(img), cmap="gray", vmin=0.0, vmax=1.0)
+        r = df.iloc[i]
+        # Xanh lá = đúng, đỏ = sai.
+        color = "#2ca02c" if r["correct"] else "#d62728"
+        ax.set_title(f"pred: {r['pred']} ({r['prob'] * 100:.0f}%)\ntrue: {r['true']}", color=color, fontsize=9)
+    fig.tight_layout()
+    p_png = Path(out_png)
+    p_png.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(p_png, dpi=100)
+    return df

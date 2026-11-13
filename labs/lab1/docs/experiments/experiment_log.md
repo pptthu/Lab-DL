@@ -1,9 +1,14 @@
 # Sổ ghi thí nghiệm
 
 - **Created**: 2026-11-01T02:08:09+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T01:18:22+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T01:43:54+07:00 (pptthu)
 
 Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `outputs/results/`. Các mục trước 14/11 lấy từ `artifacts/runs/` cũ, đã xoá ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`.
+
+## 14/11/2026: 5 cấu hình, seed 42, early stopping (desc mới)
+- **Vì sao:** cô nhận xét bản cũ chạy cố định 5 epoch, không có log theo lần chạy, không rõ khi nào train xong. Desc mới `docs/lab1_description_v1.md` thay thí nghiệm 7 cấu hình × 5 seed bằng 5 cấu hình × seed 42, có quy tắc dừng.
+- **Thay đổi:** tối đa 30 epoch, dừng khi `val_loss` không giảm ít nhất 1e-4 trong 5 epoch, giữ `_best.pt`; mỗi run ghi `.log`, `_history.csv`, `_config.json`. Bỏ `sgd_same_lr`, `weight_decay_1e-4`, đa seed và kiểm định (O10). Cùng data, cùng split, cùng 4 thread CPU.
+- **Kết quả** (`outputs/results/experiment_results.csv`, `test_results.csv`): cả 5 cấu hình dừng sớm ở epoch 11–15. Val_acc tại best_epoch: baseline 88,97%, softmax_regression 85,15%, larger_network 89,28%, sgd_lr_0.01 89,13%, dropout_0.2 89,00%. Chọn larger_network theo val; test: baseline 88,60% (≥ 87% ✔), larger_network 88,46%. Lớp ẩn vẫn là yếu tố rõ nhất (+3,8 điểm so với mô hình tuyến tính), giống kết luận cũ; các cấu hình còn lại chênh baseline ≤ 0,31 điểm với một seed nên chưa kết luận. Dropout đưa train − val về −0,24 điểm (baseline 2,59).
 
 ## 06/11/2026: lưu lịch sử theo epoch
 - **Vì sao:** trước đây mỗi lần chạy chỉ giữ giá trị tốt nhất và cuối cùng, nên các giải thích như "SGD lr 1e-3 vẫn đang học" hay "baseline overfit sau epoch 7" không có đường cong làm bằng chứng.
