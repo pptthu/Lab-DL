@@ -1,7 +1,7 @@
 # experiment — So sánh 5 cấu hình (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:03:08+07:00 (Thư)
+- **Last Updated**: 2026-11-14T00:34:29+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -21,7 +21,7 @@ Bản cũ chạy 7 cấu hình × 5 seed (35 lần) kèm p-value, Holm, CI95 —
 - Không làm:
   - Đánh giá trên test — việc của `evaluate`, chạy một lần sau khi chọn
   - Đa seed, p-value, Holm, CI95 — đã bỏ (O10)
-  - Thêm cấu hình ngoài 5 cấu hình (vd `sgd_same_lr`, `weight_decay_1e-4` của bản cũ) — leader chưa duyệt
+  - Thêm cấu hình ngoài 5 cấu hình (vd `sgd_same_lr`, `weight_decay_1e-4` của bản cũ) — Thư chưa duyệt
   - Optuna hay tìm siêu tham số tự động — ngoài đề
 
 ## Input / Output
