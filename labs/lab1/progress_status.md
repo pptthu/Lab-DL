@@ -144,6 +144,8 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-06 Thư: `experiment` (thêm `history`, `save_history`), `main.py`, `extended_study.py`, notebook (Stage 9b, 10b), README, `docs/`: lưu lịch sử theo epoch, chạy lại, kết quả giống hệt 04/11; bỏ số liệu Kaggle
 - 2026-11-04 Thư: `main.py`, `extended_study.py`, notebook, README, `docs/`: tạo lại CSV chính thức trên máy nhóm trưởng; chạy lại `main.py`, `extended_study.py`, notebook trên data chính thức; gộp `README_official_data.md` của Toàn vào `README.md` rồi xóa bản nháp; thay mọi số trong README, chữ trong notebook và file này; thêm 9 hướng dẫn module trong `labs/lab1/docs/`; ghi phạm vi chỉ làm MLP -> 54 passed, notebook 0 lỗi và khớp `main.py`
 - 2026-11-01 Thư: `experiment`, `extended_study`, notebook, README: thêm train accuracy, kiểm định t có hiệu chỉnh Holm, khoảng tin cậy 95%, nghiên cứu 20 epoch; đối chiếu CSV Kaggle với file chính thức; viết báo cáo chi tiết trong README; bỏ CNN vì thiếu thời gian -> 54 passed, chạy `main.py` hai lần ra kết quả y hệt.
+- 2026-11-13 Thư: `docs/`: sửa tài liệu theo nhận xét của cô; thêm `rules/`, `templates/`, `plans/`, `lab1_description_v1.md`, `00_README_v1.md`; chuyển 9 hướng dẫn module vào `docs/phases/<module>_v1.md` (giữ lịch sử) rồi viết lại theo khuôn phase của M; trạng thái module ghi "Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới" -> chỉ sửa tài liệu, không đổi code; `pytest labs/lab1/tests` 52 passed
+- 2026-11-13 Thư: `README`, `docs/experiments/experiment_log.md`, notebook: chuyển sang tiếng Việt (dịch từ phần tiếng Anh vì đầy đủ hơn); notebook chỉ đổi 16 ô markdown, ô code và output giữ nguyên -> chỉ sửa tài liệu, không chạy lại notebook
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.
@@ -155,3 +157,4 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - Chưa kiểm chứng: giả thuyết về nguyên nhân lỗi của Shirt, và nguyên nhân CSV Kaggle khác file chính thức.
 - Chưa làm: chạy trên máy khác. Trên cùng máy, `main.py` chạy hai lần cho kết quả y hệt (2026-11-04).
 - Ngoài phạm vi (quyết định của nhóm, 2026-11-04): CNN; Lab 1 chỉ làm MLP.
+- Chưa làm (2026-11-13): sửa code theo desc mới `docs/lab1_description_v1.md` (5 cấu hình, seed 42, tối đa 30 epoch + early stopping, log 3 file, `outputs/`); từng chỗ lệch ghi trong `docs/phases/<module>_v1.md`, mục "Chỗ code chưa khớp plan".
