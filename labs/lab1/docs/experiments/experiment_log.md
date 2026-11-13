@@ -1,5 +1,8 @@
 # Sổ ghi thí nghiệm
 
+- **Created**: 2026-11-01T02:08:09+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T00:11:16+07:00 (pptthu)
+
 Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `artifacts/runs/`.
 
 ## 06/11/2026: lưu lịch sử theo epoch

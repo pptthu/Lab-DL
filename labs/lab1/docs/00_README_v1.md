@@ -1,6 +1,6 @@
 # Tài liệu Lab 1 — đọc file này trước (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:05+07:00 | Cập nhật: Thư, 2026-11-13T11:22:05+07:00
 
 ## Quy tắc version
 - Tên file có hậu tố `_vN`. Luôn dùng bản có **số lớn nhất**; bản cũ giữ nguyên, không sửa đè.

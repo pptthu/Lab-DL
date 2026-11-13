@@ -1,5 +1,8 @@
 # Lab 1: Fashion-MNIST classification with an MLP (PyTorch): project description (Define + Design)
 
+- **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
+- **Last Updated**: 2026-11-06T23:34:19+07:00 (pptthu)
+
 ## Define
 - **Problem:** Classify 28x28 grayscale clothing images into 10 classes with a neural network trained in PyTorch.
 - **Target users:** the lecturer (grading) and the group (learning).

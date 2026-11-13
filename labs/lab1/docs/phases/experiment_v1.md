@@ -1,7 +1,7 @@
 # experiment — So sánh 5 cấu hình (v1)
 
-- **Created**: 2026-11-13T23:36:00+07:00
-- **Last Updated**: 2026-11-13T23:36:00+07:00 (Thư)
+- **Created**: 2026-11-04T14:49:03+07:00
+- **Last Updated**: 2026-11-14T00:03:08+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 

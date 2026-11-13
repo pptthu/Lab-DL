@@ -1,5 +1,5 @@
 # Lab 1 — Phân loại Fashion-MNIST bằng MLP  (v1)
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
 - Trạng thái: To Do (train lại theo log và quy tắc dừng mới)
 ## Background
 Đề P1: load Fashion-MNIST, build NN, train, đánh giá accuracy, save/load, thử network/hyperparameter, vẽ loss, hiện ảnh dự đoán. Bản cũ chạy 5 epoch cố định, không có log theo lần chạy, lưu model trong `artifacts/`, nên train lại theo luật mới.
