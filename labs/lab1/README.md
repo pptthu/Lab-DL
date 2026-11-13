@@ -106,8 +106,7 @@ labs/lab1/
 ├── notebook/lab1_presentation.ipynb # presentation notebook
 ├── raw_data/                # dataset files (NOT committed)
 ├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
-├── docs/                    # per-module guides for AI agents (eda.md ... experiment.md, demo.md)
-├── logbook/                 # bug reports and experiment notes (docs/templates)
+├── docs/                    # per-module guides for AI agents (eda.md ... experiment.md, demo.md); experiments/ = experiment notes (was logbook/)
 └── tests/                   # interface contract + module tests (fake data)
 ```
 
