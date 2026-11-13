@@ -1,7 +1,7 @@
 # preprocessing — Tải dữ liệu và chia train/val (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:03:08+07:00 (Thư)
+- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
 - **Status**: Done (chờ đổi đường dẫn ở giai đoạn O5)
 
@@ -14,7 +14,7 @@ Preprocessing — tải Fashion-MNIST chính thức, đọc CSV, chia train/val 
 Đề P1: "load FashionMNIST". Nhóm dùng file chính thức của Zalando (kiểm MD5) thay cho CSV Kaggle.
 Val phải tách từ train, test giữ nguyên 10.000 ảnh để đánh giá cuối.
 
-## Goals / Purpose  [đề xuất]
+## Goals / Purpose
 - Có 2 file CSV: train 60.000 dòng (6.000 mỗi lớp), test 10.000 dòng (1.000 mỗi lớp), cột `label` + `pixel1..pixel784`
 - `load_csv` trả ảnh `[N,28,28]` uint8 và nhãn `[N]` int64
 - File split `train_val_split.json` cố định: 54.000 train / 6.000 val (600 mỗi lớp), seed 42
@@ -58,7 +58,7 @@ torchvision FashionMNIST (MD5) → download_official → 2 CSV
   - Không tự viết đường dẫn dữ liệu, dùng `raw_data_dir("lab1")` (`preprocessing.md` cũ)
   - Chỉ có một cách chia; kết quả trên cách chia khác chưa đo (`preprocessing.md` cũ)
 
-## Success criteria  [đề xuất]
+## Success criteria
 - **Test:** `python -m pytest labs/lab1/tests/test_preprocessing.py -q` đạt (6 test, CSV giả, không tải mạng)
 - **Smoke run:** `make_split(labels, 0.1, 42)` trên CSV vừa tạo cho ra đúng `train_val_split.json` đã commit
 - **Normal run:** MD5 CSV train `8ff2cced1c624159b21dac4f735b4215`, test `78e18be2098f1256a07ce6f91a4d436e`; split 54.000 / 6.000
