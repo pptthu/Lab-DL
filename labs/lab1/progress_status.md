@@ -37,7 +37,7 @@ Sau bàn giao, Member A chỉ trả lời câu hỏi và review PR, không sửa
 ## Kiểm chứng: đổi sang dữ liệu chính thức của Zalando (2026-11-02, Python 3.13.7, torch 2.13.0 CPU, torchvision 0.29.1)
 Dữ liệu và split dưới đây thay thế CSV Kaggle. Kết quả huấn luyện trên dữ liệu này nằm ở mục kế tiếp (2026-11-04).
 - `python -m labs.lab1.preprocessing.download_official` -> đạt: torchvision tải 4 file IDX gốc và kiểm MD5; ghi `fashion-mnist_train.csv` (60.000 dòng, 6.000 mỗi lớp) và `fashion-mnist_test.csv` (10.000 dòng, 1.000 mỗi lớp); `load_csv` đọc lại khớp từng pixel và nhãn với dữ liệu gốc
-- CSV Kaggle cũ giữ lại để đối chiếu: `raw_data/fashion-mnist_train_kaggle.csv`, `raw_data/fashion-mnist_test_kaggle.csv` (không commit)
+- CSV Kaggle cũ (`raw_data/fashion-mnist_*_kaggle.csv`, không commit) từng giữ lại để đối chiếu, đã xóa ngày 2026-11-08 vì code không dùng; các số so sánh Kaggle trong file này không còn kiểm chứng lại được
 - `python -m labs.lab1.preprocessing.preprocessing` -> đạt: `make_split(labels, val_ratio=0.1, seed=42)`, train 54.000 / val 6.000 (600 mỗi lớp), ghi lại `artifacts/splits/train_val_split.json`
 - `run_eda` trên CSV train mới -> đạt: n_rows 60000, 6000 mỗi lớp, pixel 0-255, n_missing 0, n_duplicates 0 (CSV Kaggle: 43)
 - `compute_mean_std` trên 54.000 ảnh train -> mean 0,2859, std 0,3530 (CSV Kaggle: 0,2860 / 0,3527)
@@ -61,7 +61,7 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - `python -m labs.lab1.extended_study` -> đạt, 10 lần chạy 20 epoch, 1.440 giây: baseline val 89,22 +/- 0,26%, test 88,62 +/- 0,19%, train 92,95%, epoch tốt nhất 7-10, val loss thấp nhất 0,2988, cuối 0,3972; dropout 0,2 val 89,58 +/- 0,29%, epoch tốt nhất 9-20, val loss cuối 0,3095
 - Ở 20 epoch: dropout so với baseline +0,36 điểm val accuracy, p sau hiệu chỉnh 0,15; val loss cuối thấp hơn 0,088 ở cả 5 seed (p sau hiệu chỉnh 0,0001); 20 so với 5 epoch +0,60 điểm, p sau hiệu chỉnh 0,15
 - `python -m pytest labs/lab1/tests tests -q` -> 54 passed; md5 của `mlp_baseline.pt` không đổi sau khi chạy test
-- Kết quả và notebook của lần chạy trên CSV Kaggle được sao lưu ngoài repo (`lab1_kaggle_artifacts_backup_2026-11-04`), không commit
+- Kết quả và notebook của lần chạy trên CSV Kaggle từng được sao lưu ngoài repo (`lab1_kaggle_artifacts_backup_2026-11-04`, không commit), đã xóa ngày 2026-11-08
 
 ## Kiểm chứng: kết quả trên CSV Kaggle (2026-11-01, đã thay thế, giữ làm lịch sử)
 - `python -m pytest labs/lab1/tests tests -q` -> 54 passed; md5 của mọi file `.pt` không đổi sau khi chạy test
@@ -144,6 +144,8 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-06 Thư: `experiment` (thêm `history`, `save_history`), `main.py`, `extended_study.py`, notebook (Stage 9b, 10b), README, `docs/`: lưu lịch sử theo epoch, chạy lại, kết quả giống hệt 04/11; bỏ số liệu Kaggle
 - 2026-11-04 Thư: `main.py`, `extended_study.py`, notebook, README, `docs/`: tạo lại CSV chính thức trên máy nhóm trưởng; chạy lại `main.py`, `extended_study.py`, notebook trên data chính thức; gộp `README_official_data.md` của Toàn vào `README.md` rồi xóa bản nháp; thay mọi số trong README, chữ trong notebook và file này; thêm 9 hướng dẫn module trong `labs/lab1/docs/`; ghi phạm vi chỉ làm MLP -> 54 passed, notebook 0 lỗi và khớp `main.py`
 - 2026-11-01 Thư: `experiment`, `extended_study`, notebook, README: thêm train accuracy, kiểm định t có hiệu chỉnh Holm, khoảng tin cậy 95%, nghiên cứu 20 epoch; đối chiếu CSV Kaggle với file chính thức; viết báo cáo chi tiết trong README; bỏ CNN vì thiếu thời gian -> 54 passed, chạy `main.py` hai lần ra kết quả y hệt.
+- 2026-11-13 Thư: `docs/`: sửa tài liệu theo nhận xét của cô; thêm `rules/`, `templates/`, `plans/`, `lab1_description_v1.md`, `00_README_v1.md`; chuyển 9 hướng dẫn module vào `docs/phases/<module>_v1.md` (giữ lịch sử) rồi viết lại theo khuôn phase của M; trạng thái module ghi "Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới" -> chỉ sửa tài liệu, không đổi code; `pytest labs/lab1/tests` 52 passed
+- 2026-11-13 Thư: `README`, `docs/experiments/experiment_log.md`, notebook: chuyển sang tiếng Việt (dịch từ phần tiếng Anh vì đầy đủ hơn); notebook chỉ đổi 16 ô markdown, ô code và output giữ nguyên -> chỉ sửa tài liệu, không chạy lại notebook
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.
@@ -155,3 +157,4 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - Chưa kiểm chứng: giả thuyết về nguyên nhân lỗi của Shirt, và nguyên nhân CSV Kaggle khác file chính thức.
 - Chưa làm: chạy trên máy khác. Trên cùng máy, `main.py` chạy hai lần cho kết quả y hệt (2026-11-04).
 - Ngoài phạm vi (quyết định của nhóm, 2026-11-04): CNN; Lab 1 chỉ làm MLP.
+- Chưa làm (2026-11-13): sửa code theo desc mới `docs/lab1_description_v1.md` (5 cấu hình, seed 42, tối đa 30 epoch + early stopping, log 3 file, `outputs/`); từng chỗ lệch ghi trong `docs/phases/<module>_v1.md`, mục "Chỗ code chưa khớp plan".
