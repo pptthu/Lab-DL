@@ -1,6 +1,6 @@
 # Lab 1 — Phân loại Fashion-MNIST bằng MLP  (v1)
-- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-14T01:18:05+07:00
-- Trạng thái: To Do (train lại theo log và quy tắc dừng mới)
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-14T01:43:35+07:00
+- Trạng thái: Done (normal run 2026-11-14, audit trong `phases/*_v1.md`; kết quả ở `../README.md`)
 ## Background
 Đề P1: load Fashion-MNIST, build NN, train, đánh giá accuracy, save/load, thử network/hyperparameter, vẽ loss, hiện ảnh dự đoán. Bản cũ chạy 5 epoch cố định, không có log theo lần chạy, lưu model trong `artifacts/`, nên train lại theo luật mới.
 ## Purpose
@@ -33,3 +33,4 @@
 - 2026-11-12: dừng theo `val_loss`, patience 5, `min_delta` 1e-4, tối đa 30 epoch — `val_loss` nhạy hơn acc; luôn giữ best checkpoint.
 - 2026-11-13: còn 5 cấu hình × seed 42, bỏ đa seed và kiểm định — đề không yêu cầu, giữ desc ngắn.
 - 2026-11-14: mức test ≥ 87% theo bài báo gốc Fashion-MNIST; test chạy cho cả baseline và cấu hình được chọn; sơ đồ kiến trúc vẽ bằng mermaid trong model card.
+- 2026-11-14: chọn `larger_network` theo val_acc tại best_epoch (89,28%, hơn `sgd_lr_0.01` 0,15 điểm, một seed) — đúng quy tắc chọn trên val; test baseline 88,60% đạt mức ≥ 87%, `larger_network` 88,46%.

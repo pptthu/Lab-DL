@@ -1,181 +1,105 @@
-# Lab 1: Fashion-MNIST classification with an MLP (PyTorch): project description (Define + Design)
+# Lab 1: Phân loại Fashion-MNIST bằng MLP (PyTorch) — tổng quan dự án (Define + Design)
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T00:34:29+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T01:50:00+07:00 (pptthu)
+- File này là bản tổng quan để trình bày. Desc hiện hành (nguồn của mọi quyết định): [`docs/lab1_description_v1.md`](docs/lab1_description_v1.md). Kết quả: [`README.md`](README.md). Mục lục tài liệu: [`docs/00_README_v2.md`](docs/00_README_v2.md).
 
-## Define
-- **Problem:** Classify 28x28 grayscale clothing images into 10 classes with a neural network trained in PyTorch.
-- **Target users:** the lecturer (grading) and the group (learning).
-- **Input / Output:** Input: CSV rows (label + 784 pixels, values 0-255). Output: trained model, accuracy, loss curves, predicted-vs-actual images, experiment table.
-- **Data:** official Fashion-MNIST from Zalando GitHub (`zalandoresearch/fashion-mnist`), downloaded by `preprocessing/download_official.py` and written as CSV (`label` + 784 pixel columns, 60,000 train / 10,000 test rows).
-- **Core features:**
-  1. Load the dataset and apply transforms
-  2. Build a neural network (MLP)
-  3. Training loop: forward, loss, backward, optimize
-  4. Evaluate model accuracy
-  5. Save and load the model
-  6. Experiment with network/hyperparameters
-  7. Visualize loss; display predicted vs actual images
-- **Technology constraints:** Python 3, PyTorch, matplotlib, numpy, pandas; CPU is enough. Raw data is not committed. Group scope = MLP + experiments (CNN is optional extra work of Thư).
-- **Evaluation criteria:** Practice 1 deliverables: Python code, brief report (README-style, about 200 words or fewer), loss graphs, image displays. Oral Q&A.
+## 1. Define
 
-## Design
-- **System architecture** (three layers, two entry points):
-  - Data layer: `eda`, `preprocessing`, `features` (CSV -> checked arrays -> shared split -> normalized DataLoaders)
-  - Model and training layer: `model`, `train`, `experiment` (network, training loop, best checkpoint, comparison of configurations)
-  - Analysis layer: `evaluate`, `visualize` (metrics, confusion matrix, figures)
-  - Entry points: `main.py` runs the whole pipeline; `notebook/lab1_presentation.ipynb` calls the same modules for the presentation. Outputs go to `artifacts/` (splits, models, figures, runs).
-- **Data flow:** eda -> preprocessing -> features -> model -> train -> evaluate -> visualize ; experiment wraps model + train
-- **Modules and owners** (each module = one sub-folder with one script):
-- Member A: `eda`, `preprocessing`, `features`, `model`
-- Member B: `train`, `evaluate`, `visualize`, `experiment`
-- Thư owns `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` and PR review.
-- **Module applicability rule:** if a module is not needed in this lab, mark it `N/A` in `progress_status.md` with a one-line reason. Do not delete it silently.
-- **Interfaces** (names and signatures are a contract; the test in `tests/test_smoke.py` checks the names):
+| Mục | Nội dung |
+|---|---|
+| Bài toán | Phân loại ảnh quần áo xám 28×28 thành 10 lớp bằng mạng nơ-ron train trong PyTorch (đề P1) |
+| Người dùng | Cô (chấm, vấn đáp) và nhóm (học quy trình làm bài có kiểm chứng) |
+| Dữ liệu | Fashion-MNIST chính thức của Zalando, ghi ra CSV (`label` + 784 pixel): 60.000 train, 10.000 test, 10 lớp cân bằng |
+| Input / Output | Input: CSV trong `data/raw/`. Output: checkpoint, log mỗi lần chạy, bảng so sánh, kết quả test, hình, demo trong `outputs/` |
+| Yêu cầu của đề | Load dữ liệu + transform; build NN; training loop; đánh giá accuracy; save/load model; thử network/hyperparameter; vẽ loss; hiện ảnh dự đoán so với nhãn thật |
+| Phạm vi | 5 cấu hình MLP, seed 42, tối đa 30 epoch + early stopping. Không làm: CNN, Optuna, đa seed, kiểm định thống kê, ảnh ngoài dataset |
+| Tiêu chí đạt | Mọi run đủ 3 file log và `_best.pt` nạp lại được; baseline test ≥ 87% (bài báo gốc Fashion-MNIST: MLP 0,871); baseline val_acc > softmax_regression; đủ hình và bảng |
+| Kết quả (14/11) | Baseline test **88,60%** ✔; baseline val 88,97% > softmax 85,15% ✔; cấu hình chọn trên val: larger_network (val 89,28%, test 88,46%) |
 
-| Module | Owner | Function / class | Input | Output |
-|---|---|---|---|---|
-| `eda` | Member A | `run_eda(train_csv: str, out_dir: str)` | train_csv: path to the training CSV (official Zalando data); out_dir: folder for figures | dict with n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; PNG files (class bar chart, sample image grid) in out_dir |
-| `preprocessing` | Member A | `load_csv(csv_path: str)` | csv_path: path to a CSV file | (images: uint8 array [N,28,28], labels: int64 array [N]) |
-| `preprocessing` | Member A | `make_split(labels, val_ratio: float = 0.1, seed: int = 42)` | labels: int64 array [N]; val_ratio; seed | (train_idx, val_idx): disjoint index arrays covering all N samples |
-| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | train_idx, val_idx, path (.json) | JSON file at path |
-| `preprocessing` | Member A | `load_split(path: str)` | path (.json) | (train_idx, val_idx) |
-| `features` | Member A | `compute_mean_std(train_images)` | train_images: uint8 array [N,28,28] (train indices only) | (mean, std) as floats on the 0-1 pixel scale |
-| `features` | Member A | `build_transform(mean: float, std: float)` | mean, std | callable: uint8 [28,28] -> float32 tensor [1,28,28], normalized |
-| `features` | Member A | `class FashionDataset` | __init__(images, labels, indices, transform) | __getitem__(i) -> (tensor [1,28,28], int label); __len__() -> number of samples |
-| `features` | Member A | `make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64)` | three Dataset objects; batch_size | (train_loader, val_loader, test_loader) |
-| `model` | Member A | `class MLP` | __init__(hidden_sizes=(256,128), num_classes=10, dropout=0.0); forward(x: tensor [B,1,28,28]) | forward returns logits [B,10] (NO softmax: CrossEntropyLoss expects logits) |
-| `model` | Member A | `count_parameters(model)` | model | int |
-| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, optimizer_name ('adam' or 'sgd'), weight_decay | history dict: train_loss, val_loss, val_acc (one value per epoch); best model saved at ckpt_path |
-| `train` | Member B | `save_checkpoint(model, path: str)` | model, path | file at path |
-| `train` | Member B | `load_checkpoint(model, path: str, device)` | model (same architecture), path, device | the model with loaded weights, in eval mode |
-| `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss: float, accuracy: float in 0-1) |
-| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device, num_classes | array [10,10]; rows = true class, columns = predicted class |
-| `evaluate` | Member B | `per_class_accuracy(cm)` | cm: confusion matrix | dict: class index -> accuracy |
-| `evaluate` | Member B | `save_classification_report(cm, class_names, csv_path: str)` | cm, class_names, csv_path | DataFrame of precision, recall, specificity, F1 per class; CSV file |
-| `visualize` | Member B | `plot_loss_curves(history: dict, out_path: str)` | history from train_model; out_path (.png) | PNG file |
-| `visualize` | Member B | `show_predictions(model, loader, class_names, device, out_path: str, n: int = 16)` | model, loader, class_names (10 names), device, out_path, n | PNG file |
-| `visualize` | Member B | `plot_confusion_matrix(cm, class_names, out_path: str)` | cm, class_names, out_path | PNG file |
-| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device, ckpt_prefix: str = 'exp_run')` | configs: list of dicts; loaders: (train, val, test); device; ckpt_prefix | list of result dicts: config, best_val_acc, best_val_loss, best_epoch (all from the kept checkpoint), final_val_loss, n_params, train_seconds, ckpt_path, history (train_loss, val_loss, val_acc per epoch) |
-| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | CSV file |
-| `experiment` | Member B | `save_history(results: list, csv_path: str)` | results, csv_path | CSV file: name, seed, epoch, train_loss, val_loss, val_acc (one row per run and epoch) |
-| `experiment` | Member B | `analyze_seed_runs(runs: list, loaders: tuple, class_names, device, out_dir: str, top_k: int = 10, prefix: str = '', use_test: bool = True)` | results of one fixed configuration, one per seed; loaders; class_names; device; out_dir; top_k; prefix; use_test | dict: train_acc_mean, val_acc_mean, and test_acc_mean, test_acc_std when use_test; seed_results.csv, recall_by_class.csv, top_confusions.csv in out_dir |
-| `experiment` | Member B | `build_model(cfg: dict, num_classes: int = 10)` | cfg, num_classes | new, untrained MLP |
-| `experiment` | Member B | `compare_pairs(values, pairs)` | values: table seed x configuration; pairs: (variant, reference, factor) | DataFrame: mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm |
+## 2. Design
 
-- **Folder structure:**
-```text
-labs/lab1/
-├── README.md                # brief report (EN + VI) / báo cáo ngắn
-├── project_description.md   # Define + Design (feed this to the AI agent)
-├── progress_status.md       # progress, audit, dated log / tiến độ
-├── main.py                  # runs the whole pipeline (Thư)
-├── extended_study.py        # 20-epoch study (Thư)
-├── requirements.txt
-├── eda/eda.py                  # module: eda
-├── preprocessing/preprocessing.py# module: preprocessing
-├── features/features.py        # module: features
-├── model/model.py              # module: model
-├── train/train.py              # module: train
-├── evaluate/evaluate.py        # module: evaluate
-├── visualize/visualize.py      # module: visualize
-├── experiment/experiment.py    # module: experiment
-├── notebook/lab1_presentation.ipynb # presentation notebook
-├── raw_data/                # dataset files (NOT committed)
-├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
-├── logbook/                 # bug reports and experiment notes (docs/templates)
-└── tests/                   # interface contract (test_smoke.py) + one test file per module
+### 2.1 Kiến trúc hệ thống
+Ba lớp, một điểm chạy, một notebook chỉ đọc kết quả:
+
+```mermaid
+flowchart LR
+    subgraph Data["Lớp dữ liệu (Member A — Toàn)"]
+        E["eda"] --> P["preprocessing<br/>split 54k/6k"] --> Fe["features<br/>chuẩn hoá + DataLoader"]
+    end
+    subgraph Train["Lớp model và huấn luyện"]
+        M["model<br/>MLP (Toàn)"] --> T["train<br/>log + early stopping (Thư)"]
+        X["experiment<br/>5 cấu hình, chọn trên val (Thư)"] --> T
+    end
+    subgraph Ana["Lớp phân tích (Member B — Thư)"]
+        Ev["evaluate<br/>val, test, báo cáo lớp"] --> V["visualize<br/>curve, confusion matrix, demo"]
+    end
+    Fe --> X
+    T --> Ev
+    Main["main.py<br/>(--smoke)"] -. gọi .-> Data
+    Main -. gọi .-> Train
+    Main -. gọi .-> Ana
+    Ana --> Out[("outputs/")]
+    Out --> NB["notebook<br/>chỉ đọc outputs/"]
 ```
-- **Milestones:**
-  - M1: loaders return a batch of shape [B,1,28,28] with labels 0-9
-  - M2: model forward on a dummy batch returns [B,10]
-  - M3: train_model runs 1 epoch, loss goes down, checkpoint saved and reloaded
-  - M4: evaluate + visualize produce numbers and figures from the saved model
-  - M5: experiments (3 or more configs) + brief report
-- **Technical risks:**
-  - Softmax before CrossEntropyLoss: the model must output logits
-  - Test set used for tuning: split validation from train
-  - Normalization stats computed on all data: compute on train only
-  - Wrong reshape/dtype when reading the CSV: print shapes and value range
-  - Large CSV committed to git: keep raw_data/ ignored
-  - Extra random numbers or a different CPU thread count change the results of the same seed: use `torch.zeros` for shape checks, fix the thread count, report mean and std across seeds
 
----
+### 2.2 Luồng một lần chạy (`python -m labs.lab1.main`)
+1. EDA trên file train → `outputs/figures/class_counts.png`, `sample_grid.png`
+2. Đọc CSV, dùng file split đã commit `data/splits/train_val_split.json`
+3. Mean/std chỉ từ phần train, tạo loader (batch 64; val/test không xáo)
+4. Train 5 cấu hình (`experiment` gọi `train`): mỗi run ghi `<ts>_<run>.log`, `_history.csv`, `_config.json`, lưu `_best.pt` và `_last.pt`
+5. Chọn cấu hình theo val_acc tại best_epoch (`select_config`) — không nhìn test
+6. Test đúng một lần cho baseline và cấu hình được chọn → `outputs/results/test_results.csv`
+7. Hình từ `_history.csv`, confusion matrix trên val, ảnh dự đoán test; demo nạp lại `_best.pt` → `outputs/demo/`
+8. Ghi `outputs/results/run_summary.json` cho notebook và tài liệu
 
-**Tiếng Việt**
+`--smoke`: 1 epoch, 2 batch, mọi đầu ra vào `outputs/_smoke/` (khoảng 20 giây), số liệu không dùng để báo cáo.
 
-# Lab 1: Phân loại Fashion-MNIST bằng MLP (PyTorch): mô tả dự án (Define + Design)
+### 2.3 Quy tắc dừng và log
+Theo [`docs/templates/LOG_TEMPLATE_v1.md`](docs/templates/LOG_TEMPLATE_v1.md): theo dõi `val_loss`; giảm ít nhất 1e-4 thì lưu `_best.pt` và đặt lại bộ đếm; 5 epoch không giảm thì dừng; tối đa 30 epoch. Training loss dùng để biết model có đang học không và, đặt cạnh val loss, để thấy overfit.
 
-## Define
-- **Bài toán:** Phân loại ảnh quần áo xám 28x28 thành 10 lớp bằng mạng nơ-ron huấn luyện trong PyTorch.
-- **Người dùng:** cô (chấm bài) và nhóm (học).
-- **Đầu vào / Đầu ra:** Đầu vào: các dòng CSV (label + 784 pixel, giá trị 0-255). Đầu ra: model đã huấn luyện, accuracy, đồ thị loss, ảnh dự đoán vs thực tế, bảng thí nghiệm.
-- **Dữ liệu:** Fashion-MNIST chính thức từ GitHub của Zalando (`zalandoresearch/fashion-mnist`), tải bằng `preprocessing/download_official.py` và ghi ra CSV (cột `label` + 784 cột pixel, 60.000 dòng train / 10.000 dòng test).
-- **Tính năng chính:**
-  1. Nạp dataset và áp dụng transform
-  2. Xây dựng mạng nơ-ron (MLP)
-  3. Vòng lặp huấn luyện: forward, loss, backward, optimize
-  4. Đánh giá accuracy
-  5. Lưu và nạp model
-  6. Thử nghiệm mạng/siêu tham số
-  7. Vẽ loss; hiển thị ảnh dự đoán vs thực tế
-- **Ràng buộc công nghệ:** Python 3, PyTorch, matplotlib, numpy, pandas; CPU là đủ. Không commit dữ liệu thô. Phạm vi nhóm = MLP + thí nghiệm (CNN là phần làm thêm riêng của nhóm trưởng).
-- **Tiêu chí đánh giá:** Sản phẩm Practice 1: code Python, báo cáo ngắn (kiểu README, khoảng 200 từ trở xuống), đồ thị loss, ảnh hiển thị. Vấn đáp.
+### 2.4 Module, người phụ trách, interface
 
-## Design
-- **Cấu trúc hệ thống** (ba lớp, hai điểm chạy):
-  - Lớp dữ liệu: `eda`, `preprocessing`, `features` (CSV -> mảng đã kiểm tra -> split dùng chung -> DataLoader đã chuẩn hóa)
-  - Lớp mô hình và huấn luyện: `model`, `train`, `experiment` (mạng, vòng lặp huấn luyện, checkpoint tốt nhất, so sánh cấu hình)
-  - Lớp phân tích: `evaluate`, `visualize` (chỉ số, ma trận nhầm lẫn, hình)
-  - Điểm chạy: `main.py` chạy toàn bộ pipeline; `notebook/lab1_presentation.ipynb` gọi cùng các module để trình bày. Kết quả lưu vào `artifacts/` (splits, models, figures, runs).
-- **Luồng dữ liệu:** eda -> preprocessing -> features -> model -> train -> evaluate -> visualize ; experiment wraps model + train
-- **Module và người phụ trách** (mỗi module = một sub-folder + một script):
-- Member A: `eda`, `preprocessing`, `features`, `model`
-- Member B: `train`, `evaluate`, `visualize`, `experiment`
-- Nhóm trưởng phụ trách `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` và duyệt PR.
-- **Quy tắc linh hoạt module:** nếu lab này không cần một module, ghi `N/A` trong `progress_status.md` kèm lý do một dòng. Không xóa im lặng.
-- **Interface** (tên hàm và chữ ký là hợp đồng; `tests/test_smoke.py` kiểm tra tên hàm):
+| Module | Phụ trách | Hàm chính | Desc |
+|---|---|---|---|
+| `eda` | Member A (Toàn) | `run_eda(train_csv, out_dir) -> dict` | [eda_v1](docs/phases/eda_v1.md) |
+| `preprocessing` | Member A (Toàn) | `load_csv`, `make_split(labels, 0.1, 42)`, `save_split`, `load_split` | [preprocessing_v1](docs/phases/preprocessing_v1.md) |
+| `features` | Member A (Toàn) | `compute_mean_std`, `build_transform`, `FashionDataset`, `make_loaders(..., batch_size=64)` | [features_v1](docs/phases/features_v1.md) |
+| `model` | Member A (Toàn) | `MLP(hidden_sizes, num_classes=10, dropout=0.0)` → logits `[B,10]`; `count_parameters` | [model_v1](docs/phases/model_v1.md) |
+| `train` | Member B (Thư) | `train_model(..., patience, min_delta, last_ckpt_path, log_dir, run_name, run_info, max_batches)`; `save_checkpoint`, `load_checkpoint` | [train_v1](docs/phases/train_v1.md) |
+| `experiment` | Member B (Thư) | `make_configs`, `build_model`, `run_experiments`, `save_results`, `save_history`, `select_config` | [experiment_v1](docs/phases/experiment_v1.md) |
+| `evaluate` | Member B (Thư) | `evaluate`, `confusion_matrix`, `save_classification_report`, `save_test_results` (mức 0,87) | [evaluate_v1](docs/phases/evaluate_v1.md) |
+| `visualize` | Member B (Thư) | `load_history`, `plot_loss_curves`, `plot_accuracy_curves`, `show_predictions`, `plot_confusion_matrix`, `demo_predictions` | [visualize_v1](docs/phases/visualize_v1.md), [demo_v1](docs/phases/demo_v1.md) |
+| `main.py`, notebook | Thư | `main(seed, epochs, smoke)` | [demo_v1](docs/phases/demo_v1.md) |
 
-| Module | Phụ trách | Hàm / lớp | Đầu vào | Đầu ra |
-|---|---|---|---|---|
-| `eda` | Member A | `run_eda(train_csv: str, out_dir: str)` | train_csv: đường dẫn CSV train (dữ liệu chính thức của Zalando); out_dir: thư mục lưu hình | dict gồm n_rows, class_counts, pixel_min, pixel_max, n_missing, n_duplicates; file PNG (biểu đồ số lượng mỗi lớp, lưới ảnh mẫu) trong out_dir |
-| `preprocessing` | Member A | `load_csv(csv_path: str)` | csv_path: đường dẫn file CSV | (images: mảng uint8 [N,28,28], labels: mảng int64 [N]) |
-| `preprocessing` | Member A | `make_split(labels, val_ratio: float = 0.1, seed: int = 42)` | labels: mảng int64 [N]; val_ratio; seed | (train_idx, val_idx): hai mảng chỉ số không giao nhau, gộp lại đủ N mẫu |
-| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | train_idx, val_idx, path (.json) | file JSON tại path |
-| `preprocessing` | Member A | `load_split(path: str)` | path (.json) | (train_idx, val_idx) |
-| `features` | Member A | `compute_mean_std(train_images)` | train_images: mảng uint8 [N,28,28] (chỉ chỉ số train) | (mean, std) dạng số thực trên thang pixel 0-1 |
-| `features` | Member A | `build_transform(mean: float, std: float)` | mean, std | hàm: uint8 [28,28] -> tensor float32 [1,28,28] đã chuẩn hóa |
-| `features` | Member A | `class FashionDataset` | __init__(images, labels, indices, transform) | __getitem__(i) -> (tensor [1,28,28], nhãn int); __len__() -> số mẫu |
-| `features` | Member A | `make_loaders(train_ds, val_ds, test_ds, batch_size: int = 64)` | ba đối tượng Dataset; batch_size | (train_loader, val_loader, test_loader) |
-| `model` | Member A | `class MLP` | __init__(hidden_sizes=(256,128), num_classes=10, dropout=0.0); forward(x: tensor [B,1,28,28]) | forward trả logits [B,10] (KHÔNG softmax: CrossEntropyLoss cần logits) |
-| `model` | Member A | `count_parameters(model)` | model | int |
-| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, optimizer_name ('adam' hoặc 'sgd'), weight_decay | dict history: train_loss, val_loss, val_acc (mỗi epoch một giá trị); model tốt nhất lưu tại ckpt_path |
-| `train` | Member B | `save_checkpoint(model, path: str)` | model, path | file tại path |
-| `train` | Member B | `load_checkpoint(model, path: str, device)` | model (cùng kiến trúc), path, device | model đã nạp trọng số, ở chế độ eval |
-| `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss: float, accuracy: float trong 0-1) |
-| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device, num_classes | mảng [10,10]; hàng = lớp thật, cột = lớp dự đoán |
-| `evaluate` | Member B | `per_class_accuracy(cm)` | cm: ma trận nhầm lẫn | dict: chỉ số lớp -> độ chính xác |
-| `evaluate` | Member B | `save_classification_report(cm, class_names, csv_path: str)` | cm, class_names, csv_path | DataFrame precision, recall, specificity, F1 từng lớp; file CSV |
-| `visualize` | Member B | `plot_loss_curves(history: dict, out_path: str)` | history từ train_model; out_path (.png) | file PNG |
-| `visualize` | Member B | `show_predictions(model, loader, class_names, device, out_path: str, n: int = 16)` | model, loader, class_names (10 tên), device, out_path, n | file PNG |
-| `visualize` | Member B | `plot_confusion_matrix(cm, class_names, out_path: str)` | cm, class_names, out_path | file PNG |
-| `experiment` | Member B | `run_experiments(configs: list, loaders: tuple, device, ckpt_prefix: str = 'exp_run')` | configs: danh sách dict; loaders: (train, val, test); device; ckpt_prefix | danh sách dict kết quả: config, best_val_acc, best_val_loss, best_epoch (đều của checkpoint được giữ), final_val_loss, n_params, train_seconds, ckpt_path |
-| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | file CSV |
-| `experiment` | Member B | `analyze_seed_runs(runs: list, loaders: tuple, class_names, device, out_dir: str, top_k: int = 10, prefix: str = '', use_test: bool = True)` | kết quả của một cấu hình cố định, mỗi seed một dòng; loaders; class_names; device; out_dir; top_k; prefix; use_test | dict: train_acc_mean, val_acc_mean, và test_acc_mean, test_acc_std khi use_test; seed_results.csv, recall_by_class.csv, top_confusions.csv trong out_dir |
-| `experiment` | Member B | `build_model(cfg: dict, num_classes: int = 10)` | cfg, num_classes | MLP mới, chưa huấn luyện |
-| `experiment` | Member B | `compare_pairs(values, pairs)` | values: bảng seed x cấu hình; pairs: (biến thể, mốc, yếu tố) | DataFrame: mean_diff, std_diff, ci95_low, ci95_high, seeds_higher, rule_clear, p_value, p_holm |
+Tên hàm là hợp đồng giữa các module; `tests/test_smoke.py` kiểm đủ tên. Chữ ký đầy đủ kèm số dòng code nằm trong mục "Detailed plan" của từng file phase.
 
-- **Cấu trúc thư mục:** xem cây thư mục ở phần tiếng Anh phía trên (tên file và thư mục giống nhau).
-- **Mốc (milestone):**
-  - M1: loader trả batch shape [B,1,28,28], nhãn 0-9
-  - M2: forward model trên batch giả trả [B,10]
-  - M3: train_model chạy 1 epoch, loss giảm, checkpoint lưu và nạp lại được
-  - M4: evaluate + visualize tạo ra số liệu và hình từ model đã lưu
-  - M5: thí nghiệm (từ 3 config) + báo cáo ngắn
-- **Rủi ro kỹ thuật:**
-  - Thêm softmax trước CrossEntropyLoss: model phải xuất logits
-  - Dùng tập test để chỉnh tham số: phải tách validation từ train
-  - Tính mean/std trên toàn bộ dữ liệu: chỉ tính trên train
-  - Reshape/dtype sai khi đọc CSV: in shape và khoảng giá trị
-  - Commit CSV lớn lên git: giữ raw_data/ trong .gitignore
-  - Số ngẫu nhiên phát sinh thêm hoặc số thread CPU khác làm đổi kết quả của cùng seed: dùng `torch.zeros` khi kiểm tra shape, cố định số thread, báo mean và std qua nhiều seed
+### 2.5 Năm cấu hình (mỗi cấu hình khác baseline đúng một yếu tố)
+
+| Cấu hình | Đổi gì so với baseline | Tham số |
+|---|---|---:|
+| `baseline` | — (784→256→128→10, ReLU, Adam lr 1e-3) | 235.146 |
+| `softmax_regression` | bỏ tầng ẩn (784→10) | 7.850 |
+| `larger_network` | 784→512→256→128→10 | 567.434 |
+| `sgd_lr_0.01` | SGD momentum 0,9, lr 0,01 | 235.146 |
+| `dropout_0.2` | dropout 0,2 sau mỗi tầng ẩn | 235.146 |
+
+Sơ đồ kiến trúc và bảng tham số từng lớp: [`docs/models/mlp_baseline_v1.md`](docs/models/mlp_baseline_v1.md), [`docs/models/mlp_larger_network_v1.md`](docs/models/mlp_larger_network_v1.md).
+
+### 2.6 Cấu trúc thư mục
+`data/` (vào), `outputs/` (ra), `docs/` (tài liệu), 8 folder module, `notebook/`, `tests/`. Chi tiết: [`docs/rules/FOLDER_STRUCTURE_v2.md`](docs/rules/FOLDER_STRUCTURE_v2.md). Dữ liệu thô, checkpoint, log, hình không commit; file split có commit.
+
+### 2.7 Quy trình làm việc
+Desc → hỏi lại chỗ chưa rõ → detail plan → Thư duyệt → lưu có version → small prompt từng bước → smoke run → normal run → audit ([`docs/rules/RULES_v1.md`](docs/rules/RULES_v1.md)). Người viết dàn ý, mục tiêu, tiêu chí đạt; AI chỉ chi tiết hoá và đánh dấu `[đề xuất]` tới khi được duyệt. Mỗi module có mục "Kết quả audit (2026-11-14)" đối chiếu từng tiêu chí với bằng chứng.
+
+### 2.8 Rủi ro kỹ thuật và cách xử lý
+
+| Rủi ro | Cách xử lý trong code |
+|---|---|
+| Softmax trước CrossEntropyLoss | `MLP.forward` trả logits; softmax chỉ dùng trong demo để hiện xác suất |
+| Dùng test để chọn model | Chọn cấu hình và checkpoint trên val; test chạy một lần sau khi chọn |
+| Chuẩn hoá bằng thống kê của cả dữ liệu | `compute_mean_std(images[train_idx])` |
+| Overfit khi train lâu | Early stopping theo `val_loss`, giữ `_best.pt` |
+| Ghi đè kết quả cũ | Tên file có `<ts>`; smoke run tách riêng `outputs/_smoke/` |
+| Kết quả không lặp lại | Seed 42, split đã commit, số thread CPU cố định (4) |
+| Kiến trúc nạp lại không khớp checkpoint | Dựng lại bằng `build_model(cfg)` cùng config; `_config.json` lưu config của từng run |

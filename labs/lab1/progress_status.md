@@ -1,7 +1,7 @@
 # Tiến độ Lab 1
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T01:18:22+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T01:43:35+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì.
@@ -12,11 +12,11 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 | `preprocessing` | Member A (Toàn) | xong | đạt (6 test) | đạt | Chia phân tầng 90/10, lưu tại data/splits/train_val_split.json |
 | `features` | Member A (Toàn) | xong | đạt (6 test) | đạt | Train mean 0,2859, std 0,3530 (dữ liệu chính thức); loader trả [64,1,28,28] float32 |
 | `model` | Member A (Toàn) | xong | đạt (6 test) | đạt | MLP 784->256->128->10: 235.146 tham số huấn luyện được |
-| `train` | Member B (Thư) | xong | đạt (dữ liệu giả, 4 test) | đạt (data chính thức, VAL 6.000: loss 0,3018, acc 89,05%) | 5 epoch, Adam lr=1e-3, checkpoint tốt nhất lưu tại artifacts/models/mlp_baseline.pt |
-| `evaluate` | Member B (Thư) | xong | đạt (dữ liệu giả, 5 test) | đạt (data chính thức, VAL 6.000: loss 0,3018, acc 89,05%; TEST 88,36%) | Trouser cao nhất 98,17%, Shirt thấp nhất 70,17%, ROC-AUC 0,9925; báo cáo từng lớp lưu ra CSV |
-| `visualize` | Member B (Thư) | xong | đạt (dữ liệu giả, 3 test) | đạt (lưu 3 hình trong artifacts/figures/) | loss_curves.png, predictions_grid.png, confusion_matrix.png; hình của lần chạy 2026-11-04 chưa được xem lại bằng mắt |
-| `experiment` | Member B (Thư) | xong | đạt (dữ liệu giả, 10 test) | đạt (35 lần chạy, lưu tại artifacts/runs/experiment_results.csv) | 7 cấu hình, mỗi cấu hình 5 seed; test của baseline 88,00 +/- 0,39% (data chính thức) |
-| `main.py`, README, tích hợp | Nhóm trưởng (Thư) | xong | đạt (chạy thử 1 epoch) | đạt (toàn bộ pipeline) | Báo cáo ngắn và báo cáo chi tiết trong README, `extended_study.py`, lab1_presentation.ipynb (26 ô), hướng dẫn từng module trong `docs/`; chạy lại toàn bộ trên data chính thức ngày 2026-11-04; 54 test đều đạt |
+| `train` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (7 test) | đạt (normal run 2026-11-14) | Early stopping theo val_loss (patience 5, min_delta 1e-4, tối đa 30 epoch); 3 file log mỗi run; `_best.pt` + `_last.pt` trong `outputs/models/` |
+| `evaluate` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (6 test) | đạt (baseline TEST 88,60% ≥ 87%; larger_network TEST 88,46%) | Test chạy một lần cho mỗi model, ghi `outputs/results/test_results.csv`; val_acc từ checkpoint khớp log |
+| `visualize` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (5 test) | đạt (14 hình trong `outputs/figures/`, demo trong `outputs/demo/`) | Loss/accuracy vẽ từ `_history.csv`; ảnh dự đoán trên test; demo 15/16 đúng; Thư cần xem lại hình trước buổi trình bày |
+| `experiment` | Member B (Thư) | xong (yêu cầu mới, 2026-11-14) | đạt (10 test) | đạt (5 cấu hình × seed 42, `outputs/results/experiment_results.csv`) | Cả 5 dừng sớm ở epoch 11–15; chọn larger_network (val 89,28%); baseline val 88,97% > softmax 85,15% |
+| `main.py`, README, notebook | Thư | xong (yêu cầu mới, 2026-11-14) | đạt (`test_smoke.py`, 9 test) | đạt (smoke 21 giây, normal 403 giây) | `--smoke` ghi vào `outputs/_smoke/`; notebook chỉ đọc `outputs/`, 23 ô, chạy lại 0 lỗi; model card trong `docs/models/` |
 
 ## Bàn giao A -> B (tuần tự, không xen kẽ)
 Member B chỉ bắt đầu code khi TẤT CẢ các điều kiện sau đều đúng:
@@ -27,6 +27,24 @@ Member B chỉ bắt đầu code khi TẤT CẢ các điều kiện sau đều �
 - [x] các PR của Member A đã merge vào `main`; Member B tạo nhánh từ `main` mới nhất
 - [x] Member A gửi tin bàn giao (đã làm gì, lệnh chạy chính xác, vấn đề đã biết)
 Sau bàn giao, Member A chỉ trả lời câu hỏi và review PR, không sửa module của Member B.
+
+## Kiểm chứng: chạy theo desc mới (2026-11-14, Python 3.13.7, torch 2.14.1 CPU, 4 thread)
+- `python -m pytest labs/lab1/tests tests -q` -> 64 passed
+- `python -m labs.lab1.main --smoke` -> đạt, 21 giây: 5 run × 3 file log trong `outputs/_smoke/logs/`, 10 checkpoint, 14 hình, demo; `_best.pt` nạp lại và dự đoán được; không ghi gì vào `outputs/models|logs|results`
+- `python -m labs.lab1.main` -> đạt, 403 giây (2026-11-14 01:30:36 – 01:37:20), tóm tắt `outputs/results/run_summary.json`:
+
+| Cấu hình | Tham số | best / dừng | val_loss | val_acc | train_acc | Thời gian |
+|---|---:|:---:|---:|---:|---:|---:|
+| baseline | 235.146 | 8 / 13 | 0,2943 | 88,97% | 91,55% | 87 s |
+| softmax_regression | 7.850 | 10 / 15 | 0,4243 | 85,15% | 86,22% | 56 s |
+| larger_network | 567.434 | 7 / 12 | 0,3009 | 89,28% | 90,98% | 107 s |
+| sgd_lr_0.01 | 235.146 | 10 / 15 | 0,2852 | 89,13% | 92,02% | 68 s |
+| dropout_0.2 | 235.146 | 6 / 11 | 0,2996 | 89,00% | 88,76% | 66 s |
+
+- Chọn trên val: larger_network (hơn sgd_lr_0.01 0,15 điểm). Test một lần: baseline 88,60% (loss 0,3239) ≥ 87% ✔; larger_network 88,46% (loss 0,3315)
+- Val (larger_network): Shirt recall 68,67% thấp nhất, nhầm sang T-shirt/top 71, Pullover 56, Coat 37 ảnh; demo 16 ảnh test đầu: 15 đúng
+- Notebook dựng lại (23 ô), chạy bằng `python -m jupyter nbconvert --execute` -> 0 lỗi; ô kiểm save/load: dự đoán sau khi nạp lại trùng CSV demo
+- Các mục "Kiểm chứng" bên dưới là lịch sử theo yêu cầu cũ (5 epoch, 7 cấu hình × 5 seed); file kết quả của chúng đã xoá khi đổi thư mục (O5)
 
 ## Kiểm chứng: lưu lịch sử theo epoch (2026-11-06, Python 3.13.7, torch 2.14.1 CPU, 4 thread)
 - `python -m pytest labs/lab1/tests tests -q` -> đạt, 56 test (thêm 2 test cho `history` và `save_history`)
@@ -152,6 +170,8 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-14 Thư: `docs/`: thêm ngày tạo/cập nhật thật cho mọi file md; tạo `00_README_v2.md`, `rules/FOLDER_STRUCTURE_v2.md` (trỏ tới `phases/`, `experiments/`); thêm `plans/detail_plan_lab1_md_v2.md`; bỏ chữ "leader", ghi tên Thư -> chỉ sửa tài liệu, không đổi code
 - 2026-11-14 Thư: `docs/`: chốt test cho cả baseline và cấu hình được chọn; ngưỡng test ≥ 87% (bài báo gốc Fashion-MNIST, MLP 0,871); sơ đồ kiến trúc vẽ bằng mermaid trong model card; duyệt Goals/Success của 9 file phase -> chỉ sửa tài liệu, không đổi code
 - 2026-11-14 Thư: O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`: thêm `data_dir`, `output_dir` (`shared/paths.py`, giữ `artifact_dir` cho Lab 2, 3); `git mv` split sang `data/splits/`; sửa đường dẫn trong `main.py`, `extended_study.py`, `experiment.py`, `preprocessing.py`, `download_official.py`, test và 7 dòng code notebook (không chạy lại notebook); chuyển CSV sang `data/raw/`; xoá kết quả cũ 04/11 trong `artifacts/` (không commit); cập nhật tài liệu -> `make_split` seed 42 tạo lại split giống từng byte; `pytest labs/lab1/tests tests` 58 passed
+- 2026-11-14 Thư: sửa code theo desc mới: `train` (early stopping, 3 file log, `_last.pt`, `max_batches`), `experiment` (5 cấu hình, `select_config`; bỏ `analyze_seed_runs`, `compare_pairs`, `extended_study.py` theo O10), `evaluate` (`save_test_results`, mức 0,87), `visualize` (vẽ từ `_history.csv`, accuracy curve, `demo_predictions`), `main.py` (`--smoke`, `run_summary.json`) -> smoke 21 giây, normal 403 giây, baseline test 88,60%; `pytest` 64 passed
+- 2026-11-14 Thư: notebook dựng lại chỉ đọc `outputs/` (0 lỗi); model card `docs/models/`; mục "Kết quả audit" trong 6 file phase; viết lại README, `project_description.md`
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.
@@ -163,4 +183,5 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - Chưa kiểm chứng: giả thuyết về nguyên nhân lỗi của Shirt, và nguyên nhân CSV Kaggle khác file chính thức.
 - Chưa làm: chạy trên máy khác. Trên cùng máy, `main.py` chạy hai lần cho kết quả y hệt (2026-11-04).
 - Ngoài phạm vi (quyết định của nhóm, 2026-11-04): CNN; Lab 1 chỉ làm MLP.
-- Chưa làm (2026-11-13): sửa code theo desc mới `docs/lab1_description_v1.md` (5 cấu hình, seed 42, tối đa 30 epoch + early stopping, log 3 file, `outputs/`); từng chỗ lệch ghi trong `docs/phases/<module>_v1.md`, mục "Chỗ code chưa khớp plan".
+- Đã xử lý 2026-11-14: sửa code theo desc mới `docs/lab1_description_v1.md`; mọi mục "Chỗ code chưa khớp plan" trong `docs/phases/` đã đóng (demo dựng lại kiến trúc bằng config của `experiment` thay vì đọc `_config.json`, ghi trong `demo_v1.md`).
+- Chưa làm: Thư xem lại từng hình trong `outputs/figures/` trước buổi trình bày (tiêu chí normal run của `visualize`).

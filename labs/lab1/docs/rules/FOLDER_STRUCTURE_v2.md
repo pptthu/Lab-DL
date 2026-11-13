@@ -1,6 +1,6 @@
 # Cấu trúc thư mục Lab 1 (v2)
 
-- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T01:18:05+07:00
+- Tác giả: Thư | Tạo: 2026-11-14T00:29:40+07:00 | Cập nhật: Thư, 2026-11-14T01:44:12+07:00
 - Trạng thái: đã chuyển sang cây này ngày 2026-11-14 (O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`), bằng `git mv`, kèm sửa `.gitignore`. `artifacts/`, `raw_data/` của Lab 1 đã bỏ; Lab 2, 3 vẫn dùng `artifacts/` (`shared/paths.py` giữ `artifact_dir`).
 
 ## 1. Cây thư mục `labs/lab1/`
@@ -21,7 +21,7 @@
     ├── notebook/  tests/
     └── main.py  README.md  requirements.txt  progress_status.md  project_description.md
 
-Đã bỏ khỏi gốc lab: `artifacts/`, `raw_data/`. `extended_study.py` còn giữ tới khi sửa `experiment` (O10). `logbook/` đã chuyển vào `docs/experiments/` (PR #65).
+Đã bỏ khỏi gốc lab: `artifacts/`, `raw_data/`. `extended_study.py` đã xoá khi sửa `experiment` (O10, 2026-11-14). `logbook/` đã chuyển vào `docs/experiments/` (PR #65).
 
 ## 2. Cây thư mục `labs/lab1/docs/`
 
@@ -44,13 +44,13 @@
 |---|---|---|
 | Dữ liệu gốc | `data/raw/` | `data/raw/` |
 | Split train/val | `data/splits/train_val_split.json` | `data/splits/train_val_split.json` |
-| Checkpoint | `outputs/models/<ts>_<run>_best.pt`, `_last.pt` | `outputs/models/` (`exp_run_N.pt`, `mlp_baseline.pt`), chưa đổi tên theo `<ts>_<run>` |
-| Log mỗi lần chạy | `outputs/logs/<ts>_<run>.log`, `_history.csv`, `_config.json` | `outputs/logs/` (rỗng, chưa ghi log); history nằm trong `outputs/results/epoch_history.csv` |
+| Checkpoint | `outputs/models/<ts>_<run>_best.pt`, `_last.pt` | như đích (2026-11-14) |
+| Log mỗi lần chạy | `outputs/logs/<ts>_<run>.log`, `_history.csv`, `_config.json` | như đích; thêm `outputs/results/epoch_history.csv` gộp history của 5 run |
 | Biểu đồ | `outputs/figures/` | `outputs/figures/` |
 | Bảng đánh giá, so sánh | `outputs/results/` | `outputs/results/` |
-| Ảnh demo | `outputs/demo/` | chưa có |
-| Đầu ra smoke run (log, checkpoint, hình) | `outputs/_smoke/` | chưa có |
-| Model card (có sơ đồ kiến trúc mermaid) | `docs/models/<tên>_v<N>.md` | chưa có |
+| Ảnh demo | `outputs/demo/` | `outputs/demo/<ts>_predictions.png`, `.csv` |
+| Đầu ra smoke run (log, checkpoint, hình) | `outputs/_smoke/` | `outputs/_smoke/{models,logs,figures,results,demo}/` |
+| Model card (có sơ đồ kiến trúc mermaid) | `docs/models/<tên>_v<N>.md` | `mlp_baseline_v1.md`, `mlp_larger_network_v1.md` |
 | Ghi chép thí nghiệm, lỗi | `docs/experiments/`, `docs/bugs/` | `docs/experiments/experiment_log.md` (đã chuyển); `docs/bugs/` chưa có |
 
 `<ts>` = `YYYYMMDD_HHMMSS` lúc bắt đầu chạy.
