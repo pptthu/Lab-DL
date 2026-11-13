@@ -1,54 +1,83 @@
-# Lab 2 / preprocessing: guide for AI agents
+# Preprocessing Module Documentation (`labs/lab2/preprocessing/preprocessing.py`)
 
-## For AI agents (read first)
+## 1. Purpose
+- Load raw CIFAR-10 dataset without transforms attached.
+- Deterministically partition dataset into training and validation splits.
+- Guarantee zero data leakage between train and validation sets (`set_train.isdisjoint(set_val)`).
+- Persist split indices to disk as a standardized JSON artifact for reproducible handoff between team members (Member A -> Member B).
 
-| Field | Value |
-|---|---|
-| Module | `labs/lab2/preprocessing/preprocessing.py` |
-| Owner | Member A (Đại), assigned by the team leader |
-| Status | done in `progress_status.md` (Reported only) |
-| Assigned work | see the GitHub Issues and `progress_status.md` of the lab; never assign work to yourself, ask the team leader |
-| Files you may edit | `labs/lab2/preprocessing/preprocessing.py`, `labs/lab2/tests/test_preprocessing.py`, this guide |
-| Files you must not edit | other modules, raw data, other owners' notebook cells. `artifacts/splits/train_val_split.json` only on purpose, with the team leader (every reported number depends on it) |
-| Agreed signatures | `load_raw_dataset(data_root: str, download: bool = True) -> tuple`; `make_split(n_samples: int, val_ratio: float = 0.1, seed: int = 42) -> tuple`; `save_split(train_idx, val_idx, path: str)`; `load_split(path: str) -> tuple` (`project_description.md`) |
-| Depends on / used by | `torchvision`, numpy / `features`, `main.py`, notebook |
-| Prohibited | taking validation from the test set; changing `val_ratio` or `seed` without the team leader; committing CIFAR-10 files |
-| Checks | Unit: `python -m pytest labs/lab2/tests/test_preprocessing.py -q`. Note: it calls `load_raw_dataset(download=False)` on the real data, so it **fails** on a clean checkout without CIFAR-10 (checked 2026-11-04) |
-| Done when | test passes; output recorded in `progress_status.md`; this guide updated |
+## 2. Input - Output
+- **Input:**
+  - `data_root` (`str`): Path to directory holding raw CIFAR-10 data.
+    - Default path: `labs/lab2/raw_data/` (resolved via `shared.paths.raw_data_dir("lab2")`).
+  - `download` (`bool`): Flag to automatically download dataset if not present locally (default: `True`).
+  - `n_samples` (`int`): Total sample count to partition (50,000 for CIFAR-10 train set).
+  - `val_ratio` (`float`): Validation ratio (default: `0.1` -> 10%).
+  - `seed` (`int`): Random seed for deterministic shuffling (default: `42`).
+  - `path` (`str`): Destination file path for split JSON artifact.
+    - Standard path: `labs/lab2/artifacts/splits/train_val_split.json` (resolved via `shared.paths.artifact_dir("lab2", "splits") / "train_val_split.json"`).
+- **Output:**
+  - In-memory data objects:
+    - `(train_set, test_set)`: Raw `torchvision.datasets.CIFAR10` instances with `transform=None`.
+    - `(train_idx, val_idx)`: Partitioned integer index lists (45,000 train, 5,000 val).
+  - Persistent JSON file saved at:
+    - Destination path: `labs/lab2/artifacts/splits/train_val_split.json`
+    - Contains: `train_idx` (list of 45,000 ints), `val_idx` (list of 5,000 ints), `n_train` (45000), `n_val` (5000).
 
-## What the brief requires
+## 3. Success_valuable
+- Raw datasets are loaded untransformed (`transform is None`), preserving raw image pixels.
+- Zero data overlap between train and validation indices (`train_idx ∩ val_idx = ∅`).
+- Complete coverage of samples (`len(train_idx) + len(val_idx) == n_samples`).
+- Splitting is 100% reproducible across machines and runs when using identical seed (`seed=42`).
+- Saved JSON artifact file exists, is valid JSON, and can be cleanly reloaded by downstream modules.
 
-- Brief requirement: load the dataset and prepare training, validation and test data.
-- Team choices: CIFAR-10 train/test from `torchvision`; validation = 10% of the training images, seed 42; the official test set is the test set.
-
-## How the module works (current code)
-
-- `load_raw_dataset`: `CIFAR10(root=data_root, train=True/False, download=download, transform=None)`; data lives in `raw_data_dir("lab2")` (never `./data/raw`).
-- `make_split`: `np.random.RandomState(seed).permutation(n_samples)`, then the first `val_ratio` part is validation. This is a **random** split, not stratified (CIFAR-10 is balanced, so classes stay close to 10% each, but not exactly).
-- `save_split` / `load_split`: JSON with the two index lists. `main.py` loads the committed file if it exists.
-
-## Inputs, outputs and pitfalls
-
-- With 50,000 training images: 45,000 train / 5,000 validation.
-
-## How to verify
-
-| Type | Command | Expected |
-|---|---|---|
-| Unit test | `python -m pytest labs/lab2/tests/test_preprocessing.py -q` | passes when CIFAR-10 is present |
-| Real integration run | `python -m labs.lab2.main` stage 2 | "Loaded existing split", train 45,000 / val 5,000 / test 10,000 |
-
-## Open questions / limitations
-
-- The test needs the real dataset (see above).
-- Some README text may call the split stratified; the code does a random split.
+## 4. How to do
+Execute the preprocessing pipeline sequentially:
+1. **Load raw datasets:** Call `load_raw_dataset(data_root="labs/lab2/raw_data", download=True)` to obtain `train_set` (50,000 samples) and `test_set` (10,000 samples) with raw pixels untouched.
+2. **Partition indices:** Call `make_split(n_samples=50000, val_ratio=0.1, seed=42)`. Uses `np.random.RandomState(seed)` to shuffle and divide into 45,000 training and 5,000 validation indices.
+3. **Persist split artifact:** Call `save_split(train_idx, val_idx, path="labs/lab2/artifacts/splits/train_val_split.json")` to write the JSON file (automatically creating parent directories if needed).
+4. **Handoff & reload:** Downstream training and feature extraction modules call `load_split(path="labs/lab2/artifacts/splits/train_val_split.json")` to retrieve identical indices.
 
 ---
 
 **Tiếng Việt**
 
-- **Việc được giao:** xem GitHub Issue và `progress_status.md` của lab; không tự giao việc cho mình, hỏi nhóm trưởng.
-- **Dành cho AI:** người phụ trách Member A (Đại), do nhóm trưởng giao. Được sửa `preprocessing.py`, `tests/test_preprocessing.py`, file này; chỉ sửa `train_val_split.json` khi có chủ đích và đã hỏi nhóm trưởng. Chữ ký 4 hàm khớp `project_description.md`. Cấm lấy val từ test, cấm đổi `val_ratio` hay `seed` khi chưa hỏi, cấm commit data.
-- **Đề:** nạp dataset, chuẩn bị train, validation và test. Nhóm chọn 10% ảnh train làm validation, seed 42.
-- **Cách hoạt động:** `make_split` xáo ngẫu nhiên theo seed rồi cắt 10% làm val, tức là chia **ngẫu nhiên, không phân tầng**; 45.000 / 5.000.
-- **Lưu ý:** test gọi `download=False` trên data thật nên **báo lỗi** trên máy chưa có CIFAR-10.
+# Tài liệu Module Tiền Xử Lý (`labs/lab2/preprocessing/preprocessing.py`)
+
+## 1. Purpose (Mục đích)
+- Nạp tập dữ liệu CIFAR-10 thô nguyên bản (chưa áp dụng bất kỳ transform nào).
+- Phân chia tập dữ liệu thành 2 tập train và validation một cách tất định, có thể tái lập được.
+- Đảm bảo không có sự rò rỉ dữ liệu giữa tập train và validation (`set_train.isdisjoint(set_val)`).
+- Lưu trữ danh sách chỉ số phân chia (split indices) ra file JSON chuẩn hóa làm căn cứ bàn giao giữa các thành viên (Member A -> Member B).
+
+## 2. Input - Output (Đầu vào - Đầu ra)
+- **Input (Đầu vào):**
+  - `data_root` (`str`): Đường dẫn thư mục chứa dữ liệu thô CIFAR-10.
+    - Đường dẫn chuẩn: `labs/lab2/raw_data/` (truy xuất qua `shared.paths.raw_data_dir("lab2")`).
+  - `download` (`bool`): Cho phép tự động tải về nếu dữ liệu chưa có sẵn (mặc định: `True`).
+  - `n_samples` (`int`): Tổng số lượng mẫu cần phân chia (50.000 mẫu của tập train CIFAR-10).
+  - `val_ratio` (`float`): Tỷ lệ chia tập validation (mặc định: `0.1` tức 10% = 5.000 mẫu).
+  - `seed` (`int`): Hạt giống ngẫu nhiên để tái lập phân chia (mặc định: `42`).
+  - `path` (`str`): Đường dẫn file lưu split JSON.
+    - Đường dẫn chuẩn: `labs/lab2/artifacts/splits/train_val_split.json` (truy xuất qua `shared.paths.artifact_dir("lab2", "splits") / "train_val_split.json"`).
+- **Output (Đầu ra):**
+  - Đối tượng trong bộ nhớ:
+    - `(train_set, test_set)`: Hai bộ `CIFAR10` nguyên bản với `transform=None`.
+    - `(train_idx, val_idx)`: Bộ gồm 2 danh sách số nguyên chỉ số mẫu (45.000 mẫu train, 5.000 mẫu val).
+  - File JSON lưu trữ trên đĩa cứng tại đường dẫn:
+    - Đường dẫn file: `labs/lab2/artifacts/splits/train_val_split.json`
+    - Cấu trúc file: `train_idx` (45.000 phần tử), `val_idx` (5.000 phần tử), `n_train` (45000), `n_val` (5000).
+
+## 3. Success_valuable (Tiêu chuẩn đạt yêu cầu)
+- Dữ liệu thô được nạp đúng nguyên bản (`transform is None`), không làm méo mó hoặc thay đổi phân phối ảnh.
+- Tuyệt đối không rò rỉ dữ liệu giữa tập train và val (`train_idx ∩ val_idx = ∅`).
+- Tổng số lượng mẫu được bảo toàn nguyên vẹn (`len(train_idx) + len(val_idx) == n_samples`).
+- Kết quả phân chia có tính tái lập 100% khi chạy lại cùng seed (`seed=42`).
+- File JSON được tạo hợp lệ, rõ ràng, sẵn sàng để Member B nạp vào huấn luyện.
+
+## 4. How to do (Cách thực hiện)
+Quy trình thực thi module gồm các bước:
+1. **Nạp dữ liệu thô:** Gọi `load_raw_dataset(data_root="labs/lab2/raw_data", download=True)` để lấy `train_set` (50.000 ảnh) và `test_set` (10.000 ảnh) nguyên bản.
+2. **Chia tách chỉ số:** Gọi `make_split(n_samples=50000, val_ratio=0.1, seed=42)`. Hàm sử dụng `np.random.RandomState(seed)` để xáo trộn chỉ số và cắt thành 45.000 chỉ số train và 5.000 chỉ số val.
+3. **Lưu file JSON:** Gọi `save_split(train_idx, val_idx, path="labs/lab2/artifacts/splits/train_val_split.json")` để ghi kết quả ra đĩa (tự động tạo thư mục cha `artifacts/splits/` nếu chưa có).
+4. **Bàn giao và nạp lại:** Các module sau (`features`, `train`) gọi `load_split(path="labs/lab2/artifacts/splits/train_val_split.json")` để nạp đúng chỉ số đã thống nhất.
