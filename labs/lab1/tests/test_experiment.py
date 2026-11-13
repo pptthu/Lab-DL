@@ -31,9 +31,9 @@ def _make_dummy_loaders():
 
 
 def test_run_experiments_and_save_results(tmp_path, monkeypatch):
-    # Keep fake checkpoints out of the real artifacts/models folder.
-    # VI: Không để checkpoint giả ghi vào thư mục artifacts/models thật.
-    monkeypatch.setattr(experiment_module, "artifact_dir", lambda *_: tmp_path)
+    # Keep fake checkpoints out of the real outputs/models folder.
+    # VI: Không để checkpoint giả ghi vào thư mục outputs/models thật.
+    monkeypatch.setattr(experiment_module, "output_dir", lambda *_: tmp_path)
     loaders = _make_dummy_loaders()
     configs = [
         {"hidden_sizes": (16,), "lr": 0.01, "epochs": 1, "seed": 42},
@@ -71,7 +71,7 @@ def test_run_experiments_and_save_results(tmp_path, monkeypatch):
 
 
 def test_best_val_acc_comes_from_lowest_val_loss_epoch(tmp_path, monkeypatch):
-    monkeypatch.setattr(experiment_module, "artifact_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(experiment_module, "output_dir", lambda *_: tmp_path)
     history = {"train_loss": [1.0, 0.9, 0.8], "val_loss": [0.5, 0.3, 0.4], "val_acc": [0.9, 0.7, 0.8]}
     monkeypatch.setattr(experiment_module, "train_model", lambda **_: history)
 
@@ -84,7 +84,7 @@ def test_best_val_acc_comes_from_lowest_val_loss_epoch(tmp_path, monkeypatch):
 
 
 def test_run_experiments_keeps_epoch_history(tmp_path, monkeypatch):
-    monkeypatch.setattr(experiment_module, "artifact_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(experiment_module, "output_dir", lambda *_: tmp_path)
     history = {"train_loss": [1.0, 0.9, 0.8], "val_loss": [0.5, 0.3, 0.4], "val_acc": [0.9, 0.7, 0.8]}
     monkeypatch.setattr(experiment_module, "train_model", lambda **_: history)
 
@@ -161,7 +161,7 @@ def test_build_model_follows_config():
 
 
 def test_run_experiments_uses_ckpt_prefix(tmp_path, monkeypatch):
-    monkeypatch.setattr(experiment_module, "artifact_dir", lambda *_: tmp_path)
+    monkeypatch.setattr(experiment_module, "output_dir", lambda *_: tmp_path)
     configs = [{"hidden_sizes": (4,), "epochs": 1, "seed": 1}]
 
     results = run_experiments(configs, _make_dummy_loaders(), device="cpu", ckpt_prefix="ext_run")

@@ -1,7 +1,7 @@
 # Tiến độ Lab 1
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T01:18:22+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì.
@@ -9,7 +9,7 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 | Module | Phụ trách | Trạng thái (chưa làm / đang làm / xong) | Test hợp đồng (đạt / lỗi / chưa chạy) | Chạy thử trên dữ liệu thật (đạt / lỗi / chưa chạy) | Ghi chú |
 |---|---|---|---|---|---|
 | `eda` | Member A (Toàn) | xong | đạt (3 test) | đạt | Dữ liệu chính thức của Zalando (2026-11-02): 60.000 dòng, 10 lớp cân bằng, 0 dòng trùng, 0 giá trị thiếu |
-| `preprocessing` | Member A (Toàn) | xong | đạt (6 test) | đạt | Chia phân tầng 90/10, lưu tại artifacts/splits/train_val_split.json |
+| `preprocessing` | Member A (Toàn) | xong | đạt (6 test) | đạt | Chia phân tầng 90/10, lưu tại data/splits/train_val_split.json |
 | `features` | Member A (Toàn) | xong | đạt (6 test) | đạt | Train mean 0,2859, std 0,3530 (dữ liệu chính thức); loader trả [64,1,28,28] float32 |
 | `model` | Member A (Toàn) | xong | đạt (6 test) | đạt | MLP 784->256->128->10: 235.146 tham số huấn luyện được |
 | `train` | Member B (Thư) | xong | đạt (dữ liệu giả, 4 test) | đạt (data chính thức, VAL 6.000: loss 0,3018, acc 89,05%) | 5 epoch, Adam lr=1e-3, checkpoint tốt nhất lưu tại artifacts/models/mlp_baseline.pt |
@@ -20,7 +20,7 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 
 ## Bàn giao A -> B (tuần tự, không xen kẽ)
 Member B chỉ bắt đầu code khi TẤT CẢ các điều kiện sau đều đúng:
-- [x] file JSON chia dữ liệu đã commit trong artifacts/splits/ (chỉ số train/val): `train_val_split.json`
+- [x] file JSON chia dữ liệu đã commit trong data/splits/ (chỉ số train/val): `train_val_split.json`
 - [x] make_loaders trả batch shape [B,1,28,28] với nhãn 0-9
 - [x] MLP forward trên batch giả trả logits [B,10]
 - [x] mọi module của Member A đều `xong` trong file này và `pytest labs/lab1/tests` đạt
@@ -151,6 +151,7 @@ Các số này thay thế mọi kết quả trên CSV Kaggle; README, notebook v
 - 2026-11-13 Thư: `README`, `docs/experiments/experiment_log.md`, notebook: chuyển sang tiếng Việt (dịch từ phần tiếng Anh vì đầy đủ hơn); notebook chỉ đổi 16 ô markdown, ô code và output giữ nguyên -> chỉ sửa tài liệu, không chạy lại notebook
 - 2026-11-14 Thư: `docs/`: thêm ngày tạo/cập nhật thật cho mọi file md; tạo `00_README_v2.md`, `rules/FOLDER_STRUCTURE_v2.md` (trỏ tới `phases/`, `experiments/`); thêm `plans/detail_plan_lab1_md_v2.md`; bỏ chữ "leader", ghi tên Thư -> chỉ sửa tài liệu, không đổi code
 - 2026-11-14 Thư: `docs/`: chốt test cho cả baseline và cấu hình được chọn; ngưỡng test ≥ 87% (bài báo gốc Fashion-MNIST, MLP 0,871); sơ đồ kiến trúc vẽ bằng mermaid trong model card; duyệt Goals/Success của 9 file phase -> chỉ sửa tài liệu, không đổi code
+- 2026-11-14 Thư: O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`: thêm `data_dir`, `output_dir` (`shared/paths.py`, giữ `artifact_dir` cho Lab 2, 3); `git mv` split sang `data/splits/`; sửa đường dẫn trong `main.py`, `extended_study.py`, `experiment.py`, `preprocessing.py`, `download_official.py`, test và 7 dòng code notebook (không chạy lại notebook); chuyển CSV sang `data/raw/`; xoá kết quả cũ 04/11 trong `artifacts/` (không commit); cập nhật tài liệu -> `make_split` seed 42 tạo lại split giống từng byte; `pytest labs/lab1/tests tests` 58 passed
 
 ## Vấn đề mở
 - Đã xử lý: tham số `val_fraction` bị thêm nhầm vào `preprocessing.py` của Member A và đã xóa ở commit `e14d58e`; `main.py` và notebook dùng trực tiếp `val_ratio=0.1` để giữ nguyên module và docstring của Member A.

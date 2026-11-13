@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 import torch
 
-from shared.paths import artifact_dir, raw_data_dir
+from shared.paths import data_dir, output_dir
 from shared.seed import set_seed
 from labs.lab1.eda.eda import run_eda
 from labs.lab1.preprocessing.preprocessing import load_csv, load_split, make_split, save_split
@@ -60,13 +60,13 @@ def main(seed: int = 42, epochs: int = 5) -> dict:
     print(f"=== [Lab 1 Pipeline] Device: {device} | Seed: {seed} ===")
 
     # 1. Paths setup
-    raw_dir = raw_data_dir("lab1")
+    raw_dir = data_dir("lab1", "raw")
     train_csv_path = raw_dir / "fashion-mnist_train.csv"
     test_csv_path = raw_dir / "fashion-mnist_test.csv"
-    figures_dir = artifact_dir("lab1", "figures")
-    splits_dir = artifact_dir("lab1", "splits")
-    models_dir = artifact_dir("lab1", "models")
-    runs_dir = artifact_dir("lab1", "runs")
+    figures_dir = output_dir("lab1", "figures")
+    splits_dir = data_dir("lab1", "splits")
+    models_dir = output_dir("lab1", "models")
+    runs_dir = output_dir("lab1", "results")
 
     # 2. EDA
     # VI: 2. Khám phá dữ liệu (chỉ trên file train)

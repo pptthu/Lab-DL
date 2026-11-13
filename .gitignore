@@ -17,6 +17,11 @@ labs/*/artifacts/logs/*
 !labs/*/artifacts/logs/.gitkeep
 labs/*/artifacts/runs/*
 !labs/*/artifacts/runs/.gitkeep
+# Lab 1 data/ and outputs/ (O5) / Lab 1: thư mục data/ và outputs/
+labs/lab1/data/raw/*
+!labs/lab1/data/raw/.gitkeep
+labs/lab1/outputs/*/*
+!labs/lab1/outputs/*/.gitkeep
 *.csv
 *.pt
 *.pth

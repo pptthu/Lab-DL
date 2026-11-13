@@ -1,7 +1,7 @@
 # train — Huấn luyện MLP (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member B (Thư)
 - **Status**: Done (theo yêu cầu cũ) — chờ sửa theo yêu cầu mới
 
@@ -30,7 +30,7 @@ Bản cũ chạy cố định 5 epoch, không có file log theo lần chạy; c�
 - **Output:**
   - Checkpoint `<ts>_<run>_best.pt` (val_loss thấp nhất) và `<ts>_<run>_last.pt`
   - Log `<ts>_<run>.log`, `<ts>_<run>_history.csv`, `<ts>_<run>_config.json`
-  - Hiện code lưu ở `artifacts/models/mlp_baseline.pt` (`main.py:114`), `artifacts/models/exp_run_<i>.pt` (`experiment/experiment.py:77`), chưa ghi log. Sẽ chuyển sang `outputs/models/`, `outputs/logs/` ở giai đoạn O5.
+  - Hiện code lưu ở `outputs/models/mlp_baseline.pt` (`main.py:114`), `outputs/models/exp_run_<i>.pt` (`experiment/experiment.py:77`), chưa ghi log vào `outputs/logs/`.
 
 ## How to do it (general plan)
 1. Loss: `nn.CrossEntropyLoss()` trên logits (model không có softmax)

@@ -1,9 +1,9 @@
 # Sổ ghi thí nghiệm
 
 - **Created**: 2026-11-01T02:08:09+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T00:11:16+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T01:18:22+07:00 (pptthu)
 
-Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `artifacts/runs/`.
+Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `outputs/results/`. Các mục trước 14/11 lấy từ `artifacts/runs/` cũ, đã xoá ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`.
 
 ## 06/11/2026: lưu lịch sử theo epoch
 - **Vì sao:** trước đây mỗi lần chạy chỉ giữ giá trị tốt nhất và cuối cùng, nên các giải thích như "SGD lr 1e-3 vẫn đang học" hay "baseline overfit sau epoch 7" không có đường cong làm bằng chứng.

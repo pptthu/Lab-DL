@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 import torch
 
-from shared.paths import artifact_dir, raw_data_dir
+from shared.paths import data_dir, output_dir
 from labs.lab1.main import CLASS_NAMES, N_THREADS, SEEDS
 from labs.lab1.preprocessing.preprocessing import load_csv, load_split
 from labs.lab1.features.features import compute_mean_std, build_transform, FashionDataset, make_loaders
@@ -37,10 +37,10 @@ def main() -> None:
     torch.set_num_threads(N_THREADS)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    raw_dir = raw_data_dir("lab1")
+    raw_dir = data_dir("lab1", "raw")
     images, labels = load_csv(str(raw_dir / "fashion-mnist_train.csv"))
     test_images, test_labels = load_csv(str(raw_dir / "fashion-mnist_test.csv"))
-    train_idx, val_idx = load_split(str(artifact_dir("lab1", "splits") / "train_val_split.json"))
+    train_idx, val_idx = load_split(str(data_dir("lab1", "splits") / "train_val_split.json"))
     mean, std = compute_mean_std(images[train_idx])
     transform = build_transform(mean, std)
     loaders = make_loaders(
@@ -58,7 +58,7 @@ def main() -> None:
     ]
     results = run_experiments(configs, loaders, device=device, ckpt_prefix="ext_run")
 
-    runs_dir = artifact_dir("lab1", "runs")
+    runs_dir = output_dir("lab1", "results")
     save_results(results, str(runs_dir / "extended_results.csv"))
     save_history(results, str(runs_dir / "extended_epoch_history.csv"))
     for name in VARIANTS:

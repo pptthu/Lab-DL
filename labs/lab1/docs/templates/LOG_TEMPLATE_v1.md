@@ -1,6 +1,6 @@
 # Khuôn log và quy tắc dừng (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T11:22:06+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-14T01:18:05+07:00
 - Dùng cho: mọi lần chạy train của Lab 1 (smoke run và normal run).
 
 ## 1. File sinh ra mỗi lần chạy
@@ -28,8 +28,8 @@ Lưu trong `labs/lab1/outputs/logs/` (smoke run: `outputs/_smoke/`), `<ts>` = `Y
     best_ckpt: outputs/models/<ts>_baseline_best.pt | last_ckpt: outputs/models/<ts>_baseline_last.pt
 
 Nguồn số trong ví dụ:
-- `params: 235,146`: cột `n_params` của run baseline trong `labs/lab1/artifacts/runs/experiment_results.csv`.
-- `train=54000 val=6000`: `labs/lab1/artifacts/splits/train_val_split.json`.
+- `params: 235,146`: cột `n_params` của run baseline trong `labs/lab1/outputs/results/experiment_results.csv`.
+- `train=54000 val=6000`: `labs/lab1/data/splits/train_val_split.json`.
 - `batch_size=64`: mặc định của `make_loaders` trong `labs/lab1/features/features.py`.
 - Giờ chạy chỉ là ví dụ.
 

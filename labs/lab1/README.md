@@ -1,7 +1,7 @@
 # Lab 1: Phân loại Fashion-MNIST bằng MLP (PyTorch)
 
 - **Created**: 2026-10-12T10:27:18+07:00 (pptthu)
-- **Last Updated**: 2026-11-14T00:36:56+07:00 (pptthu)
+- **Last Updated**: 2026-11-14T01:18:22+07:00 (pptthu)
 
 > Kết quả trong file này là lần chạy ngày 04/11/2026 theo yêu cầu cũ (5 epoch, 7 cấu hình × 5 seed). Nhóm sẽ chạy lại theo desc mới [`docs/lab1_description_v1.md`](docs/lab1_description_v1.md) (5 cấu hình, seed 42, tối đa 30 epoch + early stopping) và cập nhật lại báo cáo này.
 
@@ -22,7 +22,7 @@ bỏ lớp ẩn (-3,80 điểm), SGD thay Adam ở lr 1e-3 (-3,45), SGD lr 0,01 
 Kích thước mạng, dropout, weight decay chưa có tác động rõ trong 5 epoch.
 Ở 20 epoch, baseline overfit; dropout giữ val loss cuối thấp hơn nhưng chưa làm tăng accuracy rõ rệt.
 
-**Hình.** Hiển thị trong notebook, lưu ở `artifacts/figures/`. Đường cong theo epoch của cả 45 lần chạy: notebook Stage 9b và 10b, từ `artifacts/runs/epoch_history.csv` và `extended_epoch_history.csv`. Chi tiết: xem Báo cáo chi tiết.
+**Hình.** Hình của lần chạy 04/11 hiển thị trong notebook (file gốc trong `artifacts/` đã xoá ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`; lần chạy mới lưu ở `outputs/figures/`). Đường cong theo epoch của cả 45 lần chạy: notebook Stage 9b và 10b, từ `epoch_history.csv` và `extended_epoch_history.csv`. Chi tiết: xem Báo cáo chi tiết.
 
 ## Báo cáo chi tiết
 
@@ -88,7 +88,7 @@ MLP tốt hơn rõ so với mô hình tuyến tính, đạt 88,00 ± 0,39% trên
 4. Tài liệu PyTorch: https://pytorch.org/docs/stable/
 
 ## Dữ liệu
-Fashion-MNIST chính thức từ GitHub của Zalando (https://github.com/zalandoresearch/fashion-mnist). Chạy `python -m labs.lab1.preprocessing.download_official`: lệnh này tải 4 file IDX bằng torchvision (tự kiểm MD5) và ghi `fashion-mnist_train.csv`, `fashion-mnist_test.csv` (cột `label` + 784 cột pixel) vào `labs/lab1/raw_data/` (thư mục này không commit).
+Fashion-MNIST chính thức từ GitHub của Zalando (https://github.com/zalandoresearch/fashion-mnist). Chạy `python -m labs.lab1.preprocessing.download_official`: lệnh này tải 4 file IDX bằng torchvision (tự kiểm MD5) và ghi `fashion-mnist_train.csv`, `fashion-mnist_test.csv` (cột `label` + 784 cột pixel) vào `labs/lab1/data/raw/` (thư mục này không commit).
 
 ## Cấu trúc thư mục
 ```text
@@ -109,8 +109,8 @@ labs/lab1/
 ├── visualize/visualize.py              # module: visualize
 ├── experiment/experiment.py            # module: experiment
 ├── notebook/lab1_presentation.ipynb    # notebook trình bày
-├── raw_data/                # file dữ liệu (KHÔNG commit)
-├── artifacts/               # splits/ (có commit) | models, figures, logs, runs (KHÔNG commit)
+├── data/                    # raw/ (KHÔNG commit) | splits/ (có commit)
+├── outputs/                 # models, logs, figures, results, demo, _smoke (KHÔNG commit)
 ├── docs/                    # tài liệu Lab 1, đọc docs/00_README_v2.md trước
 │   ├── lab1_description_v1.md   # desc hiện hành
 │   ├── rules/  templates/  plans/
@@ -118,7 +118,7 @@ labs/lab1/
 │   └── experiments/         # ghi chép thí nghiệm (trước là logbook/)
 └── tests/                   # test hợp đồng interface + test từng module (dữ liệu giả)
 ```
-Cây thư mục đích sau khi đổi `artifacts/`, `raw_data/` sang `outputs/`, `data/`: xem [`docs/rules/FOLDER_STRUCTURE_v2.md`](docs/rules/FOLDER_STRUCTURE_v2.md).
+Giải thích cây thư mục: xem [`docs/rules/FOLDER_STRUCTURE_v2.md`](docs/rules/FOLDER_STRUCTURE_v2.md).
 
 ## Desc từng module
 Mỗi module có một file trong [`docs/phases/`](docs/phases/): `eda_v1.md`, `preprocessing_v1.md`, `features_v1.md`, `model_v1.md`, `train_v1.md`, `evaluate_v1.md`, `visualize_v1.md`, `experiment_v1.md`, `demo_v1.md`.
@@ -127,9 +127,9 @@ Mỗi module có một file trong [`docs/phases/`](docs/phases/): `eda_v1.md`, `
 ```bash
 pip install -r labs/lab1/requirements.txt
 python -m pytest labs/lab1/tests        # test trên dữ liệu giả
-python -m labs.lab1.main                # toàn bộ pipeline (cần CSV trong raw_data/)
+python -m labs.lab1.main                # toàn bộ pipeline (cần CSV trong data/raw/)
 python -m labs.lab1.extended_study      # thí nghiệm 20 epoch, chạy sau main.py
 ```
 Notebook trình bày: chạy `main.py` và `extended_study.py` trước (notebook đọc kết quả của chúng), rồi mở `labs/lab1/notebook/lab1_presentation.ipynb` và chạy tất cả các ô.
 
-Môi trường của kết quả báo cáo (04/11/2026, dữ liệu chính thức): Python 3.13.7, torch 2.14.1 (CPU), 4 thread. Giữ nguyên `artifacts/splits/train_val_split.json`. Máy khác có thể ra số hơi khác.
+Môi trường của kết quả báo cáo (04/11/2026, dữ liệu chính thức): Python 3.13.7, torch 2.14.1 (CPU), 4 thread. Giữ nguyên `data/splits/train_val_split.json`. Máy khác có thể ra số hơi khác.

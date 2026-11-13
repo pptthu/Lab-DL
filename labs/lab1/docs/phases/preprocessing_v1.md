@@ -1,9 +1,9 @@
 # preprocessing — Tải dữ liệu và chia train/val (v1)
 
 - **Created**: 2026-11-04T14:49:03+07:00
-- **Last Updated**: 2026-11-14T00:55:48+07:00 (Thư)
+- **Last Updated**: 2026-11-14T01:18:05+07:00 (Thư)
 - **Người phụ trách**: Member A (Toàn)
-- **Status**: Done (chờ đổi đường dẫn ở giai đoạn O5)
+- **Status**: Done
 
 ---
 
@@ -27,7 +27,7 @@ Val phải tách từ train, test giữ nguyên 10.000 ảnh để đánh giá c
 ## Input / Output
 - **Input:** 4 file IDX gốc tải bằng `torchvision.datasets.FashionMNIST(download=True)`
 - **Output:** `fashion-mnist_train.csv`, `fashion-mnist_test.csv`; `train_val_split.json` (`train_idx`, `val_idx`)
-  - Hiện code ghi CSV vào `raw_data/` (`shared/paths.py:16-18`), split vào `artifacts/splits/train_val_split.json` (`main.py:67`, `:83`). Sẽ chuyển sang `data/raw/`, `data/splits/` ở giai đoạn O5.
+  - Code ghi CSV vào `data/raw/` (`preprocessing/download_official.py:31`), split vào `data/splits/train_val_split.json` (`main.py:67`, `:83`).
 
 ## How to do it (general plan)
 1. Chạy `python -m labs.lab1.preprocessing.download_official` để tải và ghi 2 CSV, script tự đọc lại để so từng pixel
@@ -51,11 +51,11 @@ torchvision FashionMNIST (MD5) → download_official → 2 CSV
   - `load_csv(csv_path: str) -> tuple` (`preprocessing/preprocessing.py:25`)
   - `make_split(labels, val_ratio: float = 0.1, seed: int = 42) -> tuple` (`:50`)
   - `save_split(train_idx, val_idx, path: str) -> None` (`:77`); `load_split(path: str) -> tuple` (`:99`)
-- **Chỗ code chưa khớp plan:** chỉ còn đường dẫn, chờ O5
+- **Chỗ code chưa khớp plan:** không có (đường dẫn đã đổi ở O5 — đổi thư mục `artifacts/`, `raw_data/` sang `data/`, `outputs/`, 2026-11-14)
 - **Gotchas:**
   - Kiểm miền 0–255 **trước** khi ép kiểu `uint8`, nếu không giá trị sai bị cắt im lặng (`preprocessing/preprocessing.py:44`; `preprocessing.md` cũ)
   - Windows + đường dẫn có tiếng Việt: đặt `PYTHONIOENCODING=utf-8`, nếu không lệnh `print` cuối có thể lỗi `UnicodeEncodeError` (file vẫn đã ghi) (`preprocessing.md` cũ)
-  - Không tự viết đường dẫn dữ liệu, dùng `raw_data_dir("lab1")` (`preprocessing.md` cũ)
+  - Không tự viết đường dẫn dữ liệu, dùng `data_dir("lab1", "raw")` (`shared/paths.py:35`)
   - Chỉ có một cách chia; kết quả trên cách chia khác chưa đo (`preprocessing.md` cũ)
 
 ## Success criteria
