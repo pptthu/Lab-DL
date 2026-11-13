@@ -10,9 +10,8 @@ from torch.utils.data import DataLoader, TensorDataset
 
 import labs.lab1.experiment.experiment as experiment_module
 from labs.lab1.experiment.experiment import (
-    analyze_seed_runs, build_model, compare_pairs, run_experiments, save_history, save_results,
+    VARIANTS, build_model, make_configs, run_experiments, save_history, save_results, select_config,
 )
-from labs.lab1.train.train import save_checkpoint
 from labs.lab1.model.model import MLP
 
 
@@ -118,42 +117,6 @@ def test_save_results_marks_network_without_hidden_layers(tmp_path):
     assert pd.read_csv(csv_path)["hidden_sizes"].tolist() == ["none"]
 
 
-def test_analyze_seed_runs_writes_summaries(tmp_path):
-    loaders = _make_dummy_loaders()
-    class_names = [f"c{i}" for i in range(10)]
-    runs = []
-    for seed in (1, 2):
-        torch.manual_seed(seed)
-        ckpt = tmp_path / f"model_{seed}.pt"
-        save_checkpoint(MLP(hidden_sizes=(8,)), str(ckpt))
-        runs.append({"config": {"hidden_sizes": (8,), "dropout": 0.0, "seed": seed}, "best_epoch": 1, "ckpt_path": str(ckpt)})
-
-    summary = analyze_seed_runs(runs, loaders, class_names, device="cpu", out_dir=str(tmp_path), top_k=5)
-
-    seeds = pd.read_csv(tmp_path / "seed_results.csv")
-    recall = pd.read_csv(tmp_path / "recall_by_class.csv")
-    confusions = pd.read_csv(tmp_path / "top_confusions.csv")
-    assert seeds["seed"].tolist() == [1, 2]
-    assert len(recall) == 10
-    assert recall["n_seeds_lowest"].sum() == 2
-    assert len(confusions) == 5
-    assert summary["test_acc_mean"] == pytest.approx(seeds["test_acc"].mean())
-
-
-def test_analyze_seed_runs_can_skip_test_set(tmp_path):
-    ckpt = tmp_path / "model.pt"
-    save_checkpoint(MLP(hidden_sizes=(8,)), str(ckpt))
-    run = {"config": {"hidden_sizes": (8,), "dropout": 0.0, "seed": 1}, "best_epoch": 1, "ckpt_path": str(ckpt)}
-
-    summary = analyze_seed_runs([run], _make_dummy_loaders(), [f"c{i}" for i in range(10)], device="cpu",
-                                out_dir=str(tmp_path), prefix="x_", use_test=False)
-
-    columns = pd.read_csv(tmp_path / "x_seed_results.csv").columns
-    assert "train_acc" in columns
-    assert "test_acc" not in columns
-    assert "test_acc_mean" not in summary
-
-
 def test_build_model_follows_config():
     model = build_model({"hidden_sizes": (4,), "dropout": 0.5})
     assert isinstance(model, MLP)
@@ -169,15 +132,43 @@ def test_run_experiments_uses_ckpt_prefix(tmp_path, monkeypatch):
     assert Path(results[0]["ckpt_path"]).name == "ext_run_0.pt"
 
 
-def test_compare_pairs_statistics():
-    values = pd.DataFrame({"a": [90.0, 91.0, 92.0, 93.0, 94.0], "b": [88.0, 88.5, 89.0, 89.5, 90.5],
-                           "c": [90.1, 90.9, 92.2, 92.8, 94.1]})
+def test_make_configs_has_five_lab_configs():
+    configs = make_configs(epochs=30, seed=42)
+    assert [c["name"] for c in configs] == ["baseline", "softmax_regression", "larger_network", "sgd_lr_0.01", "dropout_0.2"]
+    assert all(c["seed"] == 42 and c["epochs"] == 30 for c in configs)
+    # Mỗi cấu hình khác baseline đúng một yếu tố (sgd đổi optimizer kèm lr).
+    assert len(VARIANTS) == 5
+    assert configs[1]["hidden_sizes"] == () and configs[2]["hidden_sizes"] == (512, 256, 128)
+    assert configs[3]["optimizer_name"] == "sgd" and configs[3]["lr"] == 0.01
+    assert configs[4]["dropout"] == 0.2
 
-    df = compare_pairs(values, [("a", "b", "x"), ("c", "a", "y")]).set_index("factor")
 
-    assert df.loc["x", "mean_diff"] == pytest.approx(2.9)
-    assert df.loc["x", "seeds_higher"] == 5
-    assert bool(df.loc["x", "rule_clear"]) is True
-    assert bool(df.loc["y", "rule_clear"]) is False
-    assert df.loc["x", "ci95_low"] < 2.9 < df.loc["x", "ci95_high"]
-    assert df.loc["x", "p_holm"] == pytest.approx(min(df.loc["x", "p_value"] * 2, 1.0))
+def test_run_experiments_with_logs_writes_files_and_new_columns(tmp_path):
+    configs = make_configs(epochs=2)[:2]
+    results = run_experiments(configs, _make_dummy_loaders(), device="cpu", log_dir=str(tmp_path / "logs"),
+                              models_dir=str(tmp_path / "models"), patience=5, min_delta=1e-4,
+                              run_info={"batch_size": 4, "data": "fake", "split": "-"})
+    for r in results:
+        assert Path(r["log_path"]).is_file() and Path(r["history_path"]).is_file() and Path(r["config_path"]).is_file()
+        assert r["ckpt_path"].endswith("_best.pt") and Path(r["ckpt_path"]).is_file()
+        assert Path(r["last_ckpt_path"]).is_file()
+        assert r["stop_reason"] in ("early_stopping", "max_epochs")
+    csv_path = tmp_path / "cmp.csv"
+    save_results(results, str(csv_path))
+    df = pd.read_csv(csv_path)
+    for col in ("name", "n_params", "best_epoch", "stopped_epoch", "best_val_loss", "best_val_acc",
+                "best_train_acc", "train_minus_val_acc", "train_seconds"):
+        assert col in df.columns
+    assert df["train_minus_val_acc"].iloc[0] == pytest.approx(df["best_train_acc"].iloc[0] - df["best_val_acc"].iloc[0])
+
+
+def test_select_config_uses_val_acc_then_val_loss():
+    results = [
+        {"config": {"name": "a"}, "best_val_acc": 0.88, "best_val_loss": 0.33},
+        {"config": {"name": "b"}, "best_val_acc": 0.89, "best_val_loss": 0.35},
+        {"config": {"name": "c"}, "best_val_acc": 0.89, "best_val_loss": 0.30},
+    ]
+    chosen = select_config(results)
+    assert chosen["name"] == "c"
+    assert chosen["index"] == 2
+    assert "val_acc" in chosen["reason"]

@@ -4,24 +4,37 @@ Run from the repo root:  python -m labs.lab1.main
 Owner: team leader. Wire the stages here after the modules are implemented
 and each one has passed its smoke test.
 
-VI: Điểm chạy chính. Chạy từ gốc repo: python -m labs.lab1.main
-Người phụ trách: nhóm trưởng. Nối các bước sau khi từng module đã qua smoke test.
+VI: Điểm chạy chính. Chạy từ gốc repo:
+    python -m labs.lab1.main --smoke   # smoke run: 1 epoch, 2 batch, mọi đầu ra vào outputs/_smoke/
+    python -m labs.lab1.main           # normal run: 5 cấu hình, tối đa 30 epoch + early stopping
+Thứ tự: EDA -> đọc dữ liệu + split -> loader -> train 5 cấu hình (experiment) -> chọn cấu hình trên val
+-> test một lần cho baseline và cấu hình được chọn (evaluate) -> hình từ log (visualize) -> demo.
 """
 from __future__ import annotations
 
+import argparse
+import json
 import sys
+from datetime import datetime
+from pathlib import Path
+
 import torch
 
-from shared.paths import data_dir, output_dir
+from shared.paths import REPO_ROOT, data_dir, output_dir
 from shared.seed import set_seed
 from labs.lab1.eda.eda import run_eda
 from labs.lab1.preprocessing.preprocessing import load_csv, load_split, make_split, save_split
 from labs.lab1.features.features import compute_mean_std, build_transform, FashionDataset, make_loaders
-from labs.lab1.model.model import MLP, count_parameters
-from labs.lab1.train.train import train_model, load_checkpoint
-from labs.lab1.evaluate.evaluate import evaluate, confusion_matrix, per_class_accuracy, save_classification_report
-from labs.lab1.visualize.visualize import plot_loss_curves, show_predictions, plot_confusion_matrix
-from labs.lab1.experiment.experiment import analyze_seed_runs, run_experiments, save_history, save_results
+from labs.lab1.train.train import load_checkpoint
+from labs.lab1.evaluate.evaluate import (
+    TEST_ACC_THRESHOLD, confusion_matrix, evaluate, save_classification_report, save_test_results,
+)
+from labs.lab1.visualize.visualize import (
+    demo_predictions, plot_accuracy_curves, plot_confusion_matrix, plot_loss_curves, show_predictions,
+)
+from labs.lab1.experiment.experiment import (
+    build_model, make_configs, run_experiments, save_history, save_results, select_config,
+)
 
 CLASS_NAMES = [
     "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
@@ -31,162 +44,211 @@ CLASS_NAMES = [
 # Fixed so that main.py and the notebook run under the same CPU setup.
 # VI: Cố định để main.py và notebook chạy cùng cấu hình CPU.
 N_THREADS = 4
-SEEDS = (42, 7, 123, 2024, 3407)
-# Each variant changes one factor. SGD always uses momentum 0.9 (see train.py).
-# VI: Mỗi biến thể đổi một yếu tố. SGD luôn dùng momentum 0.9 (xem train.py).
-VARIANTS = {
-    "baseline": {},
-    "softmax_regression": {"hidden_sizes": ()},
-    "sgd_same_lr": {"optimizer_name": "sgd"},
-    "sgd_lr_0.01": {"optimizer_name": "sgd", "lr": 0.01},
-    "larger_network": {"hidden_sizes": (512, 256, 128)},
-    "dropout_0.2": {"dropout": 0.2},
-    "weight_decay_1e-4": {"weight_decay": 1e-4},
-}
+BATCH_SIZE = 64
+# Quy tắc dừng theo docs/templates/LOG_TEMPLATE_v1.md §3.
+MAX_EPOCHS = 30
+PATIENCE = 5
+MIN_DELTA = 1e-4
+# Smoke run theo docs/rules/RULES_v1.md mục 7.
+SMOKE_EPOCHS = 1
+SMOKE_BATCHES = 2
 
 
-def main(seed: int = 42, epochs: int = 5) -> dict:
-    """Run full Lab 1 pipeline:
-    set_seed -> EDA -> preprocessing -> features -> model -> train ->
-    load best checkpoint -> final test evaluation (not used for selection) -> visualize -> experiments.
+def _rel(path) -> str:
+    # Đường dẫn tương đối từ gốc repo, để file tóm tắt dùng được trên máy khác.
+    try:
+        return Path(path).resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
 
-    VI: Chạy toàn bộ pipeline Lab 1: cố định seed, EDA, tiền xử lý, trích xuất đặc trưng,
-    tạo model, huấn luyện, nạp checkpoint tốt nhất, đánh giá tập test cuối cùng (không dùng để chọn mô hình), trực quan hóa và thí nghiệm.
+
+def _out_dirs(smoke: bool) -> dict:
+    # Normal run: outputs/<kind>/. Smoke run: mọi thứ vào outputs/_smoke/<kind>/.
+    kinds = ("models", "logs", "figures", "results", "demo")
+    if smoke:
+        root = output_dir("lab1", "_smoke")
+        dirs = {k: root / k for k in kinds}
+        for d in dirs.values():
+            d.mkdir(parents=True, exist_ok=True)
+        return dirs
+    return {k: output_dir("lab1", k) for k in kinds}
+
+
+def main(seed: int = 42, epochs: int = MAX_EPOCHS, smoke: bool = False) -> dict:
+    """Chạy toàn bộ pipeline Lab 1 theo desc lab (docs/lab1_description_v1.md).
+
+    Vào : seed; epochs (số epoch tối đa); smoke (True: 1 epoch, 2 batch, ghi vào outputs/_smoke/)
+    Ra  : dict tóm tắt (cũng ghi ra results/run_summary.json)
     """
     sys.stdout.reconfigure(encoding="utf-8")
     torch.set_num_threads(N_THREADS)
     set_seed(seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"=== [Lab 1 Pipeline] Device: {device} | Seed: {seed} ===")
+    if smoke:
+        epochs = SMOKE_EPOCHS
+    max_batches = SMOKE_BATCHES if smoke else None
+    started = datetime.now().astimezone()
+    stamp = started.strftime("%Y%m%d_%H%M%S")
+    mode = "SMOKE RUN (số liệu không dùng để báo cáo)" if smoke else "NORMAL RUN"
+    print(f"=== [Lab 1] {mode} | device: {device} | seed: {seed} | max_epochs: {epochs} ===")
 
-    # 1. Paths setup
+    # 1. Đường dẫn
     raw_dir = data_dir("lab1", "raw")
     train_csv_path = raw_dir / "fashion-mnist_train.csv"
     test_csv_path = raw_dir / "fashion-mnist_test.csv"
-    figures_dir = output_dir("lab1", "figures")
-    splits_dir = data_dir("lab1", "splits")
-    models_dir = output_dir("lab1", "models")
-    runs_dir = output_dir("lab1", "results")
+    split_file = data_dir("lab1", "splits") / "train_val_split.json"
+    out = _out_dirs(smoke)
 
-    # 2. EDA
-    # VI: 2. Khám phá dữ liệu (chỉ trên file train)
-    print("\n--- 1. Exploratory Data Analysis (EDA) ---")
-    eda_stats = run_eda(str(train_csv_path), str(figures_dir))
-    print(f"EDA completed: {eda_stats['n_rows']} rows, {len(eda_stats['class_counts'])} classes, {eda_stats['n_duplicates']} duplicates.")
+    # 2. EDA (chỉ trên file train)
+    print("\n--- 1. EDA ---")
+    eda_stats = run_eda(str(train_csv_path), str(out["figures"]))
+    print(f"rows={eda_stats['n_rows']} classes={len(eda_stats['class_counts'])} duplicates={eda_stats['n_duplicates']}")
 
-    # 3. Preprocessing (Data Loading & Split)
-    # VI: 3. Đọc dữ liệu và chia train/val; dùng lại file split đã commit nếu có
-    print("\n--- 2. Preprocessing & Splitting ---")
+    # 3. Đọc dữ liệu và split; dùng lại file split đã commit
+    print("\n--- 2. Preprocessing ---")
     images, labels = load_csv(str(train_csv_path))
     test_images, test_labels = load_csv(str(test_csv_path))
-
-    split_file = splits_dir / "train_val_split.json"
     if split_file.is_file():
         train_idx, val_idx = load_split(str(split_file))
     else:
-        train_idx, val_idx = make_split(labels, val_ratio=0.1, seed=seed)
+        train_idx, val_idx = make_split(labels, val_ratio=0.1, seed=42)
         save_split(train_idx, val_idx, str(split_file))
-    print(f"Split loaded: train={len(train_idx)}, val={len(val_idx)}, test={len(test_labels)}")
+    print(f"train={len(train_idx)} val={len(val_idx)} test={len(test_labels)} | split: {_rel(split_file)}")
 
-    # 4. Features (Normalization & DataLoaders): mean/std from the training split only
-    # VI: 4. Chuẩn hóa và DataLoader: mean/std chỉ tính trên tập train
-    print("\n--- 3. Features & DataLoaders ---")
+    # 4. Chuẩn hoá theo mean/std của tập train, tạo loader
+    print("\n--- 3. Features ---")
     mean, std = compute_mean_std(images[train_idx])
     transform = build_transform(mean, std)
-    print(f"Train-only normalization statistics: mean={mean:.4f}, std={std:.4f}")
-
     train_ds = FashionDataset(images, labels, indices=train_idx, transform=transform)
     val_ds = FashionDataset(images, labels, indices=val_idx, transform=transform)
     test_ds = FashionDataset(test_images, test_labels, indices=None, transform=transform)
-    train_loader, val_loader, test_loader = make_loaders(train_ds, val_ds, test_ds, batch_size=64)
+    train_loader, val_loader, test_loader = make_loaders(train_ds, val_ds, test_ds, batch_size=BATCH_SIZE)
+    print(f"mean={mean:.4f} std={std:.4f} batch_size={BATCH_SIZE}")
 
-    # 5. Model; set the seed again so the initial weights are always the same
-    # VI: 5. Mô hình; đặt lại seed để trọng số ban đầu lần nào cũng giống nhau
-    print("\n--- 4. Model Instantiation ---")
-    set_seed(seed)
-    model = MLP(hidden_sizes=(256, 128), num_classes=10, dropout=0.0)
-    n_params = count_parameters(model)
-    print(f"Baseline MLP instantiated: 784 -> 256 -> 128 -> 10 ({n_params:,} trainable parameters)")
-
-    # 6. Train the baseline (Adam, lr 1e-3, 5 epochs), keep the best checkpoint by validation loss
-    # VI: 6. Huấn luyện baseline (Adam, lr 1e-3, 5 epoch), giữ checkpoint có validation loss thấp nhất
-    print("\n--- 5. Training Baseline Model ---")
-    ckpt_path = str(models_dir / "mlp_baseline.pt")
-    history = train_model(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        epochs=epochs,
-        lr=1e-3,
-        device=device,
-        ckpt_path=ckpt_path,
-        optimizer_name="adam",
-        weight_decay=0.0,
-    )
-    print(f"Baseline training finished. Best checkpoint saved to: {ckpt_path}")
-
-    # 7. Evaluate (Load Best Checkpoint): validation for analysis, test reported once
-    # VI: 7. Đánh giá (nạp checkpoint tốt nhất): validation để phân tích, test chỉ báo cáo một lần
-    print("\n--- 6. Evaluation ---")
-    eval_model = MLP(hidden_sizes=(256, 128), num_classes=10, dropout=0.0)
-    best_model = load_checkpoint(eval_model, ckpt_path, device=device)
-
-    val_loss, val_acc = evaluate(best_model, val_loader, device=device)
-    cm = confusion_matrix(best_model, val_loader, device=device, num_classes=10)
-    per_class = per_class_accuracy(cm)
-    report_csv = str(runs_dir / "classification_report.csv")
-    save_classification_report(cm, CLASS_NAMES, report_csv)
-    print(f"Validation Performance: loss={val_loss:.4f}, accuracy={val_acc*100:.2f}%")
-
-    test_loss, test_acc = evaluate(best_model, test_loader, device=device)
-    print(f"Test Performance (final test evaluation; not used for selection): loss={test_loss:.4f}, accuracy={test_acc*100:.2f}%")
-
-    # 8. Visualize
-    # VI: 8. Vẽ đường loss, ảnh dự đoán và confusion matrix
-    print("\n--- 7. Visualization ---")
-    loss_fig = str(figures_dir / "loss_curves.png")
-    pred_fig = str(figures_dir / "predictions_grid.png")
-    cm_fig = str(figures_dir / "confusion_matrix.png")
-
-    plot_loss_curves(history, loss_fig)
-    show_predictions(best_model, val_loader, CLASS_NAMES, device=device, out_path=pred_fig, n=16)
-    plot_confusion_matrix(cm, CLASS_NAMES, cm_fig)
-    print("Saved figures: loss_curves.png, predictions_grid.png, confusion_matrix.png")
-
-    # 9. Experiments: 7 configurations x 5 seeds = 35 runs, each pair changes one factor
-    # VI: 9. Thí nghiệm: 7 cấu hình x 5 seed = 35 lần chạy, mỗi cặp đổi một yếu tố
-    print("\n--- 8. Ablation Experiments ---")
-    base = {"hidden_sizes": (256, 128), "lr": 1e-3, "dropout": 0.0, "optimizer_name": "adam", "weight_decay": 0.0, "epochs": epochs}
-    configs = [
-        {**base, **change, "name": name, "seed": s}
-        for name, change in VARIANTS.items()
-        for s in SEEDS
-    ]
+    # 5. Train 5 cấu hình (experiment gọi train cho từng cấu hình), chỉ dùng train + val
+    print("\n--- 4. Train 5 cấu hình ---")
+    configs = make_configs(epochs=epochs, seed=seed)
+    run_info = {"batch_size": BATCH_SIZE, "data": f"train={len(train_idx)} val={len(val_idx)}",
+                "split": _rel(split_file), "normalize": {"mean": mean, "std": std}}
     loaders = (train_loader, val_loader, test_loader)
-    exp_results = run_experiments(configs, loaders, device=device)
-    exp_csv = str(runs_dir / "experiment_results.csv")
-    save_results(exp_results, exp_csv)
-    save_history(exp_results, str(runs_dir / "epoch_history.csv"))
-    print(f"Experiments completed and saved to: {exp_csv}")
+    results = run_experiments(
+        configs, loaders, device=device, log_dir=str(out["logs"]), models_dir=str(out["models"]),
+        patience=PATIENCE, min_delta=MIN_DELTA, max_batches=max_batches, run_info=run_info, verbose=True,
+    )
+    comparison_csv = out["results"] / "experiment_results.csv"
+    save_results(results, str(comparison_csv))
+    save_history(results, str(out["results"] / "epoch_history.csv"))
 
-    # 10. Baseline across seeds (fixed beforehand, so the test set selects nothing)
-    # VI: Baseline qua nhiều seed (đã chốt trước, nên tập test không dùng để chọn gì)
-    baseline_runs = [r for r in exp_results if r["config"]["name"] == "baseline"]
-    seed_summary = analyze_seed_runs(baseline_runs, loaders, CLASS_NAMES, device=device, out_dir=str(runs_dir))
-    print(f"Baseline test accuracy: {seed_summary['test_acc_mean']*100:.2f} +/- {seed_summary['test_acc_std']*100:.2f}% ({len(baseline_runs)} seeds)")
+    # 6. Chọn cấu hình trên val (không nhìn test)
+    chosen = select_config(results)
+    print(f"\nChọn: {chosen['reason']}")
+    by_name = {r["config"]["name"]: r for r in results}
+    baseline = by_name["baseline"]
+    selected = results[chosen["index"]]
 
-    print("\n=== [Lab 1 Pipeline Completed Successfully] ===")
-    return {
-        "val_loss": val_loss,
-        "val_acc": val_acc,
-        "test_loss": test_loss,
-        "test_acc": test_acc,
-        "n_params": n_params,
-        "experiment_count": len(exp_results),
-        "test_acc_mean": seed_summary["test_acc_mean"],
-        "test_acc_std": seed_summary["test_acc_std"],
+    # 7. Đánh giá: nạp _best.pt; val để đối chiếu với log; test đúng một lần cho mỗi model
+    print("\n--- 5. Evaluate (test một lần cho baseline và cấu hình được chọn) ---")
+    # Nếu cấu hình được chọn chính là baseline thì chỉ chạy test một lần.
+    if selected is baseline:
+        to_test = [(baseline, "baseline+selected")]
+    else:
+        to_test = [(baseline, "baseline"), (selected, "selected")]
+    test_rows = []
+    loaded = {}
+    for r, role in to_test:
+        model = load_checkpoint(build_model(r["config"]), r["ckpt_path"], device=device)
+        loaded[r["config"]["name"]] = model
+        val_loss, val_acc = evaluate(model, val_loader, device=device)
+        test_loss, test_acc = evaluate(model, test_loader, device=device)
+        test_rows.append({
+            "name": r["config"]["name"], "role": role, "run_name": r["run_name"], "ckpt_path": _rel(r["ckpt_path"]),
+            "best_epoch": r["best_epoch"], "val_loss": val_loss, "val_acc": val_acc,
+            "val_acc_in_log": r["best_val_acc"], "test_loss": test_loss, "test_acc": test_acc,
+        })
+        print(f"{r['config']['name']:<20} ({role}) val_acc={val_acc * 100:.2f}% (log {r['best_val_acc'] * 100:.2f}%) "
+              f"| test_loss={test_loss:.4f} test_acc={test_acc * 100:.2f}%")
+    test_csv = out["results"] / "test_results.csv"
+    test_df = save_test_results(test_rows, str(test_csv))
+    baseline_test_acc = float(test_df.loc[test_df["role"].str.contains("baseline"), "test_acc"].iloc[0])
+    print(f"Baseline test {baseline_test_acc * 100:.2f}% | mức desc lab ≥ {TEST_ACC_THRESHOLD * 100:.0f}%: "
+          f"{'ĐẠT' if baseline_test_acc >= TEST_ACC_THRESHOLD else 'CHƯA ĐẠT'}")
+
+    # Phân tích lỗi theo lớp trên val của cấu hình được chọn
+    sel_name = selected["config"]["name"]
+    sel_model = loaded[sel_name]
+    cm = confusion_matrix(sel_model, val_loader, device=device, num_classes=10)
+    report_csv = out["results"] / f"classification_report_val_{sel_name}.csv"
+    save_classification_report(cm, CLASS_NAMES, str(report_csv))
+
+    # 8. Hình: loss và accuracy vẽ từ _history.csv của từng run
+    print("\n--- 6. Visualize ---")
+    figures = {"eda": [_rel(out["figures"] / "class_counts.png"), _rel(out["figures"] / "sample_grid.png")]}
+    for r in results:
+        name = r["config"]["name"]
+        loss_png = out["figures"] / f"{r['run_name']}_loss.png"
+        acc_png = out["figures"] / f"{r['run_name']}_acc.png"
+        plot_loss_curves(r["history_path"], str(loss_png), title=f"{name}: loss (train / val)")
+        plot_accuracy_curves(r["history_path"], str(acc_png), title=f"{name}: accuracy (train / val)")
+        figures[name] = {"loss": _rel(loss_png), "acc": _rel(acc_png)}
+    cm_png = out["figures"] / f"{stamp}_confusion_matrix_val_{sel_name}.png"
+    plot_confusion_matrix(cm, CLASS_NAMES, str(cm_png))
+    pred_png = out["figures"] / f"{stamp}_predictions_test_{sel_name}.png"
+    show_predictions(sel_model, test_loader, CLASS_NAMES, device=device, out_path=str(pred_png), n=16)
+    figures["confusion_matrix_val"] = _rel(cm_png)
+    figures["predictions_test"] = _rel(pred_png)
+
+    # 9. Demo: nạp lại _best.pt của cấu hình được chọn vào model mới, dự đoán 16 ảnh test đầu
+    print("\n--- 7. Demo ---")
+    demo_model = load_checkpoint(build_model(selected["config"]), selected["ckpt_path"], device=device)
+    demo_png = out["demo"] / f"{stamp}_predictions.png"
+    demo_csv = out["demo"] / f"{stamp}_predictions.csv"
+    demo_df = demo_predictions(demo_model, test_loader, CLASS_NAMES, device=device,
+                               out_png=str(demo_png), out_csv=str(demo_csv), n=16)
+    print(f"demo: {int(demo_df['correct'].sum())}/{len(demo_df)} đúng -> {_rel(demo_png)}")
+
+    # 10. File tóm tắt cho notebook và tài liệu
+    finished = datetime.now().astimezone()
+    summary = {
+        "mode": "smoke" if smoke else "normal",
+        "started_at": started.isoformat(timespec="seconds"),
+        "finished_at": finished.isoformat(timespec="seconds"),
+        "duration_s": round((finished - started).total_seconds(), 1),
+        "device": device, "seed": seed, "max_epochs": epochs, "batch_size": BATCH_SIZE,
+        "early_stopping": {"monitor": "val_loss", "patience": PATIENCE, "min_delta": MIN_DELTA},
+        "max_batches": max_batches,
+        "torch": torch.__version__, "python": sys.version.split()[0], "threads": N_THREADS,
+        "data": {"train": int(len(train_idx)), "val": int(len(val_idx)), "test": int(len(test_labels)),
+                 "split": _rel(split_file), "mean": mean, "std": std},
+        "runs": [{
+            "name": r["config"]["name"], "run_name": r["run_name"], "n_params": r["n_params"],
+            "best_epoch": r["best_epoch"], "stopped_epoch": r["stopped_epoch"], "stop_reason": r["stop_reason"],
+            "best_val_loss": r["best_val_loss"], "best_val_acc": r["best_val_acc"],
+            "best_train_acc": r["best_train_acc"], "train_seconds": r["train_seconds"],
+            "log": _rel(r["log_path"]), "history": _rel(r["history_path"]), "config": _rel(r["config_path"]),
+            "best_ckpt": _rel(r["ckpt_path"]), "last_ckpt": _rel(r["last_ckpt_path"]),
+        } for r in results],
+        "selection": {k: chosen[k] for k in ("name", "run_name", "best_val_acc", "best_val_loss", "reason")},
+        "test": test_df.to_dict(orient="records"),
+        "threshold": TEST_ACC_THRESHOLD,
+        "baseline_test_acc": baseline_test_acc,
+        "baseline_meets_threshold": bool(baseline_test_acc >= TEST_ACC_THRESHOLD),
+        "files": {
+            "experiment_results": _rel(comparison_csv), "epoch_history": _rel(out["results"] / "epoch_history.csv"),
+            "test_results": _rel(test_csv), "classification_report_val": _rel(report_csv),
+            "figures": figures, "demo_png": _rel(demo_png), "demo_csv": _rel(demo_csv),
+        },
     }
+    summary_path = out["results"] / "run_summary.json"
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    print(f"\nTóm tắt: {_rel(summary_path)} | thời gian {summary['duration_s']:.0f} giây")
+    print("=== [Lab 1] Xong ===")
+    return summary
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Lab 1: Fashion-MNIST MLP")
+    parser.add_argument("--smoke", action="store_true", help="1 epoch, 2 batch, ghi vào outputs/_smoke/")
+    parser.add_argument("--epochs", type=int, default=MAX_EPOCHS, help="số epoch tối đa (mặc định 30)")
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+    main(seed=args.seed, epochs=args.epochs, smoke=args.smoke)
