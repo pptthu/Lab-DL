@@ -1,70 +1,37 @@
-# Experiment log
-
-One entry per experiment: what changed, why, and the result. Numbers come from `artifacts/runs/`.
-
-## 2026-11-06: per-epoch history saved
-- **Why:** only the best and final values of each run were kept, so explanations such as "SGD at lr 1e-3 is still learning" or "the baseline overfits after epoch 7" had no curve behind them.
-- **Change:** `run_experiments` keeps each run's history; `save_history` writes `epoch_history.csv` (35 runs x 5 epochs) and `extended_epoch_history.csv` (10 runs x 20 epochs). Data, configurations, seeds and the rule are unchanged.
-- **Result:** all 12 result CSVs are identical to the 2026-11-04 run (timing columns aside), and the history matches each run's best epoch, best and final values (0 mismatches in 45 runs). The curves show: the linear model levels off near 84% from epoch 2; SGD at lr 1e-3 is still rising at epoch 5; the 20-epoch baseline's mean val loss is lowest at epoch 7 (0.3028) and rises to 0.3972 while train loss falls to 0.1240; dropout keeps val loss between 0.2984 and 0.3100 from epoch 7 to 20.
-
-## 2026-11-04: rerun on the official Zalando data
-- **Why:** the Kaggle CSVs differ from the official files (see README); the 2026-11-01 entries below were measured on them.
-- **Change:** data only (official files, same CSV format, same split rule and seed). Code, configurations, seeds and the rule are unchanged.
-- **Result:** clear effects stay the same: no hidden layer -3.80, SGD vs Adam at lr 1e-3 -3.45, SGD lr 0.01 vs 1e-3 +3.14 points. Larger network -0.52, dropout -0.46, weight decay -0.29: not clear (rule fails; p (Holm) 0.084, 0.084, 0.059). Baseline test 88.00 +/- 0.39%. 20 epochs: baseline overfits (val loss 0.2988 at best, 0.3972 at the end), test 88.62 +/- 0.19%; dropout keeps the final val loss lower (0.3095, all 5 seeds) without a clear accuracy gain (+0.36, p (Holm) 0.15).
-
-## 2026-11-01: seven configurations, five seeds
-- **Why:** the earlier table had one seed per configuration, and two configurations changed two factors at once.
-- **Change:** each pair differs in one factor. Seeds: 42, 7, 123, 2024, 3407. Epochs: 5. Same split. 4 CPU threads.
-- **Rule, fixed before reading results:** a pair shows a clear difference if all 5 seeds point the same way and |mean difference| >= 2 std.
-
-| Compared | Factor | Mean difference (val, points) | Std | Seeds higher | Result |
-|---|---|---|---|---|---|
-| `softmax_regression` vs `baseline` | Hidden layers | -3.75 | 0.45 | 0/5 | Clear |
-| `sgd_same_lr` vs `baseline` | Optimizer | -3.33 | 0.34 | 0/5 | Clear |
-| `sgd_lr_0.01` vs `sgd_same_lr` | Learning rate | +2.81 | 0.38 | 5/5 | Clear |
-| `larger_network` vs `baseline` | Network size | -0.34 | 0.48 | 1/5 | Not clear |
-| `dropout_0.2` vs `baseline` | Dropout | -0.68 | 0.46 | 0/5 | Not clear |
-| `weight_decay_1e-4` vs `baseline` | Weight decay | -0.30 | 0.37 | 1/5 | Not clear |
-
-- **Baseline test accuracy:** 88.42 +/- 0.37% across 5 seeds. It was fixed beforehand, so the test set chose nothing.
-- **Limits:** 5 epochs may favour configurations that learn fast. The rule is practical, not a statistical test.
-- **Next:** test the Shirt hypotheses, for example with a small CNN on the same split and seeds.
-
-## 2026-11-01: statistical check and 20 epochs
-- **Why:** the 5-epoch rule was only practical, and 5 epochs could hide overfitting or a late effect of dropout.
-- **Change:** paired t-test with Holm correction and 95% CI on the six pairs; baseline and dropout at 20 epochs, 5 seeds. Planned CNN dropped for time.
-- **Result:** the same three pairs stay clear. Dropout at 5 epochs: p = 0.031, 0.093 after correction. At 20 epochs the baseline overfits (lowest val loss 0.3055, final 0.4020; test 89.11 +/- 0.17%). Dropout: val accuracy +0.08 points, p = 0.71, final val loss 0.3101.
-- **Reproducibility:** a second `main.py` run gave identical baseline weights and identical results for all 35 runs.
-
----
-
-**Tiếng Việt**
-
 # Sổ ghi thí nghiệm
 
 Mỗi mục ghi một thí nghiệm: đổi gì, vì sao, kết quả ra sao. Số liệu lấy từ `artifacts/runs/`.
 
 ## 06/11/2026: lưu lịch sử theo epoch
 - **Vì sao:** trước đây mỗi lần chạy chỉ giữ giá trị tốt nhất và cuối cùng, nên các giải thích như "SGD lr 1e-3 vẫn đang học" hay "baseline overfit sau epoch 7" không có đường cong làm bằng chứng.
-- **Thay đổi:** `run_experiments` giữ lịch sử của từng lần chạy; `save_history` ghi `epoch_history.csv` (35 lần chạy x 5 epoch) và `extended_epoch_history.csv` (10 lần chạy x 20 epoch). Data, cấu hình, seed và quy tắc giữ nguyên.
-- **Kết quả:** 12 file CSV kết quả giống hệt lần chạy 04/11 (trừ cột thời gian), lịch sử khớp epoch tốt nhất, giá trị tốt nhất và cuối của từng lần chạy (0 sai lệch trên 45 lần chạy). Đường cong cho thấy: mô hình tuyến tính đứng quanh 84% từ epoch 2; SGD lr 1e-3 vẫn đang tăng ở epoch 5; baseline 20 epoch có val loss trung bình thấp nhất ở epoch 7 (0,3028) rồi tăng lên 0,3972 trong khi train loss giảm xuống 0,1240; dropout giữ val loss trong khoảng 0,2984 đến 0,3100 từ epoch 7 đến 20.
+- **Thay đổi:** `run_experiments` giữ lịch sử của từng lần chạy; `save_history` ghi `epoch_history.csv` (35 lần chạy × 5 epoch) và `extended_epoch_history.csv` (10 lần chạy × 20 epoch). Data, cấu hình, seed và quy tắc giữ nguyên.
+- **Kết quả:** 12 file CSV kết quả giống hệt lần chạy 04/11 (trừ cột thời gian); lịch sử khớp epoch tốt nhất, giá trị tốt nhất và cuối của từng lần chạy (0 sai lệch trên 45 lần chạy). Đường cong cho thấy: mô hình tuyến tính đứng quanh 84% từ epoch 2; SGD lr 1e-3 vẫn đang tăng ở epoch 5; baseline 20 epoch có val loss trung bình thấp nhất ở epoch 7 (0,3028) rồi tăng lên 0,3972 trong khi train loss giảm xuống 0,1240; dropout giữ val loss trong khoảng 0,2984 đến 0,3100 từ epoch 7 đến 20.
 
 ## 04/11/2026: chạy lại trên data chính thức của Zalando
 - **Vì sao:** CSV Kaggle khác file chính thức (xem README); các mục ngày 01/11 bên dưới đo trên CSV đó.
 - **Thay đổi:** chỉ đổi data (file chính thức, cùng định dạng CSV, cùng quy tắc chia và seed). Code, cấu hình, seed và quy tắc giữ nguyên.
-- **Kết quả:** các tác động rõ giữ nguyên: bỏ lớp ẩn -3,80, SGD so với Adam -3,45, SGD lr 0,01 +3,14 điểm. Mạng lớn hơn -0,52, dropout -0,46, weight decay -0,29: chưa rõ. Baseline test 88,00 +/- 0,39%. 20 epoch: baseline overfit, test 88,62 +/- 0,19%; dropout giữ val loss cuối thấp hơn nhưng chưa tăng accuracy rõ.
+- **Kết quả:** các tác động rõ giữ nguyên: bỏ lớp ẩn -3,80, SGD so với Adam ở lr 1e-3 -3,45, SGD lr 0,01 so với 1e-3 +3,14 điểm. Mạng lớn hơn -0,52, dropout -0,46, weight decay -0,29: chưa rõ (không qua quy tắc; p sau hiệu chỉnh Holm 0,084; 0,084; 0,059). Baseline test 88,00 ± 0,39%. 20 epoch: baseline overfit (val loss thấp nhất 0,2988, cuối 0,3972), test 88,62 ± 0,19%; dropout giữ val loss cuối thấp hơn (0,3095, ở cả 5 seed) nhưng chưa tăng accuracy rõ (+0,36 điểm, p Holm 0,15).
 
-## 2026-11-01: bảy cấu hình, năm seed
+## 01/11/2026: bảy cấu hình, năm seed
 - **Vì sao:** bảng cũ mỗi cấu hình chỉ một seed, và hai cấu hình đổi cùng lúc hai yếu tố.
 - **Thay đổi:** mỗi cặp chỉ khác một yếu tố. Seed: 42, 7, 123, 2024, 3407. 5 epoch, cùng split, 4 thread CPU.
-- **Quy tắc, chốt trước khi đọc kết quả:** một cặp có khác biệt rõ khi cả 5 seed cùng chiều và |chênh lệch trung bình| >= 2 std.
-- **Kết quả:** rõ ở lớp ẩn (-3,75 điểm), optimizer (-3,33) và learning rate (+2,81). Chưa rõ ở kích thước mạng, dropout và weight decay (xem bảng trên).
-- **Accuracy test của baseline:** 88,42 +/- 0,37% qua 5 seed. Baseline được chốt trước nên tập test không dùng để chọn gì.
+- **Quy tắc, chốt trước khi đọc kết quả:** một cặp có khác biệt rõ khi cả 5 seed cùng chiều và |chênh lệch trung bình| ≥ 2 std.
+
+| So sánh | Yếu tố | Chênh lệch trung bình (val, điểm) | Std | Số seed cao hơn | Kết luận |
+|---|---|---|---|---|---|
+| `softmax_regression` so với `baseline` | Lớp ẩn | -3,75 | 0,45 | 0/5 | Rõ |
+| `sgd_same_lr` so với `baseline` | Optimizer | -3,33 | 0,34 | 0/5 | Rõ |
+| `sgd_lr_0.01` so với `sgd_same_lr` | Learning rate | +2,81 | 0,38 | 5/5 | Rõ |
+| `larger_network` so với `baseline` | Kích thước mạng | -0,34 | 0,48 | 1/5 | Chưa rõ |
+| `dropout_0.2` so với `baseline` | Dropout | -0,68 | 0,46 | 0/5 | Chưa rõ |
+| `weight_decay_1e-4` so với `baseline` | Weight decay | -0,30 | 0,37 | 1/5 | Chưa rõ |
+
+- **Accuracy test của baseline:** 88,42 ± 0,37% qua 5 seed. Baseline được chốt trước nên tập test không dùng để chọn gì.
 - **Giới hạn:** 5 epoch có thể thiên về cấu hình học nhanh. Quy tắc mang tính thực hành, không phải kiểm định thống kê.
 - **Bước tiếp:** kiểm chứng giả thuyết về Shirt, ví dụ bằng CNN nhỏ trên cùng split và seed.
 
-## 2026-11-01: kiểm định và 20 epoch
+## 01/11/2026: kiểm định và 20 epoch
 - **Vì sao:** quy tắc 5 epoch chỉ mang tính thực hành, và 5 epoch có thể che mất overfit hoặc tác động muộn của dropout.
 - **Thay đổi:** kiểm định t theo cặp có hiệu chỉnh Holm và khoảng tin cậy 95% cho 6 cặp; baseline và dropout chạy 20 epoch, 5 seed. Bỏ CNN vì thiếu thời gian.
-- **Kết quả:** vẫn là 3 cặp khác biệt rõ. Dropout ở 5 epoch: p = 0,031, sau hiệu chỉnh 0,093. Ở 20 epoch baseline overfit (val loss thấp nhất 0,3055, cuối 0,4020; test 89,11 +/- 0,17%). Dropout: val accuracy +0,08 điểm, p = 0,71, val loss cuối 0,3101.
+- **Kết quả:** vẫn là 3 cặp khác biệt rõ. Dropout ở 5 epoch: p = 0,031, sau hiệu chỉnh 0,093. Ở 20 epoch baseline overfit (val loss thấp nhất 0,3055, cuối 0,4020; test 89,11 ± 0,17%). Dropout: val accuracy +0,08 điểm, p = 0,71, val loss cuối 0,3101.
 - **Tái lập:** chạy `main.py` lần hai ra trọng số baseline y hệt và kết quả y hệt ở cả 35 lần chạy.
