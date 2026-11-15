@@ -64,12 +64,15 @@ def test_train_model_runs_and_records_history(tiny_loaders):
         )
 
         assert "train_loss" in history
+        assert "train_acc" in history
         assert "val_loss" in history
         assert "val_acc" in history
         assert len(history["train_loss"]) == 2
+        assert len(history["train_acc"]) == 2
         assert len(history["val_loss"]) == 2
         assert len(history["val_acc"]) == 2
         assert all(isinstance(v, float) for v in history["train_loss"])
+        assert all(0.0 <= acc <= 1.0 for acc in history["train_acc"])
         assert all(0.0 <= acc <= 1.0 for acc in history["val_acc"])
         assert os.path.exists(ckpt_path)
 
@@ -112,6 +115,27 @@ def test_save_and_load_checkpoint_roundtrip():
         # Verify weights match
         for p1, p2 in zip(model1.parameters(), loaded_model.parameters()):
             assert torch.equal(p1, p2)
+
+
+def test_train_model_early_stopping(tiny_loaders):
+    train_loader, val_loader = tiny_loaders
+    model = TinyCNN()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        ckpt_path = os.path.join(tmp_dir, "test_early_stop.pt")
+        # Set patience=2 with epochs=10, should stop early if loss does not improve
+        history = train_model(
+            model=model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            epochs=10,
+            lr=0.01,
+            device="cpu",
+            ckpt_path=ckpt_path,
+            patience=2,
+        )
+        assert "stopped_epoch" in history
+        assert history["stopped_epoch"] <= 10
 
 
 def test_train_model_rejects_invalid_inputs(tiny_loaders):

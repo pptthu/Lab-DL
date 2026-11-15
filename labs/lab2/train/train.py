@@ -26,6 +26,7 @@ def train_model(
     writer: Optional[Any] = None,
     optimizer_name: str = "adam",
     weight_decay: float = 0.0,
+    patience: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Training loop with validation each epoch; log scalars to TensorBoard when writer is given; keep the best checkpoint.
 
@@ -34,17 +35,18 @@ def train_model(
     callers report the metrics of the epoch that was actually saved, instead of
     recomputing ``max(val_acc)`` (which may belong to a different epoch).
 
-    Input : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay
+    Input : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay, patience
     Output: history dict: train_loss, val_loss, val_acc (per epoch) plus best_epoch,
-            best_val_loss, best_val_acc (metrics of the saved checkpoint);
+            best_val_loss, best_val_acc (metrics of the saved checkpoint), stopped_epoch;
             checkpoint at ckpt_path; TensorBoard logs
 
     VI: Vòng lặp huấn luyện có validation mỗi epoch; ghi scalar lên TensorBoard nếu có writer; lưu checkpoint tốt nhất.
+    Hỗ trợ early stopping qua tham số patience (dừng nếu val_loss không giảm qua patience epoch liên tiếp).
     Tiêu chí chọn checkpoint: validation loss NHỎ NHẤT. History trả thêm best_epoch,
     best_val_loss, best_val_acc để báo cáo đúng epoch đã lưu.
-    Vào : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay
+    Vào : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay, patience
     Ra  : dict history: train_loss, val_loss, val_acc (từng epoch) và best_epoch,
-          best_val_loss, best_val_acc; checkpoint tại ckpt_path; log TensorBoard
+          best_val_loss, best_val_acc, stopped_epoch; checkpoint tại ckpt_path; log TensorBoard
     """
     if epochs <= 0:
         raise ValueError(f"epochs must be positive, got {epochs}")
@@ -70,6 +72,7 @@ def train_model(
 
     history: Dict[str, Any] = {
         "train_loss": [],
+        "train_acc": [],
         "val_loss": [],
         "val_acc": [],
         # Metrics of the epoch whose weights were saved as the checkpoint.
@@ -81,11 +84,13 @@ def train_model(
     best_val_loss = float("inf")
     best_epoch = 0
     best_val_acc = 0.0
+    no_improve_epochs = 0
 
     # 2. Training and validation loops
     for epoch in range(1, epochs + 1):
         model.train()
         running_train_loss = 0.0
+        correct_train = 0
         train_samples = 0
 
         for images, targets in train_loader:
@@ -100,13 +105,17 @@ def train_model(
 
             batch_size = images.size(0)
             running_train_loss += loss.item() * batch_size
+            preds = outputs.argmax(dim=1)
+            correct_train += (preds == targets).sum().item()
             train_samples += batch_size
 
         if train_samples == 0:
             raise ValueError("train_loader yielded 0 samples.")
 
         train_epoch_loss = running_train_loss / train_samples
+        train_epoch_acc = correct_train / train_samples
         history["train_loss"].append(float(train_epoch_loss))
+        history["train_acc"].append(float(train_epoch_acc))
 
         # Validation loop
         model.eval()
@@ -140,6 +149,7 @@ def train_model(
         # Log scalars to TensorBoard
         if writer is not None:
             writer.add_scalar("Loss/train", train_epoch_loss, epoch)
+            writer.add_scalar("Accuracy/train", train_epoch_acc, epoch)
             writer.add_scalar("Loss/val", val_epoch_loss, epoch)
             writer.add_scalar("Accuracy/val", val_epoch_acc, epoch)
 
@@ -151,11 +161,20 @@ def train_model(
             best_epoch = epoch
             best_val_acc = val_epoch_acc
             save_checkpoint(model, ckpt_path)
+            no_improve_epochs = 0
+        else:
+            no_improve_epochs += 1
+
+        if patience is not None and no_improve_epochs >= patience:
+            print(f"  [Early Stopping] Dừng huấn luyện tại epoch {epoch} do val_loss không giảm qua {patience} epoch liên tiếp.")
+            print(f"  [Early Stopping] Checkpoint tốt nhất được lưu tại epoch {best_epoch} (val_loss={best_val_loss:.4f}, val_acc={best_val_acc*100:.2f}%).")
+            break
 
     if best_epoch > 0:
         history["best_epoch"] = best_epoch
         history["best_val_loss"] = float(best_val_loss)
         history["best_val_acc"] = float(best_val_acc)
+    history["stopped_epoch"] = epoch
 
     return history
 
