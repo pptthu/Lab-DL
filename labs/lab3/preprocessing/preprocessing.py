@@ -35,7 +35,7 @@ def label_counts(dataset, label_col: str = "label") -> dict:
     return dict(sorted(Counter(int(x) for x in dataset[label_col]).items()))
 
 
-def load_text_dataset(name: str = 'imdb', n_train: int = 2000, n_val: int = 500, n_test: int = 500, seed: int = 42) -> tuple:
+def load_text_dataset(name: str = 'imdb', n_train: int = 2000, n_val: int = 1000, n_test: int = 2000, seed: int = 42) -> tuple:
     """Load a binary text-classification dataset and take small reproducible subsets (CPU friendly).
 
     The Hub splits of IMDB are ordered by label, so each pool is shuffled with `seed` BEFORE
