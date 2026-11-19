@@ -1,7 +1,7 @@
 # Tiến độ Lab 3
 
 - **Created**: 2026-11-20T01:25:13+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T02:41:59+07:00 (pptthu)
+- **Last Updated**: 2026-11-20T03:57:00+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì. Bài làm lại độc lập trên nhánh `feat/lab3-redo` (plan: `docs/plans/detail_plan_lab3_md_v1.md`).
@@ -31,7 +31,7 @@ Phúc bắt đầu code khi TẤT CẢ các mục sau đúng:
 - [x] `max_length` đã chốt sau EDA: **512** (Thư, 2026-11-20), ghi trong `docs/experiments/experiment_log.md`
 - [x] `model.build_model(seed)` và `model.load_tokenizer()` chạy được (nạp thật, forward 1 batch)
 - [x] `pytest labs/lab3/tests` đạt cho các module của Member A (24 passed)
-- [ ] Code của Member A đã push lên `feat/lab3-redo`; Thư gửi tin bàn giao — code đang ở nhánh `lab3/member-a` (chưa push), chờ Thư duyệt
+- [x] Code của Member A đã push lên `feat/lab3-redo` (`8932b58`, 2026-11-20); Thư gửi tin bàn giao cho Phúc (2026-11-20)
 
 **Cách B dùng phần A** (sau khi bàn giao):
 ```python
@@ -50,6 +50,7 @@ Trên Kaggle: lần đầu `load_datasets()` tự tải `aclImdb_v1.tar.gz` (c�
 Thư duyệt ở các cổng: smoke run, pilot (chốt trần epoch, patience), audit.
 
 ## Nhật ký (mỗi bước một dòng, có ngày)
+- 2026-11-20 Thư: code phần A lên `feat/lab3-redo` (`8932b58`); PR #79 đưa bài cũ về lại `main`; bàn giao phần B cho Phúc (Phúc làm trên nhánh `lab3-redo/member-b`, PR vào `feat/lab3-redo`).
 - 2026-11-20 Thư (AI soạn, nhánh `lab3/member-a`): xong code + test + chạy thật 5 module của A; EDA full data; split train/val; notebook Stage 0–5; đề xuất `max_length` 512.
 - 2026-11-20 Thư: chốt `max_length` 512; giữ split 22.499 / 2.501. `pytest labs/lab3/tests` 24 passed.
 - 2026-11-20 Thư: chia việc Member A (Thư) / Member B (Phúc); `eda` chuyển về Member A.
