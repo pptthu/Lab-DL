@@ -50,8 +50,9 @@ def fake_imdb_root(tmp_path) -> Path:
 
 @pytest.fixture
 def tiny_tokenizer(tmp_path):
-    """DistilBertTokenizerFast with a ~35-word vocab (no token_type_ids, like the real one); no download."""
-    from transformers import DistilBertTokenizerFast
+    """BertTokenizerFast with a ~35-word vocab; returns token_type_ids like the real distilbert tokenizer
+    in transformers 5 (measured 2026-11-20), so tests check that features removes them. No download."""
+    from transformers import BertTokenizerFast as DistilBertTokenizerFast
 
     vocab = ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"] + WORDS
     path = tmp_path / "vocab.txt"

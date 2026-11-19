@@ -126,7 +126,8 @@ def plot_label_distribution(summary: pd.DataFrame, path: Path) -> None:
     ax.set_xticks(x, summary["split"])
     ax.set_ylabel("số review")
     ax.set_title("Phân bố nhãn")
-    ax.legend()
+    ax.set_ylim(0, max(summary["n_neg"].max(), summary["n_pos"].max()) * 1.25)
+    ax.legend(loc="upper center", ncol=2, fontsize=8)
     fig.tight_layout()
     fig.savefig(path, dpi=120)
     plt.close(fig)
@@ -142,10 +143,13 @@ def plot_length_histogram(lengths: pd.DataFrame, path: Path) -> None:
     bins = np.linspace(0, upper, 80)
     for split, g in lengths.groupby("split"):
         ax.hist(g["n_tokens"].clip(upper=upper), bins=bins, alpha=0.5, label=split)
-    for limit in LENGTH_LIMITS:
+    top = ax.get_ylim()[1]
+    for i, limit in enumerate(LENGTH_LIMITS):
         pct = (lengths["n_tokens"] > limit).mean() * 100
         ax.axvline(limit, color="k", ls="--", lw=1)
-        ax.text(limit, ax.get_ylim()[1] * 0.95, f" {limit}\n >{limit}: {pct:.1f}%", fontsize=8, va="top")
+        # so le độ cao để chữ của các vạch gần nhau không chồng lên nhau
+        ax.text(limit + 8, top * (0.97 - 0.16 * i), f">{limit}: {pct:.1f}%", fontsize=8, va="top",
+                bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "none", "pad": 1})
     ax.set_xlabel("số token (đã làm sạch, gồm [CLS]/[SEP]; cắt hiển thị ở P99.5)")
     ax.set_ylabel("số review")
     ax.set_title("Độ dài review theo token (DistilBERT uncased)")

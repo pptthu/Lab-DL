@@ -18,7 +18,10 @@ def tokenize_datasets(ds, tokenizer, max_length: int | None, text_column: str = 
         raise ValueError("max_length is required: set it after EDA (labs/lab3/config.py MAX_LENGTH)")
 
     def _tok(batch):
-        return tokenizer(batch[text_column], truncation=True, max_length=max_length)
+        # return_token_type_ids=False: DistilBERT không dùng token_type_ids, nhưng tokenizer của
+        # transformers 5 vẫn trả cột này (đo trên dữ liệu thật 2026-11-20) → tắt cho đúng đầu vào model
+        return tokenizer(batch[text_column], truncation=True, max_length=max_length,
+                         return_token_type_ids=False)
 
     first = next(iter(ds.values())) if hasattr(ds, "values") else ds
     drop = [c for c in first.column_names if c not in KEEP_COLUMNS]
