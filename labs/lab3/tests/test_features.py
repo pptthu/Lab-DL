@@ -1,35 +1,56 @@
-"""Tests for labs/lab3/features (offline: tiny tokenizer, small in-memory DatasetDict)."""
+"""Tests for `features` (Lab 3). A fake tokenizer and a fake dataset are used: no network, no `transformers`.
+
+VI: Test cho `features` (Lab 3). Dùng tokenizer và dataset giả: không cần mạng, không cần `transformers`.
+"""
 import pytest
-from datasets import Dataset, DatasetDict
 
-from labs.lab3.features.features import make_collator, tokenize_datasets
-
-
-def small_ds():
-    rows = {"uid": ["a", "b"], "text": ["great movie", "the film was very very very boring and bad"],
-            "label": [1, 0], "rating": [9, 1], "movie_id": ["tt1", "tt2"]}
-    return DatasetDict({"train": Dataset.from_dict(rows), "test": Dataset.from_dict(rows)})
+from labs.lab3.features.features import tokenize_dataset
 
 
-def test_tokenize_keeps_uid_label_and_truncates(tiny_tokenizer):
-    out = tokenize_datasets(small_ds(), tiny_tokenizer, max_length=6)
-    for split in out.values():
-        assert set(split.column_names) == {"uid", "label", "input_ids", "attention_mask"}
-        assert all(len(ids) <= 6 for ids in split["input_ids"])
-        assert all(ids[0] == tiny_tokenizer.cls_token_id for ids in split["input_ids"])
-        assert all(ids[-1] == tiny_tokenizer.sep_token_id for ids in split["input_ids"])
-    assert len(out["train"]["input_ids"][0]) == 4  # câu ngắn không bị pad cố định
+class FakeTokenizer:
+    """Turns each word into an id; honours truncation/max_length like a real tokenizer."""
+
+    def __call__(self, texts, truncation=False, max_length=None, return_token_type_ids=True):
+        ids = [[101] + [len(w) for w in t.split()] + [102] for t in texts]
+        if truncation and max_length:
+            ids = [x[:max_length] for x in ids]
+        out = {"input_ids": ids, "attention_mask": [[1] * len(x) for x in ids]}
+        if return_token_type_ids:                      # like a real BERT-style tokenizer
+            out["token_type_ids"] = [[0] * len(x) for x in ids]
+        return out
 
 
-def test_tokenize_requires_max_length(tiny_tokenizer):
-    with pytest.raises(ValueError, match="max_length"):
-        tokenize_datasets(small_ds(), tiny_tokenizer, max_length=None)
+class FakeDS:
+    def __init__(self, columns):
+        self.columns = dict(columns)
+        self.column_names = list(self.columns)
+
+    def __getitem__(self, key):
+        return self.columns[key]
+
+    def map(self, fn, batched=False, remove_columns=None):
+        new = fn(self.columns)
+        cols = {k: v for k, v in self.columns.items() if k not in (remove_columns or [])}
+        cols.update(new)
+        return FakeDS(cols)
 
 
-def test_collator_pads_to_longest_in_batch(tiny_tokenizer):
-    tok = tokenize_datasets(small_ds(), tiny_tokenizer, max_length=8)["train"]
-    batch = make_collator(tiny_tokenizer)([{k: tok[i][k] for k in ("input_ids", "attention_mask", "label")}
-                                          for i in range(2)])
-    assert batch["input_ids"].shape == (2, 8)
-    assert batch["attention_mask"][0].tolist() == [1, 1, 1, 1, 0, 0, 0, 0]
-    assert batch["labels"].tolist() == [1, 0]
+def _ds():
+    return FakeDS({"text": ["I love this movie a lot", "bad"], "label": [1, 0]})
+
+
+def test_tokenize_dataset_has_three_columns_and_drops_text():
+    out = tokenize_dataset(_ds(), FakeTokenizer(), max_length=256)
+    assert set(out.column_names) == {"input_ids", "attention_mask", "label"}
+    assert out["label"] == [1, 0]
+
+
+def test_tokenize_dataset_truncates_to_max_length():
+    out = tokenize_dataset(_ds(), FakeTokenizer(), max_length=4)
+    assert all(len(x) <= 4 for x in out["input_ids"])
+    assert all(len(a) == len(i) for a, i in zip(out["attention_mask"], out["input_ids"]))
+
+
+def test_tokenize_dataset_missing_column_raises():
+    with pytest.raises(KeyError):
+        tokenize_dataset(_ds(), FakeTokenizer(), text_col="review")

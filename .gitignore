@@ -27,18 +27,6 @@ labs/lab1/outputs/*/*
 *.pth
 *.zip
 .env
-# Lab 3: commit logs, figures, results, demo (runs are on Kaggle GPU); not raw data, models, smoke runs
-# Lab 3: commit log, hình, bảng kết quả, demo (chạy trên Kaggle GPU); không commit dữ liệu gốc, model, smoke run
-labs/lab3/data/raw/*
-!labs/lab3/data/raw/.gitkeep
-labs/lab3/outputs/models/*
-!labs/lab3/outputs/models/.gitkeep
-labs/lab3/outputs/_smoke/*
-!labs/lab3/outputs/_smoke/.gitkeep
-!labs/lab3/data/splits/*.csv
-!labs/lab3/outputs/logs/*.csv
-!labs/lab3/outputs/results/*.csv
-!labs/lab3/outputs/demo/*.csv
 
 # Course slides, local only (copyrighted) / Slide môn học, chỉ để trên máy (có bản quyền)
 tailieu/
