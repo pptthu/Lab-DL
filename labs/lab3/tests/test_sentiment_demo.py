@@ -1,55 +1,48 @@
-"""Tests for labs/lab3/sentiment_demo (offline: fake pipeline + tiny tokenizer)."""
-import pandas as pd
+"""Tests for `sentiment_demo` (Lab 3). Fake tokenizer and pipeline: no network, no model download.
 
-from labs.lab3.sentiment_demo.sentiment_demo import (
-    CONTROL_SENTENCES, predict_sentiment, run_demo, tokenize_sentence,
-)
+VI: Test cho `sentiment_demo` (Lab 3). Tokenizer và pipeline giả: không cần mạng, không tải model.
+"""
+import pytest
 
-
-class FakePipe:
-    """Mimics transformers' sentiment pipeline: 'not'/'waste'/'dull' -> NEGATIVE."""
-
-    def __init__(self, tokenizer):
-        self.tokenizer = tokenizer
-        self.model = type("M", (), {"name_or_path": "fake-sst2",
-                                    "config": type("C", (), {"_commit_hash": "abc123"})()})()
-        self.calls = []
-
-    def __call__(self, texts, truncation=True, batch_size=1):
-        self.calls.append({"truncation": truncation, "n": len(texts)})
-        neg = ("not", "waste", "dull")
-        return [{"label": "NEGATIVE" if any(w in t.lower() for w in neg) else "POSITIVE", "score": 0.9}
-                for t in texts]
+from labs.lab3.sentiment_demo import sentiment_demo as sd
 
 
-def test_control_sentences_cover_checklist_capabilities():
-    assert len(CONTROL_SENTENCES) == 6
-    assert {s["expected"] for s in CONTROL_SENTENCES} == {"POSITIVE", "NEGATIVE", None}
-    assert any("not" in s["text"].lower() for s in CONTROL_SENTENCES)
+class FakeTokenizer:
+    vocab = {101: "[CLS]", 102: "[SEP]"}
+
+    def __call__(self, sentence):
+        ids = [101] + [1000 + i for i, _ in enumerate(sentence.split())] + [102]
+        return {"input_ids": ids}
+
+    def convert_ids_to_tokens(self, ids):
+        return [self.vocab.get(i, f"tok{i}") for i in ids]
 
 
-def test_tokenize_sentence_starts_with_cls_ends_with_sep(tiny_tokenizer):
-    tok = tokenize_sentence("I love this movie", tiny_tokenizer)
-    assert tok["tokens"][0] == "[CLS]" and tok["tokens"][-1] == "[SEP]"
-    assert len(tok["tokens"]) == len(tok["input_ids"]) == len(tok["attention_mask"])
-    assert set(tok["attention_mask"]) == {1}
+def fake_pipeline(sentences, truncation=True, batch_size=1):
+    return [{"label": "NEGATIVE" if "boring" in s else "POSITIVE", "score": 0.9} for s in sentences]
 
 
-def test_predict_sentiment_uses_truncation(tiny_tokenizer):
-    pipe = FakePipe(tiny_tokenizer)
-    out = predict_sentiment(["great", "not good"], pipe)
-    assert [o["label"] for o in out] == ["POSITIVE", "NEGATIVE"]
-    assert all(0.0 <= o["score"] <= 1.0 for o in out)
-    assert pipe.calls[0]["truncation"] is True
+def test_show_tokens_contract(monkeypatch):
+    monkeypatch.setattr(sd, "_get_tokenizer", lambda name: FakeTokenizer())
+    out = sd.show_tokens("I love it")
+    assert set(out) == {"tokens", "input_ids"}
+    assert out["tokens"][0] == "[CLS]" and out["tokens"][-1] == "[SEP]"
+    assert len(out["tokens"]) == len(out["input_ids"]) == 5
 
 
-def test_run_demo_writes_both_csv(tiny_tokenizer, tmp_path):
-    out = run_demo(tmp_path, pipe=FakePipe(tiny_tokenizer))
-    preds = pd.read_csv(out["paths"]["predictions"])
-    toks = pd.read_csv(out["paths"]["tokens"])
-    assert len(preds) == 6
-    assert set(preds.columns) >= {"capability", "text", "expected", "predicted", "score", "correct", "revision"}
-    assert set(preds["predicted"]) <= {"POSITIVE", "NEGATIVE"}
-    assert preds["revision"].iloc[0] == "abc123"
-    assert preds.loc[preds["expected"].isna(), "correct"].isna().all()  # câu trung tính: không chấm
-    assert toks["token"].iloc[0] == "[CLS]" and toks["token"].iloc[-1] == "[SEP]"
+def test_show_tokens_rejects_non_string():
+    with pytest.raises(TypeError):
+        sd.show_tokens(123)
+
+
+def test_analyze_sentences_contract(monkeypatch):
+    monkeypatch.setattr(sd, "_get_pipeline", lambda name: fake_pipeline)
+    out = sd.analyze_sentences(["I love this movie", "The plot was boring", "Not bad at all"])
+    assert [set(r) for r in out] == [{"sentence", "label", "score"}] * 3
+    assert out[0]["label"] == "POSITIVE" and out[1]["label"] == "NEGATIVE"
+    assert all(isinstance(r["score"], float) for r in out)
+
+
+def test_analyze_sentences_accepts_single_string(monkeypatch):
+    monkeypatch.setattr(sd, "_get_pipeline", lambda name: fake_pipeline)
+    assert len(sd.analyze_sentences("so boring")) == 1

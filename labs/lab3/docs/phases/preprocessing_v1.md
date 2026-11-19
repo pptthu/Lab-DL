@@ -1,74 +1,72 @@
-# preprocessing — tải IMDB gốc, làm sạch, chia train/val theo phim (v1)
+# preprocessing — Nạp IMDB và làm sạch văn bản (v1)
 
-- **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
-- **Người phụ trách**: Thư
-- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
+- **Created**: 2026-11-18T13:00:00+07:00
+- **Last Updated**: 2026-11-18T13:00:00+07:00 (Member B)
+- **Người phụ trách**: Member A (Muội)
+- **Status**: Done
 
 ---
 
 ## Name
-Nạp dữ liệu (Bài 2.2) — tải `aclImdb_v1.tar.gz`, đọc review + nhãn + ID phim, làm sạch, chia val 10% theo phim
+Preprocessing — nạp IMDB, cắt tập con train / validation / test tái lập được, làm sạch văn bản
 
 ## Background
-Bài 2.2 của đề: nạp dataset phân loại văn bản nhị phân. Plan L1–L4: IMDB 25k train / 25k test chính thức; val 10% tách từ train **theo phim** vì README của bộ dữ liệu ghi train và test là hai tập phim không trùng nhau. Đầu ra dùng cho `eda`, `features`, `evaluate`.
+Đề Practice 3, Bài 2: load một dataset văn bản nhị phân đơn giản và tiền xử lý cho model.
+Nhóm chọn IMDB (Maas et al., ACL 2011) từ Hugging Face Hub (`stanfordnlp/imdb`) và dùng tập con nhỏ 2000 / 500 / 500 để chạy được trên CPU. Hai lựa chọn này chưa xác nhận với cô: danh sách link dataset do một nhóm khác tổng hợp, không phải của cô.
 
 ## Goals / Purpose
-- `download_imdb()` tải và giải nén vào `data/raw/aclImdb/` (bỏ qua nếu đã có)
-- `load_split(split)` trả bảng `id`, `text`, `label` (pos = 1, neg = 0), `rating`, `movie_id` cho `train` / `test`
-- `make_train_val_split(seed=42)` ghi `data/splits/train_val_split.json`: val ≈ 2.500 review, cân bằng nhãn, **không có phim nào và không có nội dung review trùng nào nằm ở cả train và val**
-- `load_datasets()` trả `DatasetDict` `train` / `validation` / `test` (thư viện `datasets`) đã làm sạch
+- `load_text_dataset` trả `(train, val, test)` gồm 2000 / 500 / 500 dòng với cột `text`, `label` (0/1), seed 42; ba tập con không trùng nhau
+- `clean_text` bỏ thẻ HTML như `<br />`, giải mã ký tự HTML, gộp khoảng trắng; giữ nguyên chữ hoa và dấu câu
+- Tập train cân bằng 1000 / 1000; cả hai nhãn xuất hiện trong mỗi tập
 - Không làm:
-  - Thống kê, vẽ hình — thuộc `eda`
-  - Tokenize — thuộc `features`
-  - Dùng 50k review không nhãn (`unsup/`) — ngoài phạm vi (plan §7)
+  - Lấy validation từ test — validation cắt từ train gốc, test lấy từ test gốc
+  - Hạ chữ thường, bỏ dấu câu hay stop word — tokenizer uncased của DistilBERT tự hạ chữ thường, và dấu như `!` mang thông tin cảm xúc
+  - Tokenize — thuộc `features` ([features_v1.md](features_v1.md))
+  - Commit dataset — `labs/lab3/raw_data/` bị git bỏ qua (`.gitignore:10`)
 
 ## Input / Output
-- **Input:** `https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz` (lần đầu cần mạng)
-- **Output:** `data/raw/aclImdb/` (không commit); `data/splits/train_val_split.json` (commit); `DatasetDict` trong bộ nhớ
+- **Input:** `name='imdb'`, `n_train`, `n_val`, `n_test`, `seed`; dataset tải từ Hugging Face Hub, lần đầu cần mạng
+- **Output:** `(train, val, test)` là ba `datasets.Dataset` có cột `text`, `label`; chuyển cho [eda_v1.md](eda_v1.md) và [features_v1.md](features_v1.md)
+  - Cache dataset tải về nằm ở `labs/lab3/raw_data/` (`raw_data_dir("lab3")`, `preprocessing/preprocessing.py:57`), không commit. Code không ghi file chia tập; việc tái lập dựa vào `seed`.
 
 ## How to do it (general plan)
-1. Tải + giải nén; kiểm số file: `train/pos`, `train/neg`, `test/pos`, `test/neg` mỗi thư mục 12.500
-2. Đọc review: tên file `<id>_<rating>.txt` → `id`, `rating`; nhãn theo thư mục
-3. Đọc ID phim từ `urls_pos.txt` / `urls_neg.txt`: dòng thứ i là URL trang review của phim chứa review id i (URL dạng `.../title/tt<số>/...`). **Kiểm**: số dòng = số review, mọi URL có mã `tt…`; sai thì **dừng và báo Thư**, không tự đổi cách chia
-4. Làm sạch: thay thẻ `<br />` bằng khoảng trắng, gộp khoảng trắng thừa; không bỏ stopword, không hạ chữ thường (tokenizer uncased tự làm)
-5. Nhóm khi chia = phim; các review **trùng nội dung** (băm văn bản đã làm sạch) được gộp vào cùng một nhóm để cả cặp nằm cùng một phía
-6. Chia val: `StratifiedGroupKFold(n_splits=10, shuffle=True, random_state=42)` (scikit-learn), lấy 1 fold làm val
-7. Ghi split JSON; tạo `DatasetDict`
-8. Test với vài file giả trong thư mục tạm
-9. Smoke run → lấy vài chục review mỗi split; normal run trên full data (máy Thư)
+1. `load_dataset("stanfordnlp/imdb", cache_dir=labs/lab3/raw_data)`
+2. Xáo train gốc và test gốc theo `seed` **trước khi** chọn (nguồn xếp theo nhãn)
+3. Train = `[0, n_train)` và validation = `[n_train, n_train + n_val)` từ train gốc; test = `[0, n_test)` từ test gốc
+4. Kiểm có cột `text`, `label` và nhãn chỉ gồm 0 và 1; làm sạch từng tập bằng `clean_text`
+5. Smoke run bằng test dùng dataset giả → normal run với IMDB thật
 
 ## Pipeline
 ```
-aclImdb_v1.tar.gz → download_imdb → data/raw/aclImdb/
-  → load_split (+ movie_id từ urls_*.txt) → làm sạch
-  → make_train_val_split (theo phim, cân bằng nhãn) → data/splits/train_val_split.json
-  → load_datasets → DatasetDict → eda, features, evaluate
+stanfordnlp/imdb → shuffle(seed) → select
+  (train, val từ train gốc; test từ test gốc)
+  → kiểm cột và nhãn → clean_text → (train, val, test) → eda, features
 ```
 
 ## Detailed plan
-- **Nguồn dữ liệu:** bản gốc Stanford thay vì `load_dataset("imdb")` — cần ID phim cho bước chia theo phim (plan L4)
-- **Val 10%, theo phim:** plan L3; `StratifiedGroupKFold` giữ cân bằng nhãn và không để một phim rơi vào cả hai phía. 10 fold → mỗi fold ≈ 10%
-- **Làm sạch tối thiểu (Thư duyệt 2026-11-20):** chỉ bỏ `<br />` — là thẻ HTML, tokenizer tách thành nhiều token (`<`, `br`, `/`, `>`) làm tốn chỗ trong `max_length` (`eda` đo số token tốn). Không bỏ stopword: danh sách stopword phổ biến chứa `not`, `no`, `nor` → bỏ là xoá phủ định. Tổng quan arXiv 2501.00174 trích Kurniasih & Manik (2022): tiền xử lý ảnh hưởng không đáng kể với model dùng BERT (trích lại, chưa đọc bản gốc)
-- **Review trùng nội dung:** README chỉ đảm bảo train/test khác phim, không đảm bảo khác nội dung → gộp nhóm khi chia train/val (tránh lộ dữ liệu sang val); test giữ nguyên (xem `evaluate`)
-- **Ánh xạ dòng ↔ id:** README aclImdb (qua IEEE DataPort, Visual Studio Magazine, textacy): *"a review with unique id 200 will have its URL on line 200"*; URL trỏ tới trang review của phim, không phải review riêng
+- **Xáo trước khi chọn:** `shuffle(seed=seed)` rồi mới `select` (`preprocessing/preprocessing.py:61-62`) — IMDB trên Hub xếp theo nhãn, chọn trước khi xáo sẽ cho tập con chỉ có một nhãn
+- **Chia tập:** train `range(n_train)`, validation `range(n_train, n_train + n_val)`, test `range(n_test)` (`:69-71`)
+- **Làm sạch tối giản:** chỉ nhận thẻ HTML thật (`<br />`, `<i>`…), giữ nguyên `<3` hoặc `a < b` (`:21`)
+- **Hàm hiện có:** `load_text_dataset(name: str = 'imdb', n_train: int = 2000, n_val: int = 500, n_test: int = 500, seed: int = 42) -> tuple` (`preprocessing/preprocessing.py:38`); `clean_text(text: str) -> str` (`:84`); hàm phụ `label_counts(dataset, label_col: str = "label") -> dict` (`:25`, ngoài hợp đồng trong `project_description.md`)
+- **Chỗ code chưa khớp plan:** `README.md` ghi "put the dataset in `labs/lab3/raw_data/`" nhưng code tự tải dataset về thư mục này làm cache (`:57-59`); `project_description.md` có thư mục `artifacts/splits/` nhưng chưa có code ghi vào đó
 - **Gotchas:**
-  - Mỗi phim tối đa 30 review (README aclImdb) → các fold theo phim có kích thước gần bằng nhau, nhưng không đúng chính xác 2.500
-  - File review có thể chứa ký tự không phải ASCII → đọc bằng `encoding="utf-8"`
-
-## Triển khai (2026-11-20)
-- **Hàm** (`labs/lab3/preprocessing/preprocessing.py`): `download_imdb(root=None, url=config.IMDB_URL) -> Path` (`:37`); `read_movie_ids(urls_file) -> list[str]` (`:60`); `load_split(split, root=None) -> DataFrame` (`:75`); `clean_text(text) -> str` (`:112`); `text_hash(text) -> str` (`:121`); `split_groups(df) -> Series` (`:127`); `make_train_val_split(train, seed=42, n_folds=10) -> dict` (`:158`); `save_split` / `read_split` (`:189`, `:197`); `load_datasets(root=None, split_path=None, smoke_n=None) -> DatasetDict` (`:202`). Chạy: `python -m labs.lab3.preprocessing.preprocessing [--force]`
-- **Chỗ code khác plan:** (1) `load_split` lưu bộ đệm `data/raw/imdb_<split>.parquet` (git bỏ qua) — lần đọc đầu 50k file nhỏ mất 260 s + 237 s trên máy Thư (Windows Defender quét từng file), từ lần sau 2 s; (2) thêm `sample_per_label` cho smoke run; (3) val = 2.501 chứ không đúng 2.500 vì chia theo nhóm
-- **Kết quả normal run:** tải 84.125.825 byte; 4 thư mục × 12.500 file, số dòng URL khớp. Train 3.456 phim, test 3.581 phim, tối đa 30 review/phim (đúng README). 1 phim ở cả train và test (`tt0406816`, 2 review train) — ghi ở `docs/experiments/experiment_log.md` S1. Split (`data/splits/train_val_split.json`): train 22.499 / val 2.501, tỉ lệ dương ở val 0,5002, 346 phim ở val, `groups_in_both` = 0, 0 review trùng nội dung giữa train và val; 18 phim được gộp nhóm vì có review trùng
-- **Test / smoke:** `pytest labs/lab3/tests/test_preprocessing.py` 9 passed (cây aclImdb giả)
+  - `n_train + n_val` lớn hơn train gốc, hoặc `n_test` lớn hơn test gốc, thì `ValueError` (`:63-66`)
+  - Thiếu cột `text` / `label`, hoặc nhãn ngoài {0, 1}, thì `ValueError` (`:74-80`)
+  - `clean_text(None)` trả chuỗi rỗng (`:101-102`)
+  - Lần gọi đầu cần mạng; các lần sau dùng cache
 
 ## Success criteria
-- **Test:** `pytest labs/lab3/tests/test_preprocessing.py` đạt: đọc đúng id/rating/nhãn, bỏ hết `<br />`, không phim nào và không review trùng nào ở cả train và val, val gần 10%, số dòng URL sai thì báo lỗi
-- **Smoke run:** `DatasetDict` có 3 split, đủ cột
-- **Normal run:** train + val = 25.000, test = 25.000; val ≈ 2.500 (cân bằng nhãn ± 1%); giao giữa `movie_id` train và val = rỗng; split JSON tồn tại
+- **Test:** `python -m pytest labs/lab3/tests/test_preprocessing.py -q` đạt, gồm test làm sạch HTML và khoảng trắng, giữ chữ hoa / dấu câu / dấu `<`, `None` và chuỗi trống, kích thước + cột + cân bằng, tái lập + không trùng, từ chối tập con quá lớn (dataset giả, không cần mạng)
+- **Smoke run:** `python -c "from labs.lab3.preprocessing.preprocessing import load_text_dataset, label_counts; tr,va,te=load_text_dataset(); print(len(tr), label_counts(tr), len(va), label_counts(va), len(te), label_counts(te), '<br' in ' '.join(tr['text']))"` in `2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False`
+- **Normal run:** notebook mục 4 in cùng số dòng và số nhãn
+
+## Kết quả audit (số liệu lần chạy 2026-10-25)
+- **Test:** `pytest labs/lab3/tests` → 24 passed (16 test của Member A + 8 test `test_smoke.py`) ✔ (`progress_status.md:8`, `:27`)
+- **Smoke run:** `2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False` ✔ (`progress_status.md:28`)
+- **Normal run:** notebook ô 6 in train 2000 `{0: 1000, 1: 1000}`, val 500 `{0: 243, 1: 257}`, test 500 `{0: 254, 1: 246}` ✔; ô 7 cho `clean_text` đổi `Great movie!<br /><br />Loved   it &amp; more.` thành `Great movie! Loved it & more.` ✔
 
 ## Links
-- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
+- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Khuôn: [../../../lab1/docs/templates/DESC_TEMPLATE_v3.md](../../../lab1/docs/templates/DESC_TEMPLATE_v3.md)
 - Module liên quan: [eda_v1.md](eda_v1.md), [features_v1.md](features_v1.md)
-- Nguồn: trang Stanford https://ai.stanford.edu/~amaas/data/sentiment/ ; README aclImdb (trong file nén)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (dòng 8, 27, 28)
 - Code: `labs/lab3/preprocessing/preprocessing.py` | Test: `labs/lab3/tests/test_preprocessing.py`

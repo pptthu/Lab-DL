@@ -1,70 +1,70 @@
-# sentiment_demo — Bài 1: phân tích cảm xúc bằng model pre-trained (v1)
+# sentiment_demo — Phân tích cảm xúc bằng model có sẵn (v1)
 
-- **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
-- **Người phụ trách**: Thư
-- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
+- **Created**: 2026-11-18T13:00:00+07:00
+- **Last Updated**: 2026-11-18T13:00:00+07:00 (Member B)
+- **Người phụ trách**: Member A (Muội)
+- **Status**: Done
 
 ---
 
 ## Name
-Bài 1 — nạp pipeline cảm xúc pre-trained, tokenize câu mẫu, dự đoán nhãn + điểm
+Sentiment demo (Bài 1) — dùng model cảm xúc có sẵn, không train; xem một câu được tách thành token
 
 ## Background
-Bài 1 của đề (1.1–1.4): cài `transformers`, dùng model cảm xúc pre-trained từ Hub, tokenize một câu mẫu, phân tích cảm xúc câu đó. Cùng model này được `evaluate` dùng làm baseline zero-shot trên 25k test (plan L6).
+Đề Practice 3, Bài 1: dùng model cảm xúc pre-trained từ Hugging Face Hub và tokenize một câu mẫu.
+Module này cũng là baseline zero-shot của Bài 2: `evaluate.zero_shot_labels` đổi nhãn của nó sang 0/1 để so với model đã fine-tune.
 
 ## Goals / Purpose
-- `tokenize_sentence(text)` trả `tokens`, `input_ids`, `attention_mask`; token đầu `[CLS]`, cuối `[SEP]`
-- `predict_sentiment(texts)` trả nhãn (`POSITIVE`/`NEGATIVE`) và điểm cho mỗi câu
-- `run_demo()` ghi `outputs/demo/sentiment_demo.csv` (câu, năng lực kiểm, nhãn kỳ vọng, nhãn dự đoán, điểm, đúng/sai) và `outputs/demo/sentiment_demo_tokens.csv` (token + id của câu 1); in bảng ra màn hình
-- `CONTROL_SENTENCES`: 6 câu kiểm soát theo CheckList, dùng lại ở `evaluate` cho model sau fine-tune
+- `show_tokens` trả dict `tokens`, `input_ids`; token đầu là `[CLS]` (id 101), token cuối là `[SEP]` (id 102)
+- `analyze_sentences` trả danh sách dict `sentence`, `label` (`POSITIVE` hoặc `NEGATIVE`), `score` (float)
+- Cả hai hàm dùng cùng checkpoint `distilbert-base-uncased-finetuned-sst-2-english` khi `model_name=None`
 - Không làm:
-  - Đo zero-shot trên 25k test — thuộc `evaluate` (dùng chung `predict_sentiment`)
-  - Fine-tune — thuộc `train` (Bài 2)
+  - Fine-tune hay lưu model — thuộc `train`; module này không ghi gì xuống đĩa
+  - Đổi nhãn sang 0/1 — thuộc `evaluate.zero_shot_labels` ([evaluate_v1.md](evaluate_v1.md))
+  - Dùng `distilbert-base-uncased` gốc — chưa có đầu phân loại cảm xúc (`sentiment_demo/sentiment_demo.py:12-13`); model gốc được nạp ở [model_v1.md](model_v1.md)
 
 ## Input / Output
-- **Input:** danh sách câu mẫu (hằng số trong module); model `distilbert-base-uncased-finetuned-sst-2-english` từ Hub (lần đầu cần mạng)
-- **Output:** `outputs/demo/sentiment_demo.csv`; smoke run: `outputs/_smoke/demo/`
+- **Input:** một câu `str` hoặc danh sách `str`; `model_name` (`None` = checkpoint mặc định); model lấy từ Hugging Face Hub, lần đầu cần mạng
+- **Output:** `show_tokens` → `{tokens, input_ids}`; `analyze_sentences` → danh sách `{sentence, label, score}`
+  - Module không lưu file. Model tải về nằm trong cache mặc định của Hugging Face (code không đặt `cache_dir`).
 
 ## How to do it (general plan)
-1. Nạp tokenizer + pipeline `sentiment-analysis` với model ở trên; ghi `revision` (commit hash của model trên Hub) vào CSV để chạy lại ra cùng kết quả
-2. `tokenize_sentence`: `tokenizer(text)` + `convert_ids_to_tokens`
-3. `predict_sentiment`: gọi pipeline với `truncation=True`, theo batch
-4. `run_demo`: chạy trên câu mẫu, ghi CSV
-5. Test với tokenizer/pipeline giả (không cần mạng)
-6. Smoke run → kiểm CSV có đủ cột, token đầu/cuối đúng
-7. Normal run (máy Thư được, Bài 1 nhẹ)
+1. `show_tokens`: nạp tokenizer một lần (lưu trong `_tokenizers`), tokenize câu, đổi id sang token
+2. `analyze_sentences`: nạp `pipeline("sentiment-analysis")` một lần (lưu trong `_pipelines`), chạy `batch_size=16`, `truncation=True`; chuỗi đơn tự bọc thành danh sách
+3. Test bằng đối tượng giả, không cần mạng
+4. Smoke run với 3 câu mẫu (lần đầu cần mạng)
+5. Normal run: zero-shot trên 500 review test (notebook mục 10.2)
 
 ## Pipeline
 ```
-câu mẫu → tokenize_sentence → tokens / ids
-        → predict_sentiment (pipeline SST-2) → nhãn + điểm → outputs/demo/sentiment_demo.csv
-                                                          → evaluate (zero-shot trên 25k test)
+câu mẫu → show_tokens → tokenizer → tokens + input_ids
+câu mẫu → analyze_sentences → pipeline SST-2 → label + score
+500 review test → analyze_sentences → evaluate.zero_shot_labels (0/1) → classification_metrics
 ```
 
 ## Detailed plan
-- **Model:** `distilbert-base-uncased-finetuned-sst-2-english` — model ví dụ cho text classification trong tài liệu DistilBERT của HF; ghi rõ tên thay vì để pipeline tự chọn mặc định, để không đổi theo phiên bản thư viện
-- **Câu mẫu (Thư duyệt 2026-11-20):** 6 câu, mỗi câu kiểm một năng lực theo CheckList (Ribeiro et al. 2020 — model cảm xúc, kể cả thương mại, hay sai ở phủ định): (1) rõ tích cực, (2) rõ tiêu cực, (3) phủ định câu tiêu cực ("not bad"), (4) phủ định câu tích cực ("not good"), (5) tương phản có "but", (6) trung tính. Mỗi câu ghi nhãn kỳ vọng; câu (6) không có nhãn kỳ vọng — cho thấy model nhị phân vẫn buộc chọn POSITIVE/NEGATIVE
-- **Tokenize:** đề ghi "a sample sentence" → in token chi tiết cho câu (1); cả 6 câu đều dự đoán
-- **Truncation:** `truncation=True` (DistilBERT nhận tối đa 512 vị trí, `max_position_embeddings` = 512 theo `DistilBertConfig`) — cần khi dùng lại cho review IMDB dài ở `evaluate`
-- **Thiết bị:** GPU nếu có (`device=0`), không thì CPU
+- **Checkpoint mặc định:** `distilbert-base-uncased-finetuned-sst-2-english` (`DEFAULT_MODEL`, `sentiment_demo/sentiment_demo.py:14`) — DistilBERT đã fine-tune sẵn trên SST-2 nên không cần train; số zero-shot trong báo cáo phụ thuộc vào checkpoint này, nên không đổi khi chưa hỏi nhóm trưởng
+- **Import trong hàm:** `transformers` được import bên trong `_get_tokenizer` (`:24`) và `_get_pipeline` (`:33`) — import module nhẹ, test thay được bằng đối tượng giả
+- **Hàm hiện có:** `show_tokens(sentence: str, model_name: str = None) -> dict` (`sentiment_demo/sentiment_demo.py:38`); `analyze_sentences(sentences: list, model_name: str = None) -> list` (`:60`); hàm phụ `_get_tokenizer` (`:20`), `_get_pipeline` (`:29`)
+- **Chỗ code chưa khớp plan:** không có
 - **Gotchas:**
-  - Model học trên SST-2 (câu ngắn) còn IMDB là review dài → baseline zero-shot có thể lệch domain (plan §5)
-  - Pipeline trả nhãn chữ; `evaluate` phải đổi sang 1/0 đúng với nhãn IMDB (pos = 1, neg = 0)
-
-## Triển khai (2026-11-20)
-- **Hàm** (`labs/lab3/sentiment_demo/sentiment_demo.py`): `CONTROL_SENTENCES` (`:22`); `load_sentiment_pipeline(model_name=config.SST2_MODEL, device=None)` (`:37`); `tokenize_sentence(text, tokenizer) -> dict` (`:51`); `predict_sentiment(texts, pipe, batch_size=32) -> list[dict]` (`:64`); `hub_revision(model_name) -> str` (`:73`); `run_demo(out_dir, pipe=None, sentences=None) -> dict` (`:96`). Chạy: `python -m labs.lab3.sentiment_demo.sentiment_demo [--smoke]`
-- **Chỗ code khác plan:** thêm `hub_revision` — transformers 5.22 không còn ghi `config._commit_hash`, nên commit của model đọc từ thư mục cache Hugging Face (`snapshots/<hash>/`). CSV có thêm cột `model`, `revision`. Câu (5) tương phản: kỳ vọng NEGATIVE vì vế sau "but" chê cả cốt truyện lẫn kết thúc
-- **Kết quả normal run** (máy Thư, CPU; model commit `714eb0fa89d2f80546fda750413ed43d93601a13`): 5/5 câu có nhãn kỳ vọng đoán đúng (cả 2 câu phủ định và câu "but", điểm 0,998–0,9999); câu trung tính → NEGATIVE, điểm 0,9955. Câu 1 tokenize thành 15 token, `[CLS]` = 101, `[SEP]` = 102. File: `outputs/demo/sentiment_demo.csv`, `sentiment_demo_tokens.csv`
-- **Test / smoke:** `pytest labs/lab3/tests/test_sentiment_demo.py` 4 passed (pipeline giả, không cần mạng); smoke ghi `outputs/_smoke/demo/` không lỗi
+  - `show_tokens` báo `TypeError` nếu `sentence` không phải `str` (`:53`)
+  - Tokenizer của `show_tokens` và model của `analyze_sentences` phải cùng checkpoint — cả hai dùng `DEFAULT_MODEL` khi `model_name=None`
+  - Pipeline cắt review dài (`truncation=True`, `:76`); khi so với model fine-tune (cắt ở 128 token) thì hai bên cắt ở độ dài khác nhau (notebook mục 10.2)
+  - Chỉ thử 3 câu mẫu, nên việc câu phủ định `Not bad at all` được đọc đúng chưa cho biết model xử lý phủ định tốt nói chung (`../../README.md`)
 
 ## Success criteria
-- **Test:** `pytest labs/lab3/tests/test_sentiment_demo.py` đạt: token đầu/cuối, đủ cột CSV, nhãn thuộc {POSITIVE, NEGATIVE}, điểm trong [0, 1]
-- **Smoke run:** `outputs/_smoke/demo/sentiment_demo.csv` có đủ số câu mẫu
-- **Normal run:** `outputs/demo/sentiment_demo.csv` (6 dòng) và `sentiment_demo_tokens.csv`; câu (1), (2) ra đúng nhãn; kết quả câu (3)–(5) ghi đúng/sai như đo được, không sửa câu cho đẹp
+- **Test:** `python -m pytest labs/lab3/tests/test_sentiment_demo.py -q` đạt, gồm test hợp đồng `show_tokens`, hợp đồng `analyze_sentences`, nhận chuỗi đơn, và `TypeError` khi không phải `str` (đối tượng giả, không cần mạng)
+- **Smoke run:** `python -c "from labs.lab3.sentiment_demo.sentiment_demo import show_tokens, analyze_sentences; s=['I love this movie','The plot was boring','Not bad at all']; [print(show_tokens(x)) for x in s]; print(analyze_sentences(s))"` — token đầu `[CLS]` (101), token cuối `[SEP]` (102); nhãn POSITIVE, NEGATIVE, POSITIVE
+- **Normal run:** zero-shot trên 500 review test, accuracy và F1 ghi vào `progress_status.md`
+
+## Kết quả audit (số liệu lần chạy 2026-10-27 và 2026-10-31)
+- **Test:** `test_sentiment_demo.py` → 4 passed ✔ (`progress_status.md:6`)
+- **Smoke run:** token đầu `[CLS]` (101), token cuối `[SEP]` (102); POSITIVE 0,9999 / NEGATIVE 0,9998 / POSITIVE 0,9991 ✔ (`progress_status.md:29`)
+- **Normal run:** zero-shot trên 500 review test: accuracy 0,8920, F1 0,8889 ✔ (notebook ô 27; `progress_status.md:12`)
 
 ## Links
-- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
-- Module liên quan: [evaluate_v1.md](evaluate_v1.md)
-- Nguồn: Ribeiro et al. 2020, CheckList https://arxiv.org/abs/2005.04118
+- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Khuôn: [../../../lab1/docs/templates/DESC_TEMPLATE_v3.md](../../../lab1/docs/templates/DESC_TEMPLATE_v3.md)
+- Module liên quan: [evaluate_v1.md](evaluate_v1.md), [demo_v1.md](demo_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (dòng 6, 12, 29)
 - Code: `labs/lab3/sentiment_demo/sentiment_demo.py` | Test: `labs/lab3/tests/test_sentiment_demo.py`

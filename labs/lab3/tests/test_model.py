@@ -1,35 +1,55 @@
-"""Tests for labs/lab3/model (offline: tiny DistilBERT built from a config, no download)."""
-import torch
+"""Tests for `model` (Lab 3). A fake `transformers` module is injected: no network, no download.
 
-from labs.lab3.model.model import ID2LABEL, build_model, count_parameters, describe_head
+VI: Test cho `model` (Lab 3). Chèn module `transformers` giả: không cần mạng, không tải gì.
+"""
+import sys
+import types
 
+import pytest
 
-def tiny_config():
-    from transformers import DistilBertConfig
-
-    return DistilBertConfig(vocab_size=40, dim=16, n_layers=1, n_heads=2, hidden_dim=32,
-                            max_position_embeddings=64)
-
-
-def test_build_model_outputs_two_logits():
-    model = build_model(seed=0, model_config=tiny_config())
-    out = model(input_ids=torch.tensor([[2, 5, 6, 3]]), attention_mask=torch.ones(1, 4, dtype=torch.long))
-    assert out.logits.shape == (1, 2)
-    assert model.config.id2label == ID2LABEL
+from labs.lab3.model.model import load_model_and_tokenizer
 
 
-def test_same_seed_same_head_different_seed_different_head():
-    a = build_model(seed=1, model_config=tiny_config()).classifier.weight
-    b = build_model(seed=1, model_config=tiny_config()).classifier.weight
-    c = build_model(seed=2, model_config=tiny_config()).classifier.weight
-    assert torch.equal(a, b)
-    assert not torch.equal(a, c)
+@pytest.fixture
+def fake_hf(monkeypatch):
+    calls = {}
+
+    class Tok:
+        @staticmethod
+        def from_pretrained(name):
+            calls["tok"] = name
+            return ("tokenizer", name)
+
+    class Mod:
+        @staticmethod
+        def from_pretrained(name, **kw):
+            calls["model"] = (name, kw)
+            return ("model", name)
+
+    mod = types.ModuleType("transformers")
+    mod.AutoTokenizer, mod.AutoModelForSequenceClassification = Tok, Mod
+    monkeypatch.setitem(sys.modules, "transformers", mod)
+    return calls
 
 
-def test_count_parameters_splits_backbone_and_head():
-    model = build_model(seed=0, model_config=tiny_config())
-    n = count_parameters(model)
-    assert n["total"] == n["backbone"] + n["head"] == n["trainable"]
-    # đầu phân loại DistilBERT: pre_classifier dim->dim + classifier dim->2 (dim=16)
-    assert n["head"] == (16 * 16 + 16) + (16 * 2 + 2)
-    assert "pre_classifier" in describe_head(model) and "classifier" in describe_head(model)
+def test_returns_model_and_tokenizer_from_same_checkpoint(fake_hf):
+    model, tok = load_model_and_tokenizer()
+    assert model == ("model", "distilbert-base-uncased") and tok == ("tokenizer", "distilbert-base-uncased")
+    assert fake_hf["tok"] == fake_hf["model"][0]
+
+
+def test_binary_gets_label_names(fake_hf):
+    load_model_and_tokenizer(num_labels=2)
+    kw = fake_hf["model"][1]
+    assert kw["num_labels"] == 2 and kw["id2label"] == {0: "NEGATIVE", 1: "POSITIVE"}
+
+
+def test_three_labels_has_no_binary_names(fake_hf):
+    load_model_and_tokenizer(num_labels=3)
+    assert "id2label" not in fake_hf["model"][1]
+
+
+@pytest.mark.parametrize("bad", [1, 0, -2, "2", None])
+def test_invalid_num_labels_raises(bad):
+    with pytest.raises(ValueError):
+        load_model_and_tokenizer(num_labels=bad)

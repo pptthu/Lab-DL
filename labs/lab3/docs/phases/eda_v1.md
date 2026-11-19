@@ -1,70 +1,71 @@
-# eda — khám phá dữ liệu IMDB, đo độ dài token (v1)
+# eda — Khám phá dữ liệu train (v1)
 
-- **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:41:59+07:00 (Thư)
-- **Người phụ trách**: Thư
-- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
+- **Created**: 2026-11-18T13:00:00+07:00
+- **Last Updated**: 2026-11-18T13:00:00+07:00 (Member B)
+- **Người phụ trách**: Member A (Muội)
+- **Status**: Done
 
 ---
 
 ## Name
-EDA — phân bố nhãn, độ dài review (từ và token), trùng lặp; số liệu để chốt `max_length`
+EDA — kiểm tra cân bằng nhãn và độ dài review của tập train
 
 ## Background
-Không có trong 7 bước của đề, nhưng cần cho quyết định `max_length` (plan §4 bước S1): review IMDB dài, DistilBERT nhận tối đa 512 token; Sun et al. 2019 cho thấy cách cắt văn bản ảnh hưởng accuracy trên IMDb. Đầu vào cho thí nghiệm `max_length` và phân tích lỗi.
+Slide Practice 3 không nêu bước EDA, và nhóm chưa xác nhận với cô là có bắt buộc hay không. Nhóm vẫn làm để biết hai nhãn có cân bằng không và có số liệu độ dài review khi chọn `max_length` cho `features`.
+EDA chỉ chạy trên tập train để không đưa thông tin của validation và test vào quyết định.
 
 ## Goals / Purpose
-- `outputs/results/eda_summary.csv`: số review và tỉ lệ nhãn mỗi split (train, test chính thức); độ dài token: trung bình, median, P90, P95, max; % review dài hơn 128 / 256 / 512 token
-- `outputs/figures/`: phân bố nhãn, histogram độ dài token (vạch 128/256/512), độ dài theo nhãn
-- Số review trùng nội dung trong train, trong test và giữa train–test (băm văn bản đã làm sạch)
-- Số token `<br />` chiếm trước khi làm sạch (trung bình / review) — bằng chứng cho bước làm sạch của `preprocessing`
-- Tỉ lệ review chứa ít nhất một từ phủ định (`not`, `no`, `n't`, `never`, `nothing`, `none`, `nor`, `neither`, `nobody`, `without`) — kiểm giả định "gần như review nào cũng có phủ định" (lý do bỏ nhóm phủ định ở `visualize`)
-- Phân bố rating (1–4, 7–10) mỗi split — dùng cho phân tích lỗi theo rating
+- `run_eda` trả dict `n_samples`, `label_counts`, `length_stats` (`mean`, `std`, `min`, `median`, `p95`, `max`; đơn vị là số từ)
+- Lưu 3 hình vào `out_dir`: `label_distribution.png`, `length_distribution.png` (có đường median và p95), `length_by_label.png` (boxplot thêm)
 - Không làm:
-  - Chọn `max_length` — Thư chốt từ bảng này: **512** (2026-11-20, `docs/experiments/experiment_log.md` S1)
-  - Làm sạch, chia split — thuộc `preprocessing`
+  - Sửa dataset — chỉ đọc
+  - Dùng validation hoặc test để ra quyết định — tránh rò rỉ thông tin
+  - Tokenize và chọn `max_length` — việc của `features`; độ dài ở đây tính theo từ, không phải theo token, nên p95 chỉ là gợi ý
 
 ## Input / Output
-- **Input:** dữ liệu thô từ `preprocessing.load_split("train" | "test")` (25k + 25k, chưa chia val); tokenizer `distilbert-base-uncased`. Độ dài token đo trên văn bản đã qua `preprocessing.clean_text()` — đó là thứ model nhận; số token `<br />` đo trên văn bản gốc. Chạy **trước** phần chia train/val của `preprocessing` (Thư chốt 2026-11-20: làm EDA trước) để số liệu EDA làm căn cứ cho bước làm sạch và gộp review trùng
-- **Output:** `outputs/results/eda_summary.csv`, `outputs/figures/eda_*.png`; smoke run: `outputs/_smoke/`
+- **Input:** `dataset` là tập **train** có cột `text`, `label` từ [preprocessing_v1.md](preprocessing_v1.md); `out_dir`; tên cột (`text_col`, `label_col`)
+- **Output:** dict thống kê; 3 file PNG trong `out_dir` (tự tạo nếu chưa có)
+  - `main.py --run-training` ghi hình vào `labs/lab3/artifacts/figures/` (`main.py:85-86`), không commit (`.gitignore:14`). Test và smoke run chỉ dùng thư mục tạm.
 
 ## How to do it (general plan)
-1. Đếm nhãn mỗi split
-2. Độ dài theo từ và theo token (tokenize **không cắt**, chỉ đếm)
-3. Bảng phân vị và % vượt 128 / 256 / 512
-4. Đếm trùng lặp (so khớp nội dung đã làm sạch)
-5. Vẽ 3 hình
-6. Test với dataset giả nhỏ
-7. Smoke run vài chục review; normal run full 50k trên máy Thư (chỉ tokenize, không train)
+1. Đọc cột text và cột nhãn; dataset rỗng thì báo lỗi
+2. Đếm số mẫu mỗi nhãn
+3. Đo độ dài mỗi review theo số từ (tách theo khoảng trắng)
+4. Tính `length_stats`
+5. Vẽ và lưu 3 hình bằng matplotlib backend `Agg`
+6. Smoke run trên tập train thật, ghi hình vào thư mục tạm → normal run trong `main.py`
 
 ## Pipeline
 ```
-preprocessing.load_split (thô) → clean_text → đếm nhãn, tokenize không cắt → bảng độ dài + trùng lặp
-  → outputs/results/eda_summary.csv, outputs/figures/eda_*.png → Thư chốt max_length
+train (text, label) → đếm nhãn → label_counts
+                    → đo độ dài (số từ) → length_stats
+→ label_distribution.png, length_distribution.png, length_by_label.png
+→ dict {n_samples, label_counts, length_stats}
 ```
 
 ## Detailed plan
-- **Đo theo token, không chỉ theo từ:** `max_length` tính bằng token WordPiece; một từ có thể thành nhiều token
-- **512 thực tế còn 510 token nội dung:** 2 vị trí dành cho `[CLS]` và `[SEP]`
-- **Trùng lặp (Thư duyệt 2026-11-20):** chỉ đếm và báo cáo ở module này; cách xử lý: train–val gộp nhóm (`preprocessing`), train–test giữ test nguyên và báo thêm acc trên test bỏ review trùng (`evaluate`), trong cùng train giữ nguyên
-- **Từ phủ định:** Konstantinova et al. 2012 (SFU Review corpus): 23,7% câu trong review phim có phủ định; "not" và "no" chiếm hơn 55% dấu hiệu phủ định → review IMDB nhiều câu gần như chắc chắn có phủ định (suy luận, bảng này kiểm)
+- **Chỉ tập train:** mọi quyết định về dữ liệu dựa trên train; test để dành cho `evaluate`
+- **Độ dài theo số từ:** `len(str(t).split())` (`eda/eda.py:47`) — không cần tokenizer; số token nhiều hơn số từ
+- **Backend `Agg`:** không mở cửa sổ, chỉ lưu file (`:16`)
+- **Hàm hiện có:** `run_eda(dataset, out_dir: str, text_col: str = 'text', label_col: str = 'label') -> dict` (`eda/eda.py:21`)
+- **Chỗ code chưa khớp plan:** không có
 - **Gotchas:**
-  - Tokenize 50k review không cắt có thể báo cảnh báo "sequence longer than 512" — chỉ đếm, không đưa vào model nên bỏ qua được
-  - Tokenize full data trên CPU mất vài phút — dùng tokenizer fast, `batched=True`
-
-## Triển khai (2026-11-20)
-- **Hàm** (`labs/lab3/eda/eda.py`): `NEGATION_RE` (`:35`); `token_lengths(texts, tokenizer, batch_size=1000)` (`:39`); `length_summary(lengths, limits)` (`:51`); `duplicate_counts(train, test)` (`:69`); `negation_share(texts)` (`:88`); `split_summary(df, tokenizer)` (`:94`); 3 hàm vẽ (`:120`–`:162`); `run_eda(train, test, tokenizer, results_dir, figures_dir) -> dict` (`:178`). Chạy: `python -m labs.lab3.eda.eda [--smoke]`
-- **Chỗ code khác plan:** ngoài `eda_summary.csv`, ghi thêm `eda_duplicates.csv`, `eda_ratings.csv` và `eda_token_lengths.csv` (số token từng review — `visualize` dùng để biết review nào bị cắt). Chạy trên 2 split chính thức (val tách sau)
-- **Kết quả normal run** (51 s, máy Thư): median 222 / 219 token (train / test); > 128: 87,9 / 87,4%; > 256: 41,1 / 40,1%; > 512: 13,3 / 12,3% (Sun et al. 2019: 12,69%); 58,7% review có `<br />`, tốn trung bình 16,3 token; 89,4% có từ phủ định; 123 review test trùng train; 0 nhóm trùng có nhãn mâu thuẫn. `max_length` = 512, Thư chốt 2026-11-20 (phân tích: `docs/experiments/experiment_log.md` mục S1)
-- **Test / smoke:** `pytest labs/lab3/tests/test_eda.py` 5 passed; smoke ghi `outputs/_smoke/{results,figures}/` không lỗi
+  - Dataset rỗng thì `ValueError` (`eda/eda.py:40-41`)
+  - `boxplot` có nhánh dự phòng cho matplotlib cũ (`labels=`) và mới (`tick_labels=`) (`:79-82`)
+  - Test phải ghi hình vào `tmp_path`, không ghi vào `artifacts/figures/` thật
 
 ## Success criteria
-- **Test:** `pytest labs/lab3/tests/test_eda.py` đạt: phân vị và % vượt ngưỡng tính đúng trên dữ liệu giả
-- **Smoke run:** CSV và 3 hình có trong `outputs/_smoke/`
-- **Normal run:** `eda_summary.csv` có đủ 2 split chính thức (train, test), tổng 50.000 review; 3 hình trong `outputs/figures/`
+- **Test:** `python -m pytest labs/lab3/tests/test_eda.py -q` đạt (3 test: hợp đồng đầu ra + 3 file PNG, tên cột tùy chỉnh, dataset rỗng báo lỗi)
+- **Smoke run:** `run_eda` trên tập train thật ghi đủ 3 PNG vào thư mục tạm: `python -c "import tempfile; from labs.lab3.preprocessing.preprocessing import load_text_dataset; from labs.lab3.eda.eda import run_eda; tr,_,_=load_text_dataset(); print(run_eda(tr, tempfile.mkdtemp()))"`
+- **Normal run:** `n_samples` = 2000, `label_counts` = {0: 1000, 1: 1000}; `length_stats` lệch phải (mean lớn hơn median)
+
+## Kết quả audit (số liệu lần chạy 2026-10-25)
+- **Test:** `test_eda.py` → 3 passed ✔ (`progress_status.md:7`)
+- **Smoke run:** `run_eda` ghi 3 PNG, `n_samples` = 2000 ✔ (`progress_status.md:7`)
+- **Normal run:** notebook ô 7: 2000 mẫu, nhãn {0: 1000, 1: 1000}; số từ mean 226,2, std 167,0, min 12, median 170, p95 585,05, max 999 — lệch phải ✔. Tính theo token, 802 trên 2000 review train (40,1%) đạt `max_length=256` (notebook ô 9, xem [features_v1.md](features_v1.md))
 
 ## Links
-- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
-- Module liên quan: [preprocessing_v1.md](preprocessing_v1.md), [experiment_v1.md](experiment_v1.md), [visualize_v1.md](visualize_v1.md)
-- Nguồn: Sun et al. 2019 https://arxiv.org/abs/1905.05583 ; Konstantinova et al. 2012 https://www.uhu.es/noa.cruz/lrec.pdf
+- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Khuôn: [../../../lab1/docs/templates/DESC_TEMPLATE_v3.md](../../../lab1/docs/templates/DESC_TEMPLATE_v3.md)
+- Module liên quan: [preprocessing_v1.md](preprocessing_v1.md), [features_v1.md](features_v1.md)
+- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (dòng 7)
 - Code: `labs/lab3/eda/eda.py` | Test: `labs/lab3/tests/test_eda.py`

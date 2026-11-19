@@ -1,38 +1,35 @@
-"""Exercise 2.4: tokenize the datasets for the model (truncate to max_length, dynamic padding).
+"""Module `features` (Feature engineering (tokenization)) of Lab 3: Hugging Face sentiment analysis and fine-tuning.
 
-VI: Bài 2.4 — tokenize 3 split, cắt theo max_length, pad theo batch (DataCollatorWithPadding).
-Desc: labs/lab3/docs/phases/features_v1.md
+Owner: Member A (see progress_status.md). Do not rename functions or change signatures
+without telling the team leader: other modules depend on them.
+
+VI: Module `features` (Feature engineering (tokenization)). Người phụ trách: Member A. Không đổi tên hàm hoặc chữ ký
+khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
-KEEP_COLUMNS = ("uid", "label")  # uid để nối dự đoán với review khi phân tích lỗi (visualize)
+def tokenize_dataset(dataset, tokenizer, max_length: int = 256, text_col: str = 'text'):
+    """Tokenize with truncation (and padding if needed).
 
+    Decision for this lab: texts are truncated to `max_length` tokens but NOT padded here.
+    Member B pads per batch (DataCollatorWithPadding, which the Trainer uses by default when it
+    receives the tokenizer). token_type_ids are not returned (DistilBERT does not use them). The text column is dropped; the label column is kept (the Trainer
+    renames it to `labels`). The tokenizer must come from the same checkpoint as the model.
 
-def tokenize_datasets(ds, tokenizer, max_length: int | None, text_column: str = "text"):
-    """Tokenize every split with truncation=True and no fixed padding.
+    Input : dataset, tokenizer, max_length, text_col
+    Output: tokenized dataset with input_ids, attention_mask and label
 
-    Output columns: uid, label, input_ids, attention_mask (text and other columns removed).
-    VI: max_length bắt buộc (chốt sau EDA); không pad cố định — collator pad theo batch.
+    VI: Tokenize với truncation (và padding nếu cần).
+    Quyết định cho lab này: văn bản bị cắt còn `max_length` token nhưng CHƯA padding ở đây.
+    Member B padding theo từng batch (DataCollatorWithPadding, Trainer tự dùng khi được truyền tokenizer).
+    Cột text bị bỏ; cột label được giữ (Trainer tự đổi tên thành `labels`). Tokenizer phải cùng checkpoint với model.
+    Vào : dataset, tokenizer, max_length, text_col
+    Ra  : dataset đã tokenize có input_ids, attention_mask và label
     """
-    if not max_length:
-        raise ValueError("max_length is required: set it after EDA (labs/lab3/config.py MAX_LENGTH)")
+    if text_col not in dataset.column_names:
+        raise KeyError(f"column {text_col!r} not found; columns: {dataset.column_names} / không có cột {text_col!r}")
 
-    def _tok(batch):
-        # return_token_type_ids=False: DistilBERT không dùng token_type_ids, nhưng tokenizer của
-        # transformers 5 vẫn trả cột này (đo trên dữ liệu thật 2026-11-20) → tắt cho đúng đầu vào model
-        return tokenizer(batch[text_column], truncation=True, max_length=max_length,
-                         return_token_type_ids=False)
+    def _tokenize(batch):
+        return tokenizer(batch[text_col], truncation=True, max_length=max_length, return_token_type_ids=False)
 
-    first = next(iter(ds.values())) if hasattr(ds, "values") else ds
-    drop = [c for c in first.column_names if c not in KEEP_COLUMNS]
-    return ds.map(_tok, batched=True, remove_columns=drop, desc=f"tokenize (max_length={max_length})")
-
-
-def make_collator(tokenizer):
-    """Pad each batch to its longest sequence (HF text classification tutorial).
-
-    VI: Pad theo câu dài nhất trong batch — nhanh hơn pad cố định tới max_length.
-    """
-    from transformers import DataCollatorWithPadding
-
-    return DataCollatorWithPadding(tokenizer=tokenizer)
+    return dataset.map(_tokenize, batched=True, remove_columns=[text_col])
