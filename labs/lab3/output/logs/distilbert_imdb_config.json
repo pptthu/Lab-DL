@@ -1,0 +1,9 @@
+{
+ "max_len": 256,
+ "epochs": 3,
+ "lr": 2e-05,
+ "batch": 8,
+ "seed": 42,
+ "n_train": 2000,
+ "n_val": 1000
+}

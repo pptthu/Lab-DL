@@ -1,0 +1,15 @@
+{
+ "config": {
+  "max_len": 128,
+  "epochs": 3,
+  "lr": 2e-05,
+  "batch": 8,
+  "seed": 42,
+  "n_train": 2000,
+  "n_val": 1000
+ },
+ "accuracy": 0.857,
+ "f1": 0.8610301263362488,
+ "loss": 0.4202709496021271,
+ "train_minutes": 54.8
+}
