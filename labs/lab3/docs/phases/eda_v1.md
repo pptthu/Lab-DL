@@ -1,7 +1,7 @@
 # eda — khám phá dữ liệu IMDB, đo độ dài token (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:02:26+07:00 (Thư)
 - **Người phụ trách**: Thư
 - **Status**: To Do
 
@@ -14,7 +14,7 @@ EDA — phân bố nhãn, độ dài review (từ và token), trùng lặp; số
 Không có trong 7 bước của đề, nhưng cần cho quyết định `max_length` (plan §4 bước S1): review IMDB dài, DistilBERT nhận tối đa 512 token; Sun et al. 2019 cho thấy cách cắt văn bản ảnh hưởng accuracy trên IMDb. Đầu vào cho thí nghiệm `max_length` và phân tích lỗi.
 
 ## Goals / Purpose
-- `outputs/results/eda_summary.csv`: số review và tỉ lệ nhãn mỗi split; độ dài token: trung bình, median, P90, P95, max; % review dài hơn 128 / 256 / 512 token
+- `outputs/results/eda_summary.csv`: số review và tỉ lệ nhãn mỗi split (train, test chính thức); độ dài token: trung bình, median, P90, P95, max; % review dài hơn 128 / 256 / 512 token
 - `outputs/figures/`: phân bố nhãn, histogram độ dài token (vạch 128/256/512), độ dài theo nhãn
 - Số review trùng nội dung trong train, trong test và giữa train–test (băm văn bản đã làm sạch)
 - Số token `<br />` chiếm trước khi làm sạch (trung bình / review) — bằng chứng cho bước làm sạch của `preprocessing`
@@ -25,7 +25,7 @@ Không có trong 7 bước của đề, nhưng cần cho quyết định `max_le
   - Làm sạch, chia split — thuộc `preprocessing`
 
 ## Input / Output
-- **Input:** `DatasetDict` từ `preprocessing.load_datasets()`; tokenizer `distilbert-base-uncased`
+- **Input:** dữ liệu thô từ `preprocessing.load_split("train" | "test")` (25k + 25k, chưa chia val); tokenizer `distilbert-base-uncased`. Độ dài token đo trên văn bản đã qua `preprocessing.clean_text()` — đó là thứ model nhận; số token `<br />` đo trên văn bản gốc. Chạy **trước** phần chia train/val của `preprocessing` (Thư chốt 2026-11-20: làm EDA trước) để số liệu EDA làm căn cứ cho bước làm sạch và gộp review trùng
 - **Output:** `outputs/results/eda_summary.csv`, `outputs/figures/eda_*.png`; smoke run: `outputs/_smoke/`
 
 ## How to do it (general plan)
@@ -39,7 +39,7 @@ Không có trong 7 bước của đề, nhưng cần cho quyết định `max_le
 
 ## Pipeline
 ```
-preprocessing.load_datasets → đếm nhãn, tokenize không cắt → bảng độ dài + trùng lặp
+preprocessing.load_split (thô) → clean_text → đếm nhãn, tokenize không cắt → bảng độ dài + trùng lặp
   → outputs/results/eda_summary.csv, outputs/figures/eda_*.png → Thư chốt max_length
 ```
 
@@ -55,7 +55,7 @@ preprocessing.load_datasets → đếm nhãn, tokenize không cắt → bảng �
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_eda.py` đạt: phân vị và % vượt ngưỡng tính đúng trên dữ liệu giả
 - **Smoke run:** CSV và 3 hình có trong `outputs/_smoke/`
-- **Normal run:** `eda_summary.csv` có đủ 3 split, tổng 50.000 review; 3 hình trong `outputs/figures/`
+- **Normal run:** `eda_summary.csv` có đủ 2 split chính thức (train, test), tổng 50.000 review; 3 hình trong `outputs/figures/`
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
