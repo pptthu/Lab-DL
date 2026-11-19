@@ -70,9 +70,27 @@ def predict_sentiment(texts: list[str], pipe, batch_size: int = 32) -> list[dict
     return [{"label": o["label"], "score": float(o["score"])} for o in out]
 
 
+def hub_revision(model_name: str) -> str:
+    """Hub commit hash of a model in the local HF cache (folder snapshots/<hash>/), offline.
+
+    VI: Commit hash của model đã tải (lấy từ thư mục cache), để chạy lại đúng trọng số.
+    transformers 5 không còn ghi config._commit_hash nên đọc từ cache.
+    """
+    try:
+        from huggingface_hub import try_to_load_from_cache
+
+        path = try_to_load_from_cache(model_name, "config.json")
+        if isinstance(path, str):
+            return Path(path).parent.name
+    except Exception:  # noqa: BLE001 - không có cache / không có thư viện: ghi unknown
+        pass
+    return "unknown"
+
+
 def model_revision(pipe) -> str:
     """Hub commit hash of the loaded model, to rerun with the same weights. / Commit hash model trên Hub."""
-    return str(getattr(pipe.model.config, "_commit_hash", None) or "unknown")
+    rev = getattr(pipe.model.config, "_commit_hash", None)
+    return str(rev) if rev else hub_revision(getattr(pipe.model, "name_or_path", config.SST2_MODEL))
 
 
 def run_demo(out_dir: Path, pipe=None, sentences: list[dict] | None = None) -> dict:
@@ -103,7 +121,16 @@ def run_demo(out_dir: Path, pipe=None, sentences: list[dict] | None = None) -> d
     return {"paths": paths, "predictions": table, "tokens": tokens}
 
 
+def _utf8_stdout() -> None:
+    """Windows console may not print Vietnamese (cp1258) / in tiếng Việt an toàn."""
+    import sys
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv=None) -> None:
+    _utf8_stdout()
     parser = argparse.ArgumentParser(description="Lab 3 Exercise 1")
     parser.add_argument("--smoke", action="store_true", help="ghi vào outputs/_smoke/demo/")
     args = parser.parse_args(argv)

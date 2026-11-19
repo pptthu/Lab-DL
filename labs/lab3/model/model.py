@@ -56,14 +56,45 @@ def describe_head(model) -> str:
     return "\n".join(f"{n}: {getattr(model, n)}" for n in names)
 
 
+def _utf8_stdout() -> None:
+    """Windows console may not print Vietnamese (cp1258) / in tiếng Việt an toàn."""
+    import sys
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+
+CONFIG_KEYS = ("n_layers", "dim", "n_heads", "hidden_dim", "max_position_embeddings", "dropout",
+               "seq_classif_dropout", "vocab_size")
+
+
+def model_summary(model, revision: str = "unknown") -> dict:
+    """Config, head layers and parameter counts as a dict (written to outputs/results/model_summary.json).
+
+    VI: Tóm tắt model để notebook và model card đọc từ file, không phải nạp model.
+    """
+    return {
+        "checkpoint": config.CHECKPOINT,
+        "revision": revision,
+        "config": {k: getattr(model.config, k, None) for k in CONFIG_KEYS},
+        "head": describe_head(model).splitlines(),
+        "parameters": count_parameters(model),
+        "id2label": {int(k): v for k, v in model.config.id2label.items()},
+    }
+
+
 def main() -> None:
-    model = build_model()
-    print(model.config.__class__.__name__, {k: getattr(model.config, k) for k in
-          ("n_layers", "dim", "n_heads", "hidden_dim", "max_position_embeddings", "dropout",
-           "seq_classif_dropout", "vocab_size")})
-    print(describe_head(model))
-    print(count_parameters(model))
-    print("revision:", getattr(model.config, "_commit_hash", None))
+    import json
+
+    from labs.lab3.sentiment_demo.sentiment_demo import hub_revision
+    from shared.paths import output_dir
+
+    _utf8_stdout()
+    summary = model_summary(build_model(), hub_revision(config.CHECKPOINT))
+    path = output_dir(config.LAB, "results") / "model_summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps(summary, ensure_ascii=False, indent=1))
+    print(path)
 
 
 if __name__ == "__main__":

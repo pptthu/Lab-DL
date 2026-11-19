@@ -1,0 +1,7 @@
+capability,text,expected,predicted,score,correct,model,revision
+rõ tích cực,"This movie was absolutely wonderful, I loved every minute of it.",POSITIVE,POSITIVE,0.9999,True,distilbert-base-uncased-finetuned-sst-2-english,714eb0fa89d2f80546fda750413ed43d93601a13
+rõ tiêu cực,The film was a complete waste of time and the acting was terrible.,NEGATIVE,NEGATIVE,0.9998,True,distilbert-base-uncased-finetuned-sst-2-english,714eb0fa89d2f80546fda750413ed43d93601a13
+phủ định câu tiêu cực,The movie was not bad at all.,POSITIVE,POSITIVE,0.998,True,distilbert-base-uncased-finetuned-sst-2-english,714eb0fa89d2f80546fda750413ed43d93601a13
+phủ định câu tích cực,I would not say this film is good.,NEGATIVE,NEGATIVE,0.9997,True,distilbert-base-uncased-finetuned-sst-2-english,714eb0fa89d2f80546fda750413ed43d93601a13
+tương phản (but),"The cinematography was beautiful, but the plot was dull and the ending made no sense.",NEGATIVE,NEGATIVE,0.9997,True,distilbert-base-uncased-finetuned-sst-2-english,714eb0fa89d2f80546fda750413ed43d93601a13
+trung tính,The movie was released in 2009 and runs for about two hours.,,NEGATIVE,0.9955,,distilbert-base-uncased-finetuned-sst-2-english,714eb0fa89d2f80546fda750413ed43d93601a13

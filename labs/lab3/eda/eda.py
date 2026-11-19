@@ -213,7 +213,16 @@ def run_eda(train: pd.DataFrame, test: pd.DataFrame, tokenizer, results_dir: Pat
     return {"paths": paths, "summary": summary, "duplicates": dups, "ratings": ratings}
 
 
+def _utf8_stdout() -> None:
+    """Windows console may not print Vietnamese (cp1258) / in tiếng Việt an toàn."""
+    import sys
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv=None) -> None:
+    _utf8_stdout()
     parser = argparse.ArgumentParser(description="Lab 3 EDA")
     parser.add_argument("--smoke", action="store_true", help="vài chục review, ghi vào outputs/_smoke/")
     args = parser.parse_args(argv)

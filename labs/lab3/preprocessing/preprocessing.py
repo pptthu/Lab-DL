@@ -81,6 +81,11 @@ def load_split(split: str, root: Path | None = None) -> pd.DataFrame:
     """
     if split not in SPLITS:
         raise ValueError(f"split must be one of {SPLITS}, got {split!r}")
+    # Bộ đệm: đọc 25k file nhỏ trên Windows rất chậm (đo 2026-11-20) → lần đầu đọc xong thì lưu
+    # một file parquet cạnh aclImdb/ (git bỏ qua); lần sau đọc file này. Xoá file để đọc lại từ gốc.
+    cache = raw_root(root) / f"imdb_{split}.parquet"
+    if cache.exists():
+        return pd.read_parquet(cache)
     imdb = raw_root(root) / "aclImdb"
     rows = []
     for label_dir, label in LABEL_DIRS.items():
@@ -99,7 +104,9 @@ def load_split(split: str, root: Path | None = None) -> pd.DataFrame:
                 "movie_id": movies[rid],
                 "text": f.read_text(encoding="utf-8"),
             })
-    return pd.DataFrame(rows).sort_values("uid", kind="stable").reset_index(drop=True)
+    df = pd.DataFrame(rows).sort_values("uid", kind="stable").reset_index(drop=True)
+    df.to_parquet(cache, index=False)
+    return df
 
 
 def clean_text(text: str) -> str:
