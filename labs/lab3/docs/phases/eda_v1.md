@@ -1,7 +1,7 @@
 # eda — khám phá dữ liệu IMDB, đo độ dài token (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:41:59+07:00 (Thư)
 - **Người phụ trách**: Thư
 - **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
 
@@ -21,7 +21,7 @@ Không có trong 7 bước của đề, nhưng cần cho quyết định `max_le
 - Tỉ lệ review chứa ít nhất một từ phủ định (`not`, `no`, `n't`, `never`, `nothing`, `none`, `nor`, `neither`, `nobody`, `without`) — kiểm giả định "gần như review nào cũng có phủ định" (lý do bỏ nhóm phủ định ở `visualize`)
 - Phân bố rating (1–4, 7–10) mỗi split — dùng cho phân tích lỗi theo rating
 - Không làm:
-  - Chọn `max_length` — Thư chốt từ bảng này (`[cần chốt sau S1]`)
+  - Chọn `max_length` — Thư chốt từ bảng này: **512** (2026-11-20, `docs/experiments/experiment_log.md` S1)
   - Làm sạch, chia split — thuộc `preprocessing`
 
 ## Input / Output
@@ -55,7 +55,7 @@ preprocessing.load_split (thô) → clean_text → đếm nhãn, tokenize không
 ## Triển khai (2026-11-20)
 - **Hàm** (`labs/lab3/eda/eda.py`): `NEGATION_RE` (`:35`); `token_lengths(texts, tokenizer, batch_size=1000)` (`:39`); `length_summary(lengths, limits)` (`:51`); `duplicate_counts(train, test)` (`:69`); `negation_share(texts)` (`:88`); `split_summary(df, tokenizer)` (`:94`); 3 hàm vẽ (`:120`–`:162`); `run_eda(train, test, tokenizer, results_dir, figures_dir) -> dict` (`:178`). Chạy: `python -m labs.lab3.eda.eda [--smoke]`
 - **Chỗ code khác plan:** ngoài `eda_summary.csv`, ghi thêm `eda_duplicates.csv`, `eda_ratings.csv` và `eda_token_lengths.csv` (số token từng review — `visualize` dùng để biết review nào bị cắt). Chạy trên 2 split chính thức (val tách sau)
-- **Kết quả normal run** (51 s, máy Thư): median 222 / 219 token (train / test); > 128: 87,9 / 87,4%; > 256: 41,1 / 40,1%; > 512: 13,3 / 12,3% (Sun et al. 2019: 12,69%); 58,7% review có `<br />`, tốn trung bình 16,3 token; 89,4% có từ phủ định; 123 review test trùng train; 0 nhóm trùng có nhãn mâu thuẫn. Phân tích và đề xuất `max_length` = 512: `docs/experiments/experiment_log.md` mục S1 `[chờ Thư chốt]`
+- **Kết quả normal run** (51 s, máy Thư): median 222 / 219 token (train / test); > 128: 87,9 / 87,4%; > 256: 41,1 / 40,1%; > 512: 13,3 / 12,3% (Sun et al. 2019: 12,69%); 58,7% review có `<br />`, tốn trung bình 16,3 token; 89,4% có từ phủ định; 123 review test trùng train; 0 nhóm trùng có nhãn mâu thuẫn. `max_length` = 512, Thư chốt 2026-11-20 (phân tích: `docs/experiments/experiment_log.md` mục S1)
 - **Test / smoke:** `pytest labs/lab3/tests/test_eda.py` 5 passed; smoke ghi `outputs/_smoke/{results,figures}/` không lỗi
 
 ## Success criteria

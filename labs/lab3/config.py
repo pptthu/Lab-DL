@@ -22,7 +22,7 @@ MODEL_MAX_POSITIONS = 512  # DistilBertConfig.max_position_embeddings
 
 # max_length cho lần chạy chính: chốt sau EDA (plan §4 S1).
 # None = chưa chốt; features báo lỗi nếu chưa truyền giá trị.
-MAX_LENGTH: int | None = 512  # [đề xuất 2026-11-20 sau EDA, chờ Thư chốt] căn cứ:
+MAX_LENGTH: int | None = 512  # Thư chốt 2026-11-20 sau EDA; căn cứ:
 # docs/experiments/experiment_log.md mục S1 (512 cắt 13% review, 256 cắt 41%; zero-shot cũng cắt ở 512)
 MAX_LENGTH_CANDIDATES = (128, 256, 512)  # thí nghiệm max_length (plan §5)
 

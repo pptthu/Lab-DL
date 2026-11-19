@@ -1,7 +1,7 @@
 # Sổ ghi thí nghiệm Lab 3
 
 - **Created**: 2026-11-20T02:27:41+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T02:27:41+07:00 (pptthu)
+- **Last Updated**: 2026-11-20T02:41:59+07:00 (pptthu)
 - Mỗi giai đoạn của plan §4 (S1–S5) một mục: chạy gì, số liệu (kèm file), quyết định, người chốt. Số liệu lấy từ file trong `outputs/`, không chép tay từ màn hình.
 
 ---
@@ -35,7 +35,7 @@
 - **`evaluate`:** 123 review test trùng train → báo thêm acc trên test bỏ 123 review này (quyết định đã duyệt 2026-11-20).
 - **`visualize`:** 89% review có từ phủ định → xác nhận bỏ nhóm "có phủ định" trong phân tích lỗi là đúng (nhóm gần như là cả tập).
 
-### Đề xuất `max_length` cho lần chạy chính: **512** `[đề xuất — chờ Thư chốt]`
+### `max_length` cho lần chạy chính: **512** (Thư chốt 2026-11-20)
 
 Chi phí đo trên độ dài thật của train (batch 16, pad theo batch, `outputs/results/eda_token_lengths.csv`):
 
@@ -53,7 +53,7 @@ Lý do chọn 512:
 
 **Phương án dự phòng:** nếu smoke trên Kaggle cho thấy 512 không vừa VRAM với batch 16 hoặc quá chậm cho 1 pilot + 3 seed trong quota GPU, dùng 256 (mức phổ biến trong các model card DistilBERT IMDB, vd Niophy 91,2%) và ghi lý do vào mục S2.
 
-`labs/lab3/config.py`: `MAX_LENGTH = 512` (ghi chú "đề xuất, chờ Thư chốt").
+`labs/lab3/config.py`: `MAX_LENGTH = 512`. Cũng chốt: giữ split train 22.499 / val 2.501 (không ép tròn 2.500 vì chia theo phim).
 
 ---
 

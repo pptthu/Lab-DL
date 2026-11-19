@@ -1,12 +1,12 @@
 # Lab 3 — Phân tích cảm xúc và fine-tuning với Hugging Face (v1)
-- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-19T17:02:59+07:00
+- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-20T02:41:59+07:00
 - Trạng thái: In Progress
 ## Background
 Đề Practice 3. Bài 1: dùng model cảm xúc pre-trained từ Hugging Face Hub, tokenize và phân tích cảm xúc câu mẫu. Bài 2: fine-tune model pre-trained cho phân loại văn bản nhị phân bằng `transformers`, `datasets`, `evaluate` và Trainer (7 bước). Bài làm lại độc lập, không dùng code hay số liệu Lab 3 cũ.
 ## Purpose
 - Làm:
   - Bài 1: pipeline `distilbert-base-uncased-finetuned-sst-2-english` — in token và nhãn + điểm cho câu mẫu; đo zero-shot trên 25k test IMDB làm baseline
-  - Bài 2: fine-tune `distilbert-base-uncased` trên IMDB full (train 22.500 / val 2.500 tách theo phim / test 25.000), metric bằng thư viện `evaluate`, 3 seed
+  - Bài 2: fine-tune `distilbert-base-uncased` trên IMDB full (train 22.499 / val 2.501 tách theo phim — không ép tròn 2.500 vì chia nguyên phim, Thư chốt 2026-11-20 / test 25.000), metric bằng thư viện `evaluate`, 3 seed
   - Mở rộng: đường loss/acc, thí nghiệm `max_length` 128/256/512, confusion matrix zero-shot vs fine-tuned, ví dụ dự đoán sai theo nhóm
 - Không làm: ROC/PR, head+tail, model khác (BERT-base, RoBERTa), LoRA, cleanlab, Optuna, 50k review không nhãn
 ## Input / Output
@@ -30,6 +30,6 @@
 8. Test một lần + zero-shot (`evaluate`); hình (`visualize`); model card, README, notebook
 ## Quyết định (người ghi)
 - 2026-11-19 (Thư): toàn bộ L1–L17 trong `plans/detail_plan_lab3_md_v1.md` §2 — căn cứ ghi ở cột "Căn cứ" của plan
-- [cần chốt sau EDA] `max_length` lần chạy chính
+- 2026-11-20 (Thư): `max_length` lần chạy chính = 512 — 512 cắt 13% review, 256 cắt 41%; zero-shot cũng cắt ở 512 (`experiments/experiment_log.md` S1)
 - [cần chốt sau pilot] trần epoch, patience, threshold
 - [cần chốt sau 3 seed] số seed của thí nghiệm `max_length`
