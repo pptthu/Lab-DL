@@ -1,9 +1,9 @@
 # eda — khám phá dữ liệu IMDB, đo độ dài token (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:02:26+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: To Do
+- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
 
 ---
 
@@ -51,6 +51,12 @@ preprocessing.load_split (thô) → clean_text → đếm nhãn, tokenize không
 - **Gotchas:**
   - Tokenize 50k review không cắt có thể báo cảnh báo "sequence longer than 512" — chỉ đếm, không đưa vào model nên bỏ qua được
   - Tokenize full data trên CPU mất vài phút — dùng tokenizer fast, `batched=True`
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/eda/eda.py`): `NEGATION_RE` (`:35`); `token_lengths(texts, tokenizer, batch_size=1000)` (`:39`); `length_summary(lengths, limits)` (`:51`); `duplicate_counts(train, test)` (`:69`); `negation_share(texts)` (`:88`); `split_summary(df, tokenizer)` (`:94`); 3 hàm vẽ (`:120`–`:162`); `run_eda(train, test, tokenizer, results_dir, figures_dir) -> dict` (`:178`). Chạy: `python -m labs.lab3.eda.eda [--smoke]`
+- **Chỗ code khác plan:** ngoài `eda_summary.csv`, ghi thêm `eda_duplicates.csv`, `eda_ratings.csv` và `eda_token_lengths.csv` (số token từng review — `visualize` dùng để biết review nào bị cắt). Chạy trên 2 split chính thức (val tách sau)
+- **Kết quả normal run** (51 s, máy Thư): median 222 / 219 token (train / test); > 128: 87,9 / 87,4%; > 256: 41,1 / 40,1%; > 512: 13,3 / 12,3% (Sun et al. 2019: 12,69%); 58,7% review có `<br />`, tốn trung bình 16,3 token; 89,4% có từ phủ định; 123 review test trùng train; 0 nhóm trùng có nhãn mâu thuẫn. Phân tích và đề xuất `max_length` = 512: `docs/experiments/experiment_log.md` mục S1 `[chờ Thư chốt]`
+- **Test / smoke:** `pytest labs/lab3/tests/test_eda.py` 5 passed; smoke ghi `outputs/_smoke/{results,figures}/` không lỗi
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_eda.py` đạt: phân vị và % vượt ngưỡng tính đúng trên dữ liệu giả

@@ -1,9 +1,9 @@
 # features — tokenize dataset cho model (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:00:14+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: To Do
+- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
 
 ---
 
@@ -43,6 +43,12 @@ preprocessing.load_datasets → tokenize_datasets(max_length) → DatasetDict (i
 - **Gotchas:**
   - Tokenizer phải cùng checkpoint với model (`distilbert-base-uncased`), nếu khác thì id token lệch từ vựng
   - Đổi `max_length` thì cache `datasets` phải tính lại → tên cache gắn với `max_length`
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/features/features.py`): `KEEP_COLUMNS = ("uid", "label")` (`:8`); `tokenize_datasets(ds, tokenizer, max_length, text_column="text")` (`:11`); `make_collator(tokenizer)` (`:31`). `max_length` đọc từ `labs/lab3/config.py` (`MAX_LENGTH`)
+- **Chỗ code khác plan:** thêm `return_token_type_ids=False` — tokenizer thật của `distilbert-base-uncased` trong transformers 5.22 vẫn trả cột `token_type_ids` (đo trên dữ liệu thật) mà DistilBERT không dùng. Fixture test dùng tokenizer có trả cột này để test bắt được lỗi
+- **Kết quả trên dữ liệu thật** (`max_length` 512 đề xuất): 22.499 / 2.501 / 25.000 dòng, cột `uid, label, input_ids, attention_mask`, không dòng nào vượt 512; 3.010 / 324 / 3.097 review bị cắt đúng ở 512. Một batch 4 review qua collator → model thật: input [4, 173], logits [4, 2], loss 0,7101 (≈ ln 2 khi đầu phân loại chưa train)
+- **Test:** `pytest labs/lab3/tests/test_features.py` 3 passed
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_features.py` đạt: có đủ 3 cột, độ dài ≤ `max_length`, token đầu là `[CLS]`, collator pad đúng

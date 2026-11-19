@@ -1,9 +1,9 @@
 # model — nạp DistilBERT pre-trained + đầu phân loại 2 lớp (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:00:14+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: To Do
+- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
 
 ---
 
@@ -40,12 +40,19 @@ checkpoint + seed → build_model → DistilBERT (6 lớp, 768 chiều) + pre_cl
 ```
 
 ## Detailed plan
-- **Kiến trúc** (`DistilBertConfig` mặc định, tài liệu HF): `n_layers` 6, `dim` 768, `n_heads` 12, `max_position_embeddings` 512, `dropout` 0,1. Đầu phân loại của `DistilBertForSequenceClassification`: `pre_classifier` Linear 768→768 + ReLU + dropout `seq_classif_dropout` 0,2 + `classifier` Linear 768→2 `[kiểm lại khi in model]`
+- **Kiến trúc** (`DistilBertConfig` mặc định, tài liệu HF): `n_layers` 6, `dim` 768, `n_heads` 12, `max_position_embeddings` 512, `dropout` 0,1. Đầu phân loại của `DistilBertForSequenceClassification`: `pre_classifier` Linear 768→768 + ReLU + dropout `seq_classif_dropout` 0,2 + `classifier` Linear 768→2 (đã kiểm khi in model, xem mục Triển khai)
 - **Fine-tune toàn bộ** (không đóng băng backbone) — cách làm của tutorial HF và BERT gốc
 - **Seed:** Dodge et al. 2020 cho thấy khởi tạo đầu phân loại ảnh hưởng kết quả → seed phải đặt trước khi tạo model, mỗi seed của lần chạy chính một khởi tạo khác
 - **Gotchas:**
   - Cảnh báo "Some weights … newly initialized: pre_classifier, classifier" là **bình thường**: đầu phân loại mới, chưa train
   - Tokenizer và model phải cùng checkpoint
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/model/model.py`): `load_tokenizer(checkpoint=config.CHECKPOINT)` (`:17`); `build_model(seed=42, checkpoint=config.CHECKPOINT, model_config=None)` (`:24`); `count_parameters(model) -> dict` (`:42`); `describe_head(model) -> str` (`:50`); `model_summary(model, revision) -> dict` (`:71`). Chạy: `python -m labs.lab3.model.model` → `outputs/results/model_summary.json`
+- **Chỗ code khác plan:** thêm `model_summary` và ghi JSON để notebook, model card đọc số liệu mà không phải nạp model
+- **Kiểm kiến trúc khi in model (đã kiểm):** `n_layers` 6, `dim` 768, `n_heads` 12, `hidden_dim` 3072, `max_position_embeddings` 512, `dropout` 0,1, `seq_classif_dropout` 0,2; đầu phân loại `pre_classifier` Linear 768→768, `classifier` Linear 768→2 — khớp tài liệu HF
+- **Kết quả:** tổng 66.955.010 param (đều train được): backbone 66.362.880, đầu phân loại 592.130. Commit model `12040accade4e8a0f71eabdb258fecc2e7e948be`. Model card: `docs/models/distilbert_imdb_v1.md` (phần Initial model)
+- **Test:** `pytest labs/lab3/tests/test_model.py` 3 passed (DistilBERT nhỏ tạo từ config, không tải trọng số)
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_model.py` đạt: logits [B, 2], `id2label` đúng, cùng seed → cùng trọng số đầu phân loại

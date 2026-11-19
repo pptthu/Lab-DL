@@ -1,9 +1,9 @@
 # preprocessing — tải IMDB gốc, làm sạch, chia train/val theo phim (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: To Do
+- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
 
 ---
 
@@ -55,6 +55,12 @@ aclImdb_v1.tar.gz → download_imdb → data/raw/aclImdb/
 - **Gotchas:**
   - Mỗi phim tối đa 30 review (README aclImdb) → các fold theo phim có kích thước gần bằng nhau, nhưng không đúng chính xác 2.500
   - File review có thể chứa ký tự không phải ASCII → đọc bằng `encoding="utf-8"`
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/preprocessing/preprocessing.py`): `download_imdb(root=None, url=config.IMDB_URL) -> Path` (`:37`); `read_movie_ids(urls_file) -> list[str]` (`:60`); `load_split(split, root=None) -> DataFrame` (`:75`); `clean_text(text) -> str` (`:112`); `text_hash(text) -> str` (`:121`); `split_groups(df) -> Series` (`:127`); `make_train_val_split(train, seed=42, n_folds=10) -> dict` (`:158`); `save_split` / `read_split` (`:189`, `:197`); `load_datasets(root=None, split_path=None, smoke_n=None) -> DatasetDict` (`:202`). Chạy: `python -m labs.lab3.preprocessing.preprocessing [--force]`
+- **Chỗ code khác plan:** (1) `load_split` lưu bộ đệm `data/raw/imdb_<split>.parquet` (git bỏ qua) — lần đọc đầu 50k file nhỏ mất 260 s + 237 s trên máy Thư (Windows Defender quét từng file), từ lần sau 2 s; (2) thêm `sample_per_label` cho smoke run; (3) val = 2.501 chứ không đúng 2.500 vì chia theo nhóm
+- **Kết quả normal run:** tải 84.125.825 byte; 4 thư mục × 12.500 file, số dòng URL khớp. Train 3.456 phim, test 3.581 phim, tối đa 30 review/phim (đúng README). 1 phim ở cả train và test (`tt0406816`, 2 review train) — ghi ở `docs/experiments/experiment_log.md` S1. Split (`data/splits/train_val_split.json`): train 22.499 / val 2.501, tỉ lệ dương ở val 0,5002, 346 phim ở val, `groups_in_both` = 0, 0 review trùng nội dung giữa train và val; 18 phim được gộp nhóm vì có review trùng
+- **Test / smoke:** `pytest labs/lab3/tests/test_preprocessing.py` 9 passed (cây aclImdb giả)
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_preprocessing.py` đạt: đọc đúng id/rating/nhãn, bỏ hết `<br />`, không phim nào và không review trùng nào ở cả train và val, val gần 10%, số dòng URL sai thì báo lỗi

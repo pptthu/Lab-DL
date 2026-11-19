@@ -1,9 +1,9 @@
 # sentiment_demo — Bài 1: phân tích cảm xúc bằng model pre-trained (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
+- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: To Do
+- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
 
 ---
 
@@ -51,6 +51,12 @@ câu mẫu → tokenize_sentence → tokens / ids
 - **Gotchas:**
   - Model học trên SST-2 (câu ngắn) còn IMDB là review dài → baseline zero-shot có thể lệch domain (plan §5)
   - Pipeline trả nhãn chữ; `evaluate` phải đổi sang 1/0 đúng với nhãn IMDB (pos = 1, neg = 0)
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/sentiment_demo/sentiment_demo.py`): `CONTROL_SENTENCES` (`:22`); `load_sentiment_pipeline(model_name=config.SST2_MODEL, device=None)` (`:37`); `tokenize_sentence(text, tokenizer) -> dict` (`:51`); `predict_sentiment(texts, pipe, batch_size=32) -> list[dict]` (`:64`); `hub_revision(model_name) -> str` (`:73`); `run_demo(out_dir, pipe=None, sentences=None) -> dict` (`:96`). Chạy: `python -m labs.lab3.sentiment_demo.sentiment_demo [--smoke]`
+- **Chỗ code khác plan:** thêm `hub_revision` — transformers 5.22 không còn ghi `config._commit_hash`, nên commit của model đọc từ thư mục cache Hugging Face (`snapshots/<hash>/`). CSV có thêm cột `model`, `revision`. Câu (5) tương phản: kỳ vọng NEGATIVE vì vế sau "but" chê cả cốt truyện lẫn kết thúc
+- **Kết quả normal run** (máy Thư, CPU; model commit `714eb0fa89d2f80546fda750413ed43d93601a13`): 5/5 câu có nhãn kỳ vọng đoán đúng (cả 2 câu phủ định và câu "but", điểm 0,998–0,9999); câu trung tính → NEGATIVE, điểm 0,9955. Câu 1 tokenize thành 15 token, `[CLS]` = 101, `[SEP]` = 102. File: `outputs/demo/sentiment_demo.csv`, `sentiment_demo_tokens.csv`
+- **Test / smoke:** `pytest labs/lab3/tests/test_sentiment_demo.py` 4 passed (pipeline giả, không cần mạng); smoke ghi `outputs/_smoke/demo/` không lỗi
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_sentiment_demo.py` đạt: token đầu/cuối, đủ cột CSV, nhãn thuộc {POSITIVE, NEGATIVE}, điểm trong [0, 1]
