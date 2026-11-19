@@ -1,84 +1,81 @@
-"""Tests for `preprocessing` (Lab 3). No network: the Hugging Face `datasets` module is replaced by a tiny fake.
-
-VI: Test cho `preprocessing` (Lab 3). Không cần mạng: module `datasets` của Hugging Face được thay bằng bản giả nhỏ.
-"""
-import random
-import sys
-import types
-
+"""Tests for labs/lab3/preprocessing (offline: fake aclImdb tree)."""
 import pytest
 
-from labs.lab3.preprocessing.preprocessing import clean_text, label_counts, load_text_dataset
+from labs.lab3.preprocessing.preprocessing import clean_text, load_split, read_movie_ids, text_hash
 
 
-class FakeDS:
-    """Minimal stand-in for datasets.Dataset. / Bản giả tối thiểu của datasets.Dataset."""
-
-    def __init__(self, rows):
-        self.rows = list(rows)
-        self.column_names = list(self.rows[0]) if self.rows else []
-
-    def __len__(self):
-        return len(self.rows)
-
-    def __getitem__(self, key):
-        return [r[key] for r in self.rows]
-
-    def shuffle(self, seed):
-        rows = self.rows[:]
-        random.Random(seed).shuffle(rows)
-        return FakeDS(rows)
-
-    def select(self, indices):
-        return FakeDS([self.rows[i] for i in indices])
-
-    def map(self, fn, batched=False):
-        out = fn({"text": self["text"]})
-        return FakeDS([dict(r, text=t) for r, t in zip(self.rows, out["text"])])
+def test_load_split_reads_id_rating_label_movie(fake_imdb_root):
+    df = load_split("train", fake_imdb_root)
+    assert len(df) == 8
+    assert set(df.columns) >= {"uid", "split", "id", "rating", "label", "movie_id", "text"}
+    row = df.set_index("uid").loc["train_neg_3"]
+    assert (row["rating"], row["label"], row["movie_id"]) == (4, 0, "tt0000006")
+    assert set(df.loc[df["label"] == 1, "rating"]) <= {7, 8, 9, 10}
+    assert set(df.loc[df["label"] == 0, "rating"]) <= {1, 2, 3, 4}
 
 
-def _fake_datasets(n=200):
-    """Rows ordered by label like the real Hub data: first half 0, second half 1."""
-    def make(prefix):
-        return FakeDS([{"text": f"{prefix} review {i}<br />ok", "label": 0 if i < n // 2 else 1} for i in range(n)])
-    mod = types.ModuleType("datasets")
-    mod.load_dataset = lambda name, cache_dir=None: {"train": make("tr"), "test": make("te")}
-    return mod
+def test_load_split_stops_when_url_lines_do_not_match(fake_imdb_root):
+    urls = fake_imdb_root / "aclImdb" / "train" / "urls_pos.txt"
+    urls.write_text("\n".join(urls.read_text().splitlines()[:-1]) + "\n")
+    with pytest.raises(ValueError, match="URL lines"):
+        load_split("train", fake_imdb_root)
 
 
-def test_clean_text_strips_html_and_spaces():
-    assert clean_text("Great movie!<br /><br />Loved   it &amp; more.\n\n") == "Great movie! Loved it & more."
+def test_read_movie_ids_rejects_line_without_movie(tmp_path):
+    p = tmp_path / "urls.txt"
+    p.write_text("http://www.imdb.com/title/tt0453418/usercomments\nhttp://example.com/x\n")
+    with pytest.raises(ValueError, match="no movie id"):
+        read_movie_ids(p)
 
 
-def test_clean_text_keeps_case_punctuation_and_less_than_sign():
-    assert clean_text("WOW!!! I give it <3 stars, 5 > 4?") == "WOW!!! I give it <3 stars, 5 > 4?"
+def test_clean_text_removes_br_only():
+    assert clean_text("Great.<br /><br />I did NOT like   it<BR/>!") == "Great. I did NOT like it !"
+    assert clean_text("no tags, don't change") == "no tags, don't change"
 
 
-def test_clean_text_none_and_blank():
-    assert clean_text(None) == ""
-    assert clean_text("   \n ") == ""
+def test_text_hash_ignores_br_and_spaces():
+    assert text_hash("a<br />b") == text_hash("a b") == text_hash("a   b")
+    assert text_hash("a b") != text_hash("A b")
 
 
-def test_load_text_dataset_sizes_columns_and_balance(monkeypatch):
-    monkeypatch.setitem(sys.modules, "datasets", _fake_datasets())
-    train, val, test = load_text_dataset("imdb", n_train=60, n_val=20, n_test=30, seed=42)
-    assert (len(train), len(val), len(test)) == (60, 20, 30)
-    for ds in (train, val, test):
-        assert {"text", "label"} <= set(ds.column_names)
-        assert "<br" not in " ".join(ds["text"])
-    # shuffle before select: the subset must contain BOTH labels although the source is ordered by label
-    assert set(label_counts(train)) == {0, 1}
+# ---------------------------------------------------------------- chia train / val
+def test_split_groups_merge_same_movie_and_duplicate_text(fake_imdb_root):
+    from labs.lab3.preprocessing.preprocessing import split_groups
+
+    df = load_split("train", fake_imdb_root).set_index("uid")
+    g = split_groups(df.reset_index()).set_axis(df.index)
+    assert g["train_pos_0"] == g["train_pos_1"]          # cùng phim tt0000001
+    assert g["train_pos_2"] == g["train_neg_2"]          # khác phim nhưng trùng nội dung
+    assert g["train_pos_0"] != g["train_neg_3"]
 
 
-def test_load_text_dataset_is_reproducible_and_disjoint(monkeypatch):
-    monkeypatch.setitem(sys.modules, "datasets", _fake_datasets())
-    a = load_text_dataset("imdb", n_train=60, n_val=20, n_test=30, seed=7)
-    b = load_text_dataset("imdb", n_train=60, n_val=20, n_test=30, seed=7)
-    assert a[0]["text"] == b[0]["text"]
-    assert not set(a[0]["text"]) & set(a[1]["text"])      # train and val do not overlap
+def test_make_train_val_split_has_no_group_in_both(fake_imdb_root):
+    from labs.lab3.preprocessing.preprocessing import make_train_val_split, split_groups
+
+    train = load_split("train", fake_imdb_root)
+    s = make_train_val_split(train, seed=0, n_folds=2)
+    assert s["groups_in_both"] == 0
+    assert s["n_train"] + s["n_val"] == len(train)
+    assert not set(s["train_uids"]) & set(s["val_uids"])
+    groups = dict(zip(train["uid"], split_groups(train)))
+    assert not {groups[u] for u in s["train_uids"]} & {groups[u] for u in s["val_uids"]}
 
 
-def test_load_text_dataset_rejects_too_large_subset(monkeypatch):
-    monkeypatch.setitem(sys.modules, "datasets", _fake_datasets(n=50))
-    with pytest.raises(ValueError):
-        load_text_dataset("imdb", n_train=40, n_val=20, n_test=10)
+def test_make_train_val_split_is_reproducible(fake_imdb_root):
+    from labs.lab3.preprocessing.preprocessing import make_train_val_split
+
+    train = load_split("train", fake_imdb_root)
+    assert make_train_val_split(train, seed=3, n_folds=2)["val_uids"] == \
+        make_train_val_split(train, seed=3, n_folds=2)["val_uids"]
+
+
+def test_load_datasets_returns_three_clean_splits(fake_imdb_root, tmp_path):
+    from labs.lab3.preprocessing.preprocessing import load_datasets, make_train_val_split, save_split
+
+    path = save_split(make_train_val_split(load_split("train", fake_imdb_root), seed=0, n_folds=2),
+                      tmp_path / "split.json")
+    ds = load_datasets(root=fake_imdb_root, split_path=path)
+    assert set(ds) == {"train", "validation", "test"}
+    assert len(ds["train"]) + len(ds["validation"]) == 8 and len(ds["test"]) == 4
+    assert set(ds["train"].column_names) == {"uid", "text", "label", "rating", "movie_id"}
+    assert not any("<br" in t.lower() for split in ds.values() for t in split["text"])
