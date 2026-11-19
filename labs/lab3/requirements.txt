@@ -1,5 +1,0 @@
--r ../../requirements.txt
-transformers
-datasets
-evaluate
-accelerate
