@@ -1,7 +1,7 @@
 # Lab 3: Phân tích cảm xúc và fine-tuning với Hugging Face — tổng quan dự án
 
 - **Created**: 2026-11-20T14:29:08+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T14:29:08+07:00 (pptthu)
+- **Last Updated**: 2026-11-21T01:42:29+07:00 (pptthu)
 - Desc hiện hành: [`docs/lab3_description_v1.md`](docs/lab3_description_v1.md) · Plan: [`docs/plans/detail_plan_lab3_md_v1.md`](docs/plans/detail_plan_lab3_md_v1.md) · Kết quả: [`README.md`](README.md) · Mục lục tài liệu: [`docs/00_README_v1.md`](docs/00_README_v1.md)
 
 ## 1. Define
@@ -10,7 +10,7 @@
 |---|---|
 | Bài toán | Bài 1: phân tích cảm xúc câu mẫu bằng model pre-trained. Bài 2: fine-tune model pre-trained phân loại review phim tích cực / tiêu cực (đề Practice 3) |
 | Dữ liệu | IMDB gốc `aclImdb_v1.tar.gz` (Maas et al. 2011): 25.000 train, 25.000 test, nhãn cân bằng, có mã phim của từng review |
-| Input / Output | Vào: thư mục aclImdb trong `data/raw/`. Ra: CSV Bài 1, kết quả EDA, file chia val, log mỗi lần chạy, bảng kết quả, hình trong `outputs/`; checkpoint trên Kaggle |
+| Input / Output | Vào: thư mục aclImdb trong `data/raw/`; một mẫu = 1 file `.txt` (một review) + nhãn 0/1 theo thư mục `neg`/`pos`, kèm rating và mã phim. Model nhận tối đa 512 token (`input_ids`, `attention_mask`), trả 2 logits → softmax ra xác suất khen; loss cross-entropy; metric accuracy (chính) + F1 bằng `evaluate`. Ra: checkpoint tốt nhất (trên Kaggle, không commit); file dự đoán test (`uid, label, pred, prob_pos`); `test_summary.csv`; log mỗi lần chạy, hình, CSV Bài 1 trong `outputs/` |
 | Yêu cầu của đề | Bài 1: cài `transformers`, nạp model cảm xúc, tokenize câu mẫu, phân tích cảm xúc. Bài 2: `datasets`, tokenize, model pre-trained, `evaluate`, `TrainingArguments`, `Trainer`, fine-tune, đánh giá |
 | Phạm vi | `distilbert-base-uncased`, `max_length` 512, 3 seed, chọn trên val, test dùng một lần. Mở rộng: pilot chọn số epoch, thí nghiệm `max_length`, so sánh zero-shot, 6 câu kiểm soát, phân tích lỗi. Không làm: ROC/PR, head + tail, model khác, LoRA, Optuna |
 | Tiêu chí đạt | Test acc trung bình 3 seed ≥ 91% (DistilBERT paper: 92,82%); mọi số liệu trỏ tới file của một lần chạy có log; test 25k chạy một lần cho mỗi model |

@@ -1,5 +1,5 @@
 # Lab 3 — Phân tích cảm xúc và fine-tuning với Hugging Face (v1)
-- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-20T15:17:23+07:00
+- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-21T01:42:29+07:00
 - Trạng thái: Done (đã merge vào `main` qua PR #84, 2026-11-20)
 ## Background
 Đề Practice 3. Bài 1: dùng model cảm xúc pre-trained từ Hugging Face Hub, tokenize và phân tích cảm xúc câu mẫu. Bài 2: fine-tune model pre-trained cho phân loại văn bản nhị phân bằng `transformers`, `datasets`, `evaluate` và Trainer (7 bước). Bài làm lại độc lập, không dùng code hay số liệu Lab 3 cũ.
@@ -11,7 +11,11 @@
 - Không làm: ROC/PR, head+tail, model khác (BERT-base, RoBERTa), LoRA, cleanlab, Optuna, 50k review không nhãn
 ## Input / Output
 - Input: `data/raw/aclImdb/` (bản gốc Stanford `aclImdb_v1.tar.gz`, 25k train + 25k test, cân bằng nhãn; không commit)
-- Output: `data/splits/train_val_split.json`; `outputs/{logs,figures,results,demo}/` (commit); `outputs/models/` (không commit)
+- Một mẫu: 1 file `.txt` = một review + nhãn 0/1 (thư mục `neg`/`pos`); kèm rating (tên file `<id>_<rating>.txt`) và mã phim (`urls_[pos|neg].txt`)
+- Vào model: tối đa 512 token (`input_ids`, `attention_mask`), pad theo batch
+- Model trả: 2 logits; softmax → xác suất khen (`prob_pos`)
+- Loss: cross-entropy (model tự tính khi có `labels`); metric: accuracy (chính) + F1 bằng thư viện `evaluate`
+- Output: checkpoint tốt nhất (`outputs/models/`, trên Kaggle, không commit); file dự đoán test (`uid, label, pred, prob_pos`); `test_summary.csv`; log mỗi lần chạy, hình, CSV Bài 1 (`outputs/{logs,figures,results,demo}/`, commit); `data/splits/train_val_split.json`
 - Code: `labs/lab3/main.py` gọi 9 module `labs/lab3/<module>/<module>.py`; chạy chính trên Kaggle (`labs/lab3/kaggle/`); trình bày ở `notebook/lab3_presentation.ipynb` (chỉ đọc `outputs/`)
 ## Success criteria
 - `python -m pytest labs/lab3/tests -q` đạt; smoke run chạy hết không lỗi
