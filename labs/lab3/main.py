@@ -159,9 +159,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model-name", default="distilbert-base-uncased")
     parser.add_argument("--max-length", type=int, default=256)
 
-    parser.add_argument("--n-train", type=int, default=2000)
-    parser.add_argument("--n-val", type=int, default=500)
-    parser.add_argument("--n-test", type=int, default=500)
+    parser.add_argument("--n-train", type=int, default=22500)
+    parser.add_argument("--n-val", type=int, default=2500)
+    parser.add_argument("--n-test", type=int, default=25000)
 
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--learning-rate", type=float, default=2e-5)
