@@ -1,9 +1,9 @@
 # visualize — đường huấn luyện, confusion matrix, `max_length`, ví dụ sai (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
-- **Người phụ trách**: Thư
-- **Status**: To Do
+- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Người phụ trách**: Phúc (Member B)
+- **Status**: In Progress (chạy xong, chờ Thư audit)
 
 ---
 
@@ -50,6 +50,19 @@ maxlen_runs.csv → plot_maxlen
 - **Gotchas:**
   - Notebook chỉ hiển thị hình đã lưu, không vẽ lại từ model (RULES §2)
   - Review dài: cắt hiển thị trong CSV ví dụ (vd 300 ký tự đầu) nhưng giữ `id` để tra bản đầy đủ
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/visualize/visualize.py`): `plot_training_curves(history_csv, out_path=None, title=None)` (`:34`); `confusion_counts(df)` (`:76`); `plot_confusion(pred_csvs, out_path=None)` (`:84`); `maxlen_table(maxlen_runs, main_runs=None)` (`:117`); `plot_maxlen(maxlen_runs, main_runs=None, out_path=None)` (`:131`); `error_analysis(pred_csv, test_df, token_lengths, max_length, results_dir=None, demo_dir=None, per_group=3)` (`:156`); `run_all(...)` (`:207`). Chạy: `python -m labs.lab3.visualize.visualize` (chỉ đọc file trong `outputs/`)
+- **Chỗ code khác plan:**
+  - `maxlen_table` lấy giá trị 512 từ `main_runs.csv` (thí nghiệm `maxlen` không chạy lại 512)
+  - Độ dài token lấy từ `outputs/results/eda_token_lengths.csv` của EDA (đếm trên văn bản đã làm sạch, gồm `[CLS]`/`[SEP]`); bị cắt ⇔ `n_tokens > max_length`
+  - Confusion matrix và phân tích lỗi dùng seed có **val acc** cao nhất (seed 44), chọn trên val
+- **Kết quả** (chi tiết `experiment_log.md` S5):
+  - Hình: `outputs/figures/pilot_seed42_curves.png`, `main_seed{42,43,44}_curves.png`, `maxlen{128,256}_seed42_curves.png`, `maxlen_val_acc.png`, `confusion_zero_shot_vs_finetuned.png` (tổng mỗi ma trận = 25.000)
+  - Zero-shot bỏ sót 13,5% review tích cực (FN 1.690); fine-tuned FN 685, FP 971
+  - Tỉ lệ lỗi (seed 44): bị cắt 10,05% so với không bị cắt 6,14%; rating 4: 17,23%, rating 7: 11,70% (cao nhất) → giả thuyết "lỗi tập trung ở 4 và 7" đúng trên số liệu này
+  - File: `outputs/results/error_by_group.csv`, `outputs/demo/error_examples.csv`
+- **Test / smoke:** `pytest labs/lab3/tests/test_visualize.py` 4 passed (CSV giả, tổng confusion = số mẫu); smoke trên máy: hình và CSV trong `outputs/_smoke/`
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_visualize.py` đạt: tạo đủ file từ CSV giả, tổng confusion matrix = số mẫu

@@ -1,9 +1,9 @@
 # experiment — pilot, 3 seed, thí nghiệm `max_length` (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
-- **Người phụ trách**: Thư
-- **Status**: To Do
+- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Người phụ trách**: Phúc (Member B)
+- **Status**: In Progress (chạy xong, chờ Thư audit)
 
 ---
 
@@ -50,6 +50,20 @@ main (3 checkpoint) → evaluate (test một lần)
 - **Gotchas:**
   - `max_length` 512 tốn bộ nhớ và thời gian nhất → chạy cuối, giảm batch nếu thiếu VRAM và ghi lại trong log
   - Kaggle ngắt phiên sau một thời gian chạy liên tục → mỗi run ghi kết quả ngay khi xong, chạy lại được từng run
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/experiment/experiment.py`): `make_configs(stage, smoke=False) -> list[dict]` (`:37`); `append_run_row(row, path)` (`:74`); `run_row(cfg, result, n_train) -> dict` (`:86`); `run_stage(stage, parts=None, smoke=False, runs=None, train_fn=None, model_fn=None, results_dir=None, **train_kw)` (`:98`); `seed_spread(main_runs) -> dict` (`:144`); `merge_run_tables(src, dst) -> int` (`:163`). Chạy: `python -m labs.lab3.main --stage timing|pilot|main|maxlen [--runs …]`
+- **Chỗ code khác plan:**
+  - Thêm giai đoạn `timing` (300 step) để đo thời gian/epoch trên Kaggle trước khi chọn trần pilot (theo yêu cầu bổ sung của Thư 2026-11-20)
+  - `run_stage` nhận `runs` để mỗi kernel Kaggle chạy đúng một run; bảng `<stage>_runs.csv` ghi sau mỗi run và được gộp khi tải về (`merge_run_tables`)
+  - `make_configs` báo lỗi nếu giá trị `[cần chốt]` trong `config.py` còn `None` (không đoán)
+- **Kết quả normal run** (chi tiết `experiment_log.md` S2–S4):
+  - `timing_runs.csv`: 0,356 s/step → chọn trần pilot 6 epoch
+  - `pilot_runs.csv`: best val acc 0,9308 (epoch 4,0) → chốt trần 6, patience 8, threshold 0 [AI chốt theo uỷ quyền của Thư 2026-11-20 — Thư đã duyệt 2026-11-20]
+  - `main_runs.csv`: 3 seed, val acc 0,9303 ± 0,0013 → `seed_spread`: std ≤ 0,3 điểm → 1 seed / `max_length` (ngưỡng của plan)
+  - `maxlen_runs.csv` (seed 42): val acc 128: 0,8729; 256: 0,9152; 512 (`main_seed42`): 0,9288 → cùng seed: 256 hơn 128 4,24 điểm, 512 hơn 256 1,36 điểm, đều lớn hơn 2 × std (0,26 điểm); trung bình 3 seed ở 512 (0,9303) chỉ để tham khảo
+  - Chạy trên tài khoản Kaggle của Thư (`pptt1103`); Kaggle cho tối đa 2 phiên GPU cùng lúc → các run chạy theo cặp
+- **Test / smoke:** `pytest labs/lab3/tests/test_experiment.py` 6 passed (`train_model` giả); smoke trên máy: `pilot_runs.csv` 1 dòng, `main_runs.csv` 3 dòng
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_experiment.py` đạt
