@@ -1,0 +1,7 @@
+model,run,seed,n,accuracy,f1,n_no_dup,accuracy_no_dup,f1_no_dup,pass
+fine-tuned,main_seed42,42.0,25000,0.93,0.9304,24877.0,0.9297,0.9302,
+fine-tuned,main_seed43,43.0,25000,0.9309,0.9319,24877.0,0.9305,0.9318,
+fine-tuned,main_seed44,44.0,25000,0.9338,0.9345,24877.0,0.9335,0.9344,
+fine-tuned,mean,,25000,0.9315,0.9323,,0.9312,0.9321,True
+fine-tuned,std,,25000,0.002,0.0021,,0.002,0.0021,
+zero-shot (SST-2),zero_shot,,25000,0.8922,0.8892,24877.0,0.8921,0.8893,

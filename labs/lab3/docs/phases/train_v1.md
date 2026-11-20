@@ -1,9 +1,9 @@
 # train — TrainingArguments, Trainer, fine-tune, log, dừng sớm (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
-- **Người phụ trách**: Thư
-- **Status**: To Do
+- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Người phụ trách**: Phúc (Member B)
+- **Status**: In Progress (chạy xong, chờ Thư audit)
 
 ---
 
@@ -56,6 +56,23 @@ cfg + model + tokenized + collator + compute_metrics
   - Tên tham số đổi theo phiên bản: `eval_strategy` (mới) / `evaluation_strategy` (cũ); `processing_class` / `tokenizer` → ghi phiên bản trong log, chốt phiên bản trong `requirements.txt` theo Kaggle
   - Lịch lr linear giảm theo **trần epoch** → đổi trần là đổi tốc độ giảm lr (lý do pilot và lần chạy chính phải ghi trần riêng)
   - `EarlyStoppingCallback` cần `load_best_model_at_end=True` và `metric_for_best_model`; tên metric phải khớp `eval_accuracy`, nếu không callback tự tắt kèm cảnh báo
+
+## Triển khai (2026-11-20)
+- **Hàm** (`labs/lab3/train/train.py`): `default_cfg(**overrides) -> dict` (`:29`); `eval_steps_for(n_train, cfg) -> int` (`:52`); `make_training_args(cfg, output_dir, n_train)` (`:63`); `run_environment() -> dict` (`:122`); `RunLog` (`:150`, ghi `.log`, `_history.csv`, `_config.json`); `make_log_callback(log, t0_holder)` (`:220`); `summarize_history(rows, max_steps_planned, stopped_step) -> dict` (`:251`); `train_model(cfg, model, tokenized, collator, compute_metrics=None, tokenizer=None, logs_dir=None, models_dir=None) -> dict` (`:271`)
+- **Chỗ code khác plan:**
+  - `train_model` có thêm tham số tuỳ chọn `compute_metrics`, `tokenizer`, `logs_dir`, `models_dir` (để test và smoke ghi vào thư mục riêng); mặc định dùng `evaluate.compute_metrics` và `outputs/`
+  - transformers 5.22 bỏ `warmup_ratio` → dùng `warmup_steps=0.1` (số thực < 1 được hiểu là tỉ lệ tổng step, theo docstring `TrainingArguments`)
+  - Tham số của phần B đặt trong `labs/lab3/config.py` (LEARNING_RATE … THRESHOLD), không đặt trong `train.py` (RULES_v1 §2: một chỗ)
+  - Log ghi thêm `code: <HEAD>+tree:<cây index>` (code chạy chưa commit) và `test_evaluated` trong `_config.json` (cờ cho `evaluate`)
+  - Checkpoint trung gian (`<ts>_<run>_ckpt/`) bị xoá sau khi lưu `<ts>_<run>_best/` để không đầy ổ Kaggle; `save_best=False` cho đo thời gian và thí nghiệm `max_length` (không cần checkpoint)
+- **Gotcha gặp thật:** Kaggle T4 x2 làm Trainer tự chạy DataParallel (batch thực 32) → kernel đặt `CUDA_VISIBLE_DEVICES=0` (`labs/lab3/kaggle/kernel_template.py`)
+- **Kết quả normal run** (Kaggle Tesla T4, fp16; chi tiết `docs/experiments/experiment_log.md` S2–S3):
+  - Đo thời gian: 0,356 s/step (300 step); pilot: **5,2 phút/epoch**, 6 epoch trong 1.872 s
+  - Pilot (seed 42, không dừng sớm): best val acc 0,9308 ở epoch 4,0; `best_is_last_eval: no`; val loss thấp nhất ở epoch 1 rồi tăng trong khi val acc còn tăng → xác nhận L8
+  - Chốt sau pilot (AI theo uỷ quyền của Thư, Thư duyệt 2026-11-20): trần 6 epoch, patience 8, threshold 0
+  - 3 seed: val acc 0,9288 / 0,9308 / 0,9312 (mean 0,9303 ± 0,0013), cả 3 `best_is_last_eval: no`; 2 seed dừng sớm, 1 seed chạy hết trần
+  - File: `outputs/logs/<ts>_<run>.log`, `_history.csv`, `_config.json`; hình `outputs/figures/<run>_curves.png`
+- **Test / smoke:** `pytest labs/lab3/tests/test_train.py` 7 passed (DistilBERT nhỏ từ config, CPU); smoke `python -m labs.lab3.main --smoke` trên máy và kernel CPU trên Kaggle: đủ 3 file log, checkpoint nạp lại được
 
 ## Success criteria
 - **Test:** `pytest labs/lab3/tests/test_train.py` đạt: args đúng cấu hình, đủ 3 file log, `_history.csv` có đủ cột, checkpoint nạp lại được
