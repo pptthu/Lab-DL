@@ -1,7 +1,7 @@
 # Tiến độ Lab 3
 
 - **Created**: 2026-11-20T01:25:13+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T14:37:54+07:00 (pptthu)
+- **Last Updated**: 2026-11-20T15:17:23+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì. Bài làm lại độc lập trên nhánh `feat/lab3-redo` (plan: `docs/plans/detail_plan_lab3_md_v1.md`).
@@ -22,8 +22,8 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 | `evaluate` | Member B (Phúc) | xong, đã audit (2026-11-20) | đạt (7 test) | đạt (Kaggle T4, 2026-11-20) | **Test acc 0,9315 ± 0,0020** (≥ 91%: đạt), F1 0,9323 ± 0,0021; zero-shot 0,8922; test dùng 1 lần/model (`test_evaluated: true`); fine-tuned sai 2/2 câu phủ định kiểm soát |
 | `experiment` | Member B (Phúc) | xong, đã audit (2026-11-20) | đạt (6 test) | đạt (Kaggle T4, 2026-11-20) | timing → pilot → 3 seed → `max_length` (seed 42): val acc 128: 0,8729; 256: 0,9152; 512: 0,9288 (1 seed/giá trị vì std ≤ 0,3 điểm; Thư duyệt) |
 | `visualize` | Member B (Phúc) | xong, đã audit (2026-11-20) | đạt (4 test) | đạt (máy, đọc `outputs/`) | Đường huấn luyện 6 run, `maxlen_val_acc.png`, confusion matrix; lỗi: bị cắt 10,05% vs 6,14%, rating 4: 17,2%, rating 7: 11,7% |
-| Notebook Kaggle, các lần chạy Kaggle | Member B (Phúc) | xong, chờ audit | – | đạt: 8 kernel (`pptt1103/lab3-*`) | `labs/lab3/kaggle/` (CLI, dataset code private, 1 GPU); chạy trên tài khoản Kaggle của Thư (`pptt1103`) |
-| `main.py`, README, notebook trình bày | Member A (Thư) | xong, chờ Thư duyệt | – | notebook chạy 0 lỗi (2026-11-20) | Notebook viết lại theo khuôn Lab 1 (mỗi Stage một ô markdown, 28 ô); `README.md`, `project_description.md` viết sau khi có kết quả của B |
+| Notebook Kaggle, các lần chạy Kaggle | Member B (Phúc) | xong, đã audit (2026-11-20) | – | đạt: 8 kernel (`pptt1103/lab3-*`) | `labs/lab3/kaggle/` (CLI, dataset code private, 1 GPU); chạy trên tài khoản Kaggle của Thư (`pptt1103`) |
+| `main.py`, README, notebook trình bày | Member A (Thư) | xong (merge vào `main`, PR #84) | – | notebook chạy 0 lỗi (2026-11-20) | Notebook viết lại theo khuôn Lab 1 (mỗi Stage một ô markdown, 28 ô); `README.md`, `project_description.md` viết sau khi có kết quả của B |
 
 ## Handoff A → B (làm tuần tự)
 Phúc bắt đầu code khi TẤT CẢ các mục sau đúng:
@@ -50,6 +50,7 @@ Trên Kaggle: lần đầu `load_datasets()` tự tải `aclImdb_v1.tar.gz` (c�
 Thư duyệt ở các cổng: smoke run, pilot (chốt trần epoch, patience), audit.
 
 ## Nhật ký (mỗi bước một dòng, có ngày)
+- 2026-11-20 Thư: chọn bài làm lại làm bài nộp; PR #84 đưa Lab 3 làm lại vào `main` (revert commit revert `febf3fa`, rồi merge). Notebook bỏ thông tin phân công; cập nhật trạng thái tài liệu.
 - 2026-11-20 Thư (AI soạn): audit phần B (24 test; 4 file dự đoán 25.000 dòng; accuracy, FN/FP, std tính lại khớp; chỉ 3 run chính có `test_evaluated: true`); smoke phần B trên CPU chỉ chạy tới bước train.
 - 2026-11-20 Thư (AI soạn): audit phần A (24 test, smoke phần A 38 s, số liệu khớp `outputs/`; sửa số review bị cắt trong `features_v1.md`: 2.996 / 323 / 3.086); notebook theo khuôn Lab 1; viết `README.md`, `project_description.md`.
 - 2026-11-20 Phúc (AI soạn, theo phản hồi của Thư): S4 so cùng seed 42 (512: 0,9288; 512 hơn 256 1,36 điểm, trung bình 3 seed để tham khảo); S3 ghi chú seed 43 sát trần 6 epoch (không chạy lại); ghi đúng tài khoản Kaggle của Thư (`pptt1103`); notebook Stage 6–10 thêm ô "Nhận xét" + cập nhật Tóm tắt, chạy lại toàn bộ bằng kernel python313: 0 lỗi; Thư duyệt quy tắc dừng.

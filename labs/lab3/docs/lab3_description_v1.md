@@ -1,6 +1,6 @@
 # Lab 3 — Phân tích cảm xúc và fine-tuning với Hugging Face (v1)
-- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-20T02:41:59+07:00
-- Trạng thái: In Progress
+- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-20T15:17:23+07:00
+- Trạng thái: Done (đã merge vào `main` qua PR #84, 2026-11-20)
 ## Background
 Đề Practice 3. Bài 1: dùng model cảm xúc pre-trained từ Hugging Face Hub, tokenize và phân tích cảm xúc câu mẫu. Bài 2: fine-tune model pre-trained cho phân loại văn bản nhị phân bằng `transformers`, `datasets`, `evaluate` và Trainer (7 bước). Bài làm lại độc lập, không dùng code hay số liệu Lab 3 cũ.
 ## Purpose
