@@ -116,12 +116,12 @@ def load_split(path: str) -> tuple:
 if __name__ == "__main__":
     # Create the shared split file: python -m labs.lab1.preprocessing.preprocessing
     # VI: Tạo file split dùng chung cho cả nhóm.
-    from shared.paths import artifact_dir, raw_data_dir
+    from shared.paths import data_dir
 
-    images, labels = load_csv(str(raw_data_dir("lab1") / TRAIN_CSV_NAME))
+    images, labels = load_csv(str(data_dir("lab1", "raw") / TRAIN_CSV_NAME))
     print("images", images.shape, images.dtype, images.min(), images.max())
     print("labels", labels.shape, labels.dtype, labels.min(), labels.max())
     train_idx, val_idx = make_split(labels)
-    split_path = artifact_dir("lab1", "splits") / SPLIT_JSON_NAME
+    split_path = data_dir("lab1", "splits") / SPLIT_JSON_NAME
     save_split(train_idx, val_idx, str(split_path))
     print("train", len(train_idx), "val", len(val_idx), "->", split_path)

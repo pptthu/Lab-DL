@@ -1,6 +1,6 @@
 # Khuôn desc (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-08T00:00:00+07:00 | Cập nhật: Thư, 2026-11-08T00:00:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T11:22:06+07:00 | Cập nhật: Thư, 2026-11-13T17:21:44+07:00
 - Dùng cho: desc của cả lab (`docs/lab1_description_vN.md`) và desc từng module (`docs/phases/<module>_vN.md`).
 
 ## Cách dùng

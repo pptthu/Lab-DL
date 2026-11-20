@@ -1,13 +1,13 @@
 # Khuôn desc (v2)
 
-- Tác giả: Thư | Tạo: 2026-11-13T17:19:00+07:00 | Cập nhật: Thư, 2026-11-13T17:19:00+07:00
+- Tác giả: Thư | Tạo: 2026-11-13T17:19:00+07:00 | Cập nhật: Thư, 2026-11-14T00:34:29+07:00
 - Dùng cho: desc từng module `docs/phases/<module>_vN.md`. Desc cả lab (`lab1_description_vN.md`) vẫn dùng `DESC_TEMPLATE_v1.md`.
 - Thay đổi so với v1: thêm 4 mục Interface, Pipeline, Run & Test, Gotchas và mục Links; thêm dòng Người phụ trách; sắp lại thứ tự mục. v1 giữ nguyên.
 
 ## Cách dùng
 - Copy khối bên dưới, thay phần `<...>`. Desc module khoảng 40–80 dòng.
 - Người viết dàn ý Purpose, Không làm, Success criteria. Nếu AI viết nháp thì đánh dấu `[đề xuất]` cho tới khi người duyệt.
-- Người phụ trách: lấy theo phân công của leader (với 9 module cũ: trường Owner của file cũ).
+- Người phụ trách: lấy theo phân công của Thư (với 9 module cũ: trường Owner của file cũ).
 - Input / Output: ghi đường dẫn code đang dùng thật. Nếu đường dẫn sẽ đổi, thêm dòng "Sẽ chuyển sang <đường dẫn mới> ở giai đoạn O5." Không ghi đường dẫn mới như thể đã đổi.
 - Interface: chép đúng chữ ký hàm trong code, kèm `file.py:dòng`.
 - Run & Test: chỉ ghi lệnh và kết quả có bằng chứng (log, csv, test). Chưa có thì ghi "chưa chạy".

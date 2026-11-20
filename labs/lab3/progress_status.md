@@ -32,6 +32,7 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - Member B: `compute_metrics` accuracy and F1 compared with scikit-learn on 300 random cases (random sizes 1 to 599) -> maximum absolute difference 0.
 - Member B: the code of the notebook cells of sections 5.2, 6.2, 7, 8, 9, 10 was executed against fake objects only (both branches: train and load the saved model). The real model run (tiny fine-tune and full small run) is recorded in the `evaluate` row above.
 ## Log (dated, one line per step)
+- 2026-11-18 Member B: rewrote the lab3 docs in the Lab 1 format (Vietnamese): docs/phases/*_v1.md, model card, lab description, 00_README; every relative link and file:line reference checked against the code by script; tests not re-run for this change.
 - 2026-11-12 Member B: rewrote the 7 lab3 docs (purpose, input/output, model save location); verified with grep of main.py, notebook and `git check-ignore`.
 - 2026-10-31 Member B: ran the tiny fine-tune and the full small run (notebook top to bottom); results recorded in the `evaluate` row, README and notebook outputs.
 - 2026-10-29 Member B: `model` (PR #38) and `train` (PR #39) merged into main; fake-`transformers` tests pass (8 + 8).
