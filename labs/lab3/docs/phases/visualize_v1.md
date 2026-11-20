@@ -1,9 +1,9 @@
 # visualize — đường huấn luyện, confusion matrix, `max_length`, ví dụ sai (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Last Updated**: 2026-11-20T14:37:54+07:00 (Thư)
 - **Người phụ trách**: Phúc (Member B)
-- **Status**: In Progress (chạy xong, chờ Thư audit)
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -68,6 +68,12 @@ maxlen_runs.csv → plot_maxlen
 - **Test:** `pytest labs/lab3/tests/test_visualize.py` đạt: tạo đủ file từ CSV giả, tổng confusion matrix = số mẫu
 - **Smoke run:** hình và CSV có trong `outputs/_smoke/`
 - **Normal run:** đủ hình ở Goals; tổng mỗi confusion matrix = 25.000; `error_by_group.csv` có đủ nhóm
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_visualize.py` → 4 passed ✔
+- **Normal run:** đủ 8 hình trong `outputs/figures/` (6 đường huấn luyện, `maxlen_val_acc.png`, `confusion_zero_shot_vs_finetuned.png`); mỗi confusion matrix lấy từ file dự đoán 25.000 dòng; FN / FP của seed 44 (685 / 971) và zero-shot (1.690 / 1.004) tính lại khớp; `error_by_group.csv` đủ nhóm (bị cắt / không bị cắt, 8 mức rating); `error_examples.csv` 30 ví dụ ✔
+- **Smoke run:** chưa tới bước vẽ trong lần smoke trên máy Thư (dừng ở bước train vì quá giờ trên CPU); module chỉ đọc file trong `outputs/` và đã chạy trên kết quả thật
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)

@@ -1,9 +1,9 @@
 # train — TrainingArguments, Trainer, fine-tune, log, dừng sớm (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Last Updated**: 2026-11-20T14:37:54+07:00 (Thư)
 - **Người phụ trách**: Phúc (Member B)
-- **Status**: In Progress (chạy xong, chờ Thư audit)
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -78,6 +78,12 @@ cfg + model + tokenized + collator + compute_metrics
 - **Test:** `pytest labs/lab3/tests/test_train.py` đạt: args đúng cấu hình, đủ 3 file log, `_history.csv` có đủ cột, checkpoint nạp lại được
 - **Smoke run:** `outputs/_smoke/logs/` có đủ 3 file; log có header / thân / footer
 - **Normal run:** pilot có đường cong đầy đủ tới trần epoch; lần chạy chính có `best_is_last_eval: no` và `stop_reason` ghi rõ
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_train.py` → 7 passed ✔
+- **Smoke run** (`python -m labs.lab3.main --smoke`, máy Thư, CPU, 2026-11-20): `outputs/_smoke/logs/` có đủ 3 file log cho `pilot_seed42`, `main_seed42`; log có header (phiên bản thư viện, commit code, config), thân, footer (`best_step`, `stop_reason`, `best_is_last_eval`) ✔
+- **Normal run:** pilot 24 lần đánh giá (đủ 6 epoch × 4), `stop_reason: max_epochs`, `best_is_last_eval: no`; 3 seed đều `best_is_last_eval: no`, `stop_reason` ghi rõ (seed 42, 44: early stopping; seed 43: max_epochs); 7 file `_config.json` ghi GPU Tesla T4 ✔
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md) | Khuôn log: [../templates/LOG_TEMPLATE_v1.md](../templates/LOG_TEMPLATE_v1.md)

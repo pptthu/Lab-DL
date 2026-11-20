@@ -1,9 +1,9 @@
 # experiment — pilot, 3 seed, thí nghiệm `max_length` (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Last Updated**: 2026-11-20T14:37:54+07:00 (Thư)
 - **Người phụ trách**: Phúc (Member B)
-- **Status**: In Progress (chạy xong, chờ Thư audit)
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -69,6 +69,12 @@ main (3 checkpoint) → evaluate (test một lần)
 - **Test:** `pytest labs/lab3/tests/test_experiment.py` đạt
 - **Smoke run:** `outputs/_smoke/results/pilot_runs.csv` có 1 dòng
 - **Normal run:** `pilot_runs.csv` (1 dòng), `main_runs.csv` (3 dòng, std ghi lại), `maxlen_runs.csv` (đủ giá trị); `experiment_log.md` ghi quyết định sau mỗi giai đoạn
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_experiment.py` → 6 passed ✔
+- **Smoke run** (`python -m labs.lab3.main --smoke`, máy Thư, CPU, 2026-11-20): `outputs/_smoke/results/pilot_runs.csv` 1 dòng ✔
+- **Normal run:** `pilot_runs.csv` 1 dòng, `main_runs.csv` 3 dòng (mean 0,9303, std 0,0013 tính lại khớp), `maxlen_runs.csv` 2 dòng (128, 256; 512 lấy từ `main_seed42`); `experiment_log.md` ghi quyết định sau S2, S3, S4 ✔
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)

@@ -1,9 +1,9 @@
 # evaluate — metric bằng thư viện `evaluate`, test một lần, zero-shot (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T12:37:50+07:00 (Phúc, AI soạn)
+- **Last Updated**: 2026-11-20T14:37:54+07:00 (Thư)
 - **Người phụ trách**: Phúc (Member B)
-- **Status**: In Progress (chạy xong, chờ Thư audit)
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -73,6 +73,13 @@ pipeline SST-2 (sentiment_demo) + test thô → evaluate_zero_shot → zero_shot
 - **Test:** `pytest labs/lab3/tests/test_evaluate.py` đạt: metric đúng trên ví dụ tính tay, đổi nhãn zero-shot đúng, gọi test lần hai thì báo lỗi
 - **Smoke run:** file dự đoán và `test_summary.csv` có trong `outputs/_smoke/results/`
 - **Normal run:** mỗi file dự đoán 25.000 dòng; `test_summary.csv` có 3 seed + mean ± std + zero-shot; accuracy trung bình ≥ 0,91; `control_sentences.csv` có 6 câu × 2 model
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_evaluate.py` → 7 passed ✔
+- **Normal run:** 4 file dự đoán, mỗi file 25.000 dòng, 25.000 `uid` khác nhau; accuracy tính lại từ file khớp `test_summary.csv` (0,9300 / 0,9309 / 0,9338; zero-shot 0,8922); `test_summary.csv` có 3 seed + mean + std + zero-shot, mean 0,9315 ≥ 0,91 ✔; `control_sentences.csv` 6 câu × 2 model ✔
+- **Test một lần:** chỉ 3 file `_config.json` của lần chạy chính có `test_evaluated: true`; timing, pilot, `max_length` đều `false` ✔
+- **Smoke run:** lần smoke trên máy Thư (2026-11-20) bị dừng ở bước train vì quá giờ trên CPU, chưa tới bước test; bước test được kiểm bằng test đơn vị và lần chạy thật trên Kaggle
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
