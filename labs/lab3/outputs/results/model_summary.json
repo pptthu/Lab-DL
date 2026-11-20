@@ -1,0 +1,29 @@
+{
+ "checkpoint": "distilbert-base-uncased",
+ "revision": "12040accade4e8a0f71eabdb258fecc2e7e948be",
+ "config": {
+  "n_layers": 6,
+  "dim": 768,
+  "n_heads": 12,
+  "hidden_dim": 3072,
+  "max_position_embeddings": 512,
+  "dropout": 0.1,
+  "seq_classif_dropout": 0.2,
+  "vocab_size": 30522
+ },
+ "head": [
+  "pre_classifier: Linear(in_features=768, out_features=768, bias=True)",
+  "classifier: Linear(in_features=768, out_features=2, bias=True)",
+  "dropout: Dropout(p=0.2, inplace=False)"
+ ],
+ "parameters": {
+  "total": 66955010,
+  "trainable": 66955010,
+  "backbone": 66362880,
+  "head": 592130
+ },
+ "id2label": {
+  "0": "NEGATIVE",
+  "1": "POSITIVE"
+ }
+}

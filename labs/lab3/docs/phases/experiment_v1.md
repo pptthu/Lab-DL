@@ -1,0 +1,63 @@
+# experiment — pilot, 3 seed, thí nghiệm `max_length` (v1)
+
+- **Created**: 2026-11-20T01:00:14+07:00
+- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
+- **Người phụ trách**: Thư
+- **Status**: To Do
+
+---
+
+## Name
+Thí nghiệm — sinh cấu hình cho pilot, lần chạy chính 3 seed, thí nghiệm `max_length`; gộp bảng kết quả
+
+## Background
+Phần mở rộng (plan §4 S2–S4, §5). Không có trong 7 bước của đề. Mục đích: chốt số epoch bằng thực nghiệm (pilot), đo độ lệch theo seed (Dodge et al. 2020: std SST 0,0028, tập nhỏ 0,06–0,10), và trả lời việc cắt review ảnh hưởng accuracy bao nhiêu (Sun et al. 2019).
+
+## Goals / Purpose
+- `make_configs(stage)` trả danh sách `cfg` cho `pilot` / `main` / `maxlen`; mọi tham số đọc từ một chỗ
+- `run_stage(stage)` gọi `train.train_model` cho từng `cfg`, ghi `outputs/results/<stage>_runs.csv` (run, seed, `max_length`, best_step, best_val_acc, stopped_step, stop_reason, train_time)
+- `seed_spread(main_runs)` trả mean, std của val acc 3 seed → quyết định số seed cho `maxlen` (S4)
+- Không làm:
+  - Chạy test — thuộc `evaluate`, chỉ cho lần chạy chính (thí nghiệm `max_length` so trên val)
+  - Tìm siêu tham số tự động (Optuna) — ngoài phạm vi (plan §7)
+
+## Input / Output
+- **Input:** cấu hình gốc (plan L9); `max_length` chốt sau S1; trần epoch, patience chốt sau S2
+- **Output:** `outputs/results/pilot_runs.csv`, `main_runs.csv`, `maxlen_runs.csv`; log từng run (qua `train`); ghi tóm tắt vào `docs/experiments/experiment_log.md`
+
+## How to do it (general plan)
+1. `pilot`: 1 seed (42), trần epoch trên mức 2–4 của BERT gốc (số cụ thể theo thời gian/epoch đo ở smoke trên Kaggle), không dừng sớm
+2. Thư xem đường cong pilot → chốt trần, patience, threshold
+3. `main`: 3 seed, dừng sớm theo bước 2
+4. `seed_spread` → std nhỏ (≈ ≤ 0,3 điểm): `maxlen` 1 seed / giá trị; std lớn (≈ ≥ 1 điểm): 3 seed / giá trị `[cần chốt sau S3]`
+5. `maxlen`: 128 / 256 / 512 (bỏ giá trị đã chạy ở `main`), so trên val
+6. Test: `make_configs` sinh đúng số run, tham số đúng; `run_stage` với `train_model` giả
+7. Smoke: `pilot` vài step; normal run trên Kaggle
+
+## Pipeline
+```
+make_configs(pilot) → run_stage → pilot_runs.csv + đường cong → Thư chốt trần/patience
+make_configs(main)  → run_stage → main_runs.csv → seed_spread → số seed cho maxlen
+make_configs(maxlen)→ run_stage → maxlen_runs.csv → visualize
+main (3 checkpoint) → evaluate (test một lần)
+```
+
+## Detailed plan
+- **Seed lần chạy chính (Thư duyệt 2026-11-20):** 42, 43, 44 — **cố định trước khi chạy**, báo cáo cả 3, không chọn seed cho kết quả đẹp. Seed của HF Trainer đổi cả khởi tạo đầu phân loại lẫn thứ tự dữ liệu
+- **Giới hạn:** Bouthillier et al. 2021: seed khởi tạo chỉ là *"a small part of the variance"*, phần lớn đến từ cách chia dữ liệu. Lab 3 giữ test chính thức cố định (để so với bài báo) → std đo được **chưa gồm** độ lệch do cách chia; ghi rõ trong báo cáo
+- **Tiêu chí "khác biệt có ý nghĩa" ở `maxlen`:** chênh lệch val acc lớn hơn khoảng 2 lần std theo seed đo ở `main`; nhỏ hơn thì kết luận "không phân biệt được" (plan L12)
+- **Chi phí ước tính:** 1 pilot + 3 main + 2 maxlen = 6 lần chạy trên Kaggle T4 `[đoán: 30–60 phút / lần, kiểm ở smoke trên Kaggle]`
+- **Gotchas:**
+  - `max_length` 512 tốn bộ nhớ và thời gian nhất → chạy cuối, giảm batch nếu thiếu VRAM và ghi lại trong log
+  - Kaggle ngắt phiên sau một thời gian chạy liên tục → mỗi run ghi kết quả ngay khi xong, chạy lại được từng run
+
+## Success criteria
+- **Test:** `pytest labs/lab3/tests/test_experiment.py` đạt
+- **Smoke run:** `outputs/_smoke/results/pilot_runs.csv` có 1 dòng
+- **Normal run:** `pilot_runs.csv` (1 dòng), `main_runs.csv` (3 dòng, std ghi lại), `maxlen_runs.csv` (đủ giá trị); `experiment_log.md` ghi quyết định sau mỗi giai đoạn
+
+## Links
+- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
+- Module liên quan: [train_v1.md](train_v1.md), [evaluate_v1.md](evaluate_v1.md), [visualize_v1.md](visualize_v1.md), [eda_v1.md](eda_v1.md)
+- Nguồn: Dodge et al. 2020 https://arxiv.org/abs/2002.06305 ; Sun et al. 2019 https://arxiv.org/abs/1905.05583 ; Bouthillier et al. 2021 https://arxiv.org/abs/2103.03098
+- Code: `labs/lab3/experiment/experiment.py` | Test: `labs/lab3/tests/test_experiment.py`

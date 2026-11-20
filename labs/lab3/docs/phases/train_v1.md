@@ -1,84 +1,69 @@
-# train — Fine-tune bằng Trainer (v1)
+# train — TrainingArguments, Trainer, fine-tune, log, dừng sớm (v1)
 
-- **Created**: 2026-11-18T13:00:00+07:00
-- **Last Updated**: 2026-11-18T13:00:00+07:00 (Member B)
-- **Người phụ trách**: Member B (ngohongphuc2805ag-hash)
-- **Status**: Done
+- **Created**: 2026-11-20T01:00:14+07:00
+- **Last Updated**: 2026-11-20T01:16:36+07:00 (Thư)
+- **Người phụ trách**: Thư
+- **Status**: To Do
 
 ---
 
 ## Name
-Training — `TrainingArguments`, `Trainer`, giữ epoch tốt nhất theo F1 validation, lưu model
+Fine-tune (Bài 2.5–2.6) — tạo TrainingArguments, Trainer, chạy fine-tune, ghi log theo khuôn, chọn checkpoint theo val accuracy
 
 ## Background
-Đề Practice 3, Bài 2: định nghĩa training arguments, tạo Trainer và fine-tune.
-Train dùng tập validation để chọn epoch. Tập test không bao giờ được đưa vào đây; nó chỉ dùng một lần ở `evaluate`.
+Bài 2.5 (TrainingArguments) và 2.6 (Trainer + fine-tune) của đề. Plan L8–L11: lr 2e-5, warmup 10%, linear decay, batch 16, fp16, đánh giá mỗi 1/4 epoch, chọn checkpoint theo val accuracy; số epoch chốt sau pilot. Chạy trên Kaggle GPU (L14).
 
 ## Goals / Purpose
-- `build_training_args` trả `TrainingArguments` đánh giá và lưu mỗi epoch, giữ epoch có `f1` validation cao nhất (`load_best_model_at_end`)
-- `train_with_trainer` trả `Trainer` đã train và lưu model cùng tokenizer vào `args.output_dir`
-- Padding theo từng batch bằng `DataCollatorWithPadding`
+- `make_training_args(cfg)` trả `TrainingArguments` đúng cấu hình; mọi tham số đọc từ một `cfg`
+- `train_model(cfg, model, tokenized, collator)` trả `best_step`, `best_val_acc`, `stopped_step`, `stop_reason`, đường dẫn checkpoint tốt nhất
+- Mỗi lần chạy ghi 3 file theo `LOG_TEMPLATE_v1.md`: `.log`, `_history.csv` (mỗi lần đánh giá một dòng), `_config.json`
 - Không làm:
-  - Đưa tập test vào Trainer hoặc chọn epoch theo test — test chỉ dùng ở `evaluate.evaluate_on_test` ([evaluate_v1.md](evaluate_v1.md))
-  - Tokenize hay cắt `max_length` — việc của `features` ([features_v1.md](features_v1.md))
-  - Tự chọn nơi lưu model — người gọi (`main.py` hoặc notebook) truyền `output_dir`; xem mục Input / Output
+  - Đánh giá trên test — thuộc `evaluate`
+  - Chạy nhiều seed / nhiều `max_length` — thuộc `experiment` (gọi `train_model` nhiều lần)
 
 ## Input / Output
-- **Input:** `(model, tokenizer)` từ [model_v1.md](model_v1.md) (model ban đầu là `distilbert-base-uncased`); `tokenized_train`, `tokenized_val` từ [features_v1.md](features_v1.md); `compute_metrics` từ [evaluate_v1.md](evaluate_v1.md); `output_dir`
-- **Output:** `Trainer` đã train, giữ epoch tốt nhất trên validation; model lưu trong `output_dir` (trọng số, config, tokenizer)
-  - **Nơi lưu model:** `train.py` không tự chọn đường dẫn, chỉ gọi `trainer.save_model(args.output_dir)` (`train/train.py:94`). Hai nơi đang truyền `output_dir`:
-    - `main.py --run-training`: `artifact_dir("lab3", "models") / "distilbert_sentiment"` (`main.py:110-111`) → `labs/lab3/artifacts/models/distilbert_sentiment/`; `main.py` in dòng `Model saved to: ...` (`main.py:145`)
-    - notebook (ô 17): `artifact_dir('lab3', 'models') / 'distilbert_imdb'` → `labs/lab3/artifacts/models/distilbert_imdb/`; log của Trainer ghi vào `labs/lab3/artifacts/logs/distilbert_imdb_log.json`
-  - Cả hai nằm dưới `labs/lab3/artifacts/` do `artifact_dir` tạo (`shared/paths.py`), không commit (`.gitignore:12` cho `models/`, `.gitignore:16` cho `logs/`). Không lưu vào gốc repo, `raw_data/` (chỉ là cache dataset) hay `docs/`.
-  - Vì evaluate và save chạy mỗi epoch nên `Trainer` còn ghi thư mục con `checkpoint-<step>` trong `output_dir`, giữ tối đa 1 (`save_total_limit=1`, `train/train.py:44`).
-  - Nạp lại: `AutoModelForSequenceClassification.from_pretrained(<thư mục>)` và `AutoTokenizer.from_pretrained(<thư mục>)` (tokenizer được lưu cùng vì Trainer nhận tokenizer).
+- **Input:** `cfg` (seed, `max_length`, lr, batch, warmup, trần epoch, chế độ pilot/chính, patience, threshold); model (`model`); dataset đã tokenize + collator (`features`); `compute_metrics` (`evaluate`)
+- **Output:** `outputs/logs/<ts>_<run>.*` (commit); `outputs/models/<ts>_<run>_best/` (không commit); smoke run: `outputs/_smoke/`
 
 ## How to do it (general plan)
-1. `build_training_args(output_dir, epochs, lr, batch_size, ...)`: weight decay 0,01, đánh giá + lưu mỗi epoch, `metric_for_best_model="f1"`, `save_total_limit=1`, `report_to="none"`; tự dò tên `eval_strategy` hay `evaluation_strategy` theo phiên bản `transformers`
-2. `train_with_trainer(...)`: từ chối tập train hoặc validation rỗng; lấy tokenizer được truyền vào, nếu không có thì nạp từ `model.name_or_path`; tự dò tên `processing_class` hay `tokenizer` của `Trainer`
-3. `trainer.train()`, rồi `trainer.save_model(args.output_dir)`
-4. Smoke run: fine-tune rất ngắn bằng `max_steps=4` trên 64 review
-5. Normal run: fine-tune nhỏ đầy đủ trên 2000 review train, chọn epoch trên 500 review validation, ghi `trainer.state.log_history`
+1. `make_training_args`: các tham số ở Detailed plan
+2. Callback ghi log: header (GPU, phiên bản thư viện, config) → một dòng mỗi lần đánh giá → footer (`best_step`, `stop_reason`, `best_is_last_eval`)
+3. Chế độ **pilot**: không dừng sớm. Chế độ **chính**: thêm `EarlyStoppingCallback(patience, threshold)`
+4. `trainer.train()`; lưu checkpoint tốt nhất
+5. Test với model DistilBERT rất nhỏ và vài chục mẫu giả (CPU)
+6. Smoke run trên máy Thư: vài step, `fp16=False`
+7. Normal run trên Kaggle: pilot (S2) → chính 3 seed (S3, qua `experiment`)
 
 ## Pipeline
 ```
-features (train, val đã tokenize) + model + evaluate.compute_metrics
-→ build_training_args → train_with_trainer:
-    mỗi epoch: train → đánh giá validation (f1) → lưu checkpoint
-    kết thúc: nạp lại epoch tốt nhất → trainer.save_model(output_dir)
-→ Trainer cho evaluate.evaluate_on_test
+cfg + model + tokenized + collator + compute_metrics
+  → make_training_args → Trainer (+ callback log, + EarlyStopping nếu chế độ chính)
+  → train → checkpoint val acc cao nhất → evaluate
+  → outputs/logs/<ts>_<run>.log, _history.csv, _config.json
 ```
 
 ## Detailed plan
-- **Siêu tham số mặc định:** epochs 2, lr 2e-5, batch 16, seed 42, weight decay 0,01, `logging_steps` 10 (`train/train.py:7-8`, `:38`)
-- **Lần chạy đã ghi (2026-10-31):** 1 epoch, lr 2e-5, batch 8, `max_length` 128, seed 42 (notebook ô 17) — dùng cấu hình nhỏ vì RAM 7,8 GB và 2 nhân CPU (`../../README.md`)
-- **Chọn epoch theo F1 validation:** `metric_for_best_model="f1"` (`:42`) — khóa `f1` do `evaluate.compute_metrics` trả
-- **`max_steps` > 0 thay `epochs`:** dùng cho smoke run rất ngắn (`:46`)
-- **Hàm hiện có:** `build_training_args(output_dir, epochs: int = 2, lr: float = 2e-5, batch_size: int = 16, *, max_steps: int = -1, seed: int = 42, logging_steps: int = 10)` (`train/train.py:7`); `train_with_trainer(model, tokenized_train, tokenized_val, args, compute_metrics, tokenizer=None)` (`:53`)
-- **Chỗ code chưa khớp plan:**
-  - `max_steps`, `seed`, `logging_steps` (ở `build_training_args`) và `tokenizer` (ở `train_with_trainer`) là tham số thêm ngoài hợp đồng trong `project_description.md`; đều có mặc định nên lời gọi theo hợp đồng vẫn chạy
-  - Tên thư mục lưu model của `main.py` (`distilbert_sentiment`) khác notebook (`distilbert_imdb`); model train bằng luồng này không được luồng kia tìm thấy [cần chốt: nhóm trưởng chọn một tên]
-  - Mặc định của `main.py` (`--epochs 2`, `--max-length 256`, `--batch-size 16`; `main.py:160`, `:166`, `:168`) khác lần chạy đã ghi (1, 128, 8)
+- **learning_rate 2e-5, AdamW, warmup_ratio 0,1, lr_scheduler_type linear:** Mosbach et al. 2021 (lr 2e-5, tăng tuyến tính 10% bước đầu rồi giảm về 0); BERT gốc chọn lr trong {5e-5 … 2e-5}
+- **per_device_train_batch_size 16:** trong {16, 32} của BERT gốc; vừa VRAM T4 với `max_length` 512 khi bật fp16 `[kiểm ở pilot]`
+- **weight_decay 0,01 (Thư duyệt 2026-11-20, cố định, không đưa vào thí nghiệm):** Mosbach et al. mô tả công thức fine-tune mặc định theo Devlin et al. là *"weight decay with λ = 0.01"*; tutorial text classification của HF cũng dùng 0,01. Nguồn chưa thống nhất: có bản tái hiện dùng 0 khi fine-tune
+- **fp16=True trên GPU:** chỉ để nhanh và ít VRAM; tắt khi chạy CPU
+- **eval_strategy / save_strategy = "steps", eval_steps = save_steps ≈ số bước mỗi epoch / 4:** Dodge et al. 2020 (hiệu năng giữa epoch 1 đã tương quan cao với kết quả cuối)
+- **load_best_model_at_end=True, metric_for_best_model="accuracy", greater_is_better=True:** plan L8; thiếu `greater_is_better` thì Trainer coi "nhỏ hơn là tốt" (lỗi đã gặp trên HF forum)
+- **num_train_epochs (trần), patience, threshold:** `[cần chốt sau pilot]`; quy tắc `best_is_last_eval` (LOG_TEMPLATE §3.5)
+- **save_total_limit 2:** giữ checkpoint tốt nhất + mới nhất, tránh đầy ổ Kaggle
+- **report_to="none":** không gửi log ra dịch vụ ngoài
 - **Gotchas:**
-  - Tên tham số của `transformers` đổi theo phiên bản, nên giữ phần tự dò (`train/train.py:30-31`, `:83`)
-  - Lần chạy đã ghi chỉ có 1 epoch, nên việc "giữ epoch tốt nhất" chưa được thử qua nhiều epoch
-  - Fine-tune tốn CPU: dùng tập con nhỏ, `max_length` ngắn; lần đã ghi mất khoảng 17 phút (`../../README.md`); thống nhất với nhóm trưởng trước khi chạy đầy đủ
-  - Thiếu cả `tokenizer` lẫn `model.name_or_path` thì `ValueError` (`train/train.py:80-81`)
+  - Tên tham số đổi theo phiên bản: `eval_strategy` (mới) / `evaluation_strategy` (cũ); `processing_class` / `tokenizer` → ghi phiên bản trong log, chốt phiên bản trong `requirements.txt` theo Kaggle
+  - Lịch lr linear giảm theo **trần epoch** → đổi trần là đổi tốc độ giảm lr (lý do pilot và lần chạy chính phải ghi trần riêng)
+  - `EarlyStoppingCallback` cần `load_best_model_at_end=True` và `metric_for_best_model`; tên metric phải khớp `eval_accuracy`, nếu không callback tự tắt kèm cảnh báo
 
 ## Success criteria
-- **Test:** `python -m pytest labs/lab3/tests/test_train.py -q` đạt, gồm test giá trị `TrainingArguments` và tên `eval_strategy` mới / cũ, `max_steps` và kiểm tham số, Trainer train + lưu + padding theo batch, tokenizer lấy từ tên model, thiếu tokenizer và tên model báo lỗi, tập rỗng báo lỗi (`transformers` giả)
-- **Smoke run:** fine-tune `max_steps=4` trên 64 review chạy hết không lỗi
-- **Normal run:** `output_dir` nạp lại được cả model lẫn tokenizer; `trainer.state.log_history` có `loss` theo bước và `eval_f1` mỗi epoch; epoch được giữ là epoch có `eval_f1` cao nhất
-
-## Kết quả audit (số liệu lần chạy 2026-10-31)
-- **Test:** `test_train.py` → 8 passed ✔ (`progress_status.md:11`); đã merge PR #39
-- **Smoke run:** 4 bước, 64 review train / 32 review test: accuracy 0,4688, F1 0,3200 — chỉ chứng minh code chạy ✔ (`progress_status.md:12`)
-- **Normal run (1 epoch, batch 8, `max_length` 128, seed 42):** training loss 0,6912 → 0,4108 (25 điểm log); validation epoch 1: loss 0,3607, accuracy 0,8340, F1 0,8337 ✔ (notebook ô 18, ô 20); ô 17 nạp lại model và tokenizer từ `artifacts/models/distilbert_imdb/` không cần train lại ✔
-- **`main.py --run-training --max-steps 2`:** chưa có lần chạy nào được ghi — chưa kiểm chứng
+- **Test:** `pytest labs/lab3/tests/test_train.py` đạt: args đúng cấu hình, đủ 3 file log, `_history.csv` có đủ cột, checkpoint nạp lại được
+- **Smoke run:** `outputs/_smoke/logs/` có đủ 3 file; log có header / thân / footer
+- **Normal run:** pilot có đường cong đầy đủ tới trần epoch; lần chạy chính có `best_is_last_eval: no` và `stop_reason` ghi rõ
 
 ## Links
-- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Khuôn: [../../../lab1/docs/templates/DESC_TEMPLATE_v3.md](../../../lab1/docs/templates/DESC_TEMPLATE_v3.md)
-- Module liên quan: [features_v1.md](features_v1.md), [model_v1.md](model_v1.md), [evaluate_v1.md](evaluate_v1.md), [demo_v1.md](demo_v1.md)
-- Model card: [../models/distilbert_imdb_v1.md](../models/distilbert_imdb_v1.md)
-- Tiến độ và bằng chứng chạy: [../../progress_status.md](../../progress_status.md) (dòng 11, 12)
+- Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md) | Khuôn log: [../templates/LOG_TEMPLATE_v1.md](../templates/LOG_TEMPLATE_v1.md)
+- Module liên quan: [model_v1.md](model_v1.md), [features_v1.md](features_v1.md), [evaluate_v1.md](evaluate_v1.md), [experiment_v1.md](experiment_v1.md)
+- Nguồn: Mosbach et al. 2021 https://arxiv.org/abs/2006.04884 ; Dodge et al. 2020 https://arxiv.org/abs/2002.06305 ; HF Callbacks https://huggingface.co/docs/transformers/main_classes/callback
 - Code: `labs/lab3/train/train.py` | Test: `labs/lab3/tests/test_train.py`

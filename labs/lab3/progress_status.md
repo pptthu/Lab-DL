@@ -1,63 +1,57 @@
-﻿# Lab 3: Hugging Face sentiment analysis and fine-tuning: progress status
-_Last updated: 2026-10-31 by Member B (ngohongphuc2805ag-hash)_
+# Tiến độ Lab 3
 
-| Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
+- **Created**: 2026-11-20T01:25:13+07:00 (pptthu)
+- **Last Updated**: 2026-11-20T02:41:59+07:00 (pptthu)
+
+Cập nhật file này sau MỖI bước.
+Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì. Bài làm lại độc lập trên nhánh `feat/lab3-redo` (plan: `docs/plans/detail_plan_lab3_md_v1.md`).
+
+## Phân công (Thư chốt 2026-11-20)
+- **Member A — Thư:** `sentiment_demo` (Bài 1), `preprocessing`, `eda`, `features`, `model` (Bài 2.1–2.4); tích hợp `main.py`, README, notebook trình bày
+- **Member B — Phúc (ngohongphuc2805ag-hash):** `train`, `evaluate`, `experiment`, `visualize` (Bài 2.5–2.7, mở rộng); notebook Kaggle và các lần chạy trên Kaggle
+- Theo cách chia của Lab 1 và Lab 3 cũ (A: dữ liệu → model; B: train → đánh giá)
+
+| Module | Phụ trách | Trạng thái (chưa làm / đang làm / xong) | Test (đạt / lỗi / chưa chạy) | Chạy trên dữ liệu thật (đạt / lỗi / chưa chạy) | Ghi chú |
 |---|---|---|---|---|---|
-| `sentiment_demo` | Member A (Muội) | done | `pytest labs/lab3/tests/test_sentiment_demo.py -v`: 4 passed | `show_tokens` + `analyze_sentences`: 3 samples OK (POSITIVE / NEGATIVE / POSITIVE) | `model_name=None` = DistilBERT SST-2 for BOTH functions. Needs internet for the first model download. |
-| `eda` | Member A (Muội) | done | `pytest labs/lab3/tests/test_eda.py`: 3 passed | `run_eda`: n=2000, 3 PNG saved | Figures go to `artifacts/figures/` (not committed) |
-| `preprocessing` | Member A (Muội) | done | `pytest labs/lab3/tests`: 24 passed | real IMDB run: 2000/500/500, both labels in each split, no `<br` left | Shuffle(seed) before select; val cut from train, test from test. |
-| `features` | Member A (Muội) | done | `pytest labs/lab3/tests/test_features.py -v`: 3 passed | `tokenize_dataset`: columns label, input_ids, attention_mask | Truncation only (max_length=256), NO fixed padding: Member B must use DataCollatorWithPadding. |
-| `model` | Member B (ngohongphuc2805ag-hash) | done | `pytest labs/lab3/tests/test_model.py`: 8 passed | real load of `distilbert-base-uncased`: see the `evaluate` row (same run) | Merged in PR #38. Tokenizer and model from the SAME checkpoint; `id2label` {0: NEGATIVE, 1: POSITIVE}. The warning about a new classifier head is expected. |
-| `train` | Member B (ngohongphuc2805ag-hash) | done | `pytest labs/lab3/tests/test_train.py`: 8 passed | tiny fine-tune + small full run: see the `evaluate` row (same run) | Merged in PR #39. Padding per batch (DataCollatorWithPadding); extra OPTIONAL argument `tokenizer`; `eval_strategy` / `processing_class` names are detected for the installed transformers. |
-| `evaluate` | Member B (ngohongphuc2805ag-hash) | done | `pytest labs/lab3/tests/test_evaluate.py`: 16 passed | full small run on CPU (2026-10-31): test n=500, zero-shot acc/F1 = 0.8920/0.8889, fine-tuned acc/F1 = 0.8220/0.8195 (MAX_LEN=128, EPOCHS=1, seed=42); tiny fine-tune (4 steps, 64 train / 32 test reviews, only checks that the code runs): accuracy 0.4688, F1 0.3200; details in notebook sections 6.2, 7, 10 | Metrics are NumPy only (no network). `predict_texts` has 2 extra keyword-only optional arguments (`max_length`, `batch_size`); helpers `classification_metrics` and `zero_shot_labels` added. Test set is used only in `evaluate_on_test` and section 10. |
-| `main.py`, README, integration | Team leader | todo | - | - | |
+| `sentiment_demo` | Member A (Thư) | xong, chờ audit | đạt (4 test) | đạt (2026-11-20) | Bài 1: 5/5 câu kiểm soát có nhãn đúng (kể cả phủ định, "but"); câu trung tính → NEGATIVE 0,9955; `outputs/demo/sentiment_demo*.csv` |
+| `preprocessing` | Member A (Thư) | xong, chờ audit | đạt (9 test) | đạt (2026-11-20) | aclImdb gốc 25k/25k; split train 22.499 / val 2.501 theo phim + review trùng, 0 nhóm ở cả hai phía; `data/splits/train_val_split.json` |
+| `eda` | Member A (Thư) | xong, chờ audit | đạt (5 test) | đạt (2026-11-20, 51 s) | > 256 token: 41%, > 512: 13%; `<br />` 58% review; 123 review test trùng train; `max_length` 512 (Thư chốt, `docs/experiments/experiment_log.md` S1) |
+| `features` | Member A (Thư) | xong, chờ audit | đạt (3 test) | đạt (tokenize full data ở 512) | Bỏ `token_type_ids` (tokenizer thật vẫn trả); 1 batch qua model thật: logits [4, 2], loss 0,7101 |
+| `model` | Member A (Thư) | xong, chờ audit | đạt (3 test) | đạt (nạp thật) | 66.955.010 param (đầu phân loại 592.130); `outputs/results/model_summary.json`; model card phần Initial |
+| `train` | Member B (Phúc) | chưa làm | chưa chạy | chưa chạy | Chạy trên Kaggle GPU |
+| `evaluate` | Member B (Phúc) | chưa làm | chưa chạy | chưa chạy | |
+| `experiment` | Member B (Phúc) | chưa làm | chưa chạy | chưa chạy | Pilot → 3 seed → `max_length` |
+| `visualize` | Member B (Phúc) | chưa làm | chưa chạy | chưa chạy | |
+| Notebook Kaggle, các lần chạy Kaggle | Member B (Phúc) | chưa làm | – | chưa chạy | |
+| `main.py`, README, notebook trình bày | Member A (Thư) | đang làm | – | notebook chạy 0 lỗi (2026-11-20) | Notebook: Stage 0–5 (phần A) có kết quả; Stage 6–10 đọc file của B, chưa có thì in "chưa có kết quả". `main.py`, README làm sau khi B có kết quả |
 
-## Handoff A -> B (sequential, no interleaving)
-Member B starts coding only after ALL of the following are true:
-- [ ] tokenized dataset has input_ids, attention_mask, label
-- [ ] Exercise 1 (sentiment_demo) prints tokens and sentiment for 3 sample sentences
-- [ ] all Member A modules are `done` in this file and `pytest labs/lab3/tests` passes
-- [ ] Member A's PRs are merged into `main`; Member B branches from the updated `main`
-- [ ] Member A posts the handoff message (what was done, exact run commands, known problems)
-After the handoff Member A only answers questions and reviews PRs; Member A does not edit Member B's modules.
+## Handoff A → B (làm tuần tự)
+Phúc bắt đầu code khi TẤT CẢ các mục sau đúng:
+- [x] Dataset đã tokenize có `input_ids`, `attention_mask`, `label` (3 split) — kiểm trên dữ liệu thật 2026-11-20
+- [x] `max_length` đã chốt sau EDA: **512** (Thư, 2026-11-20), ghi trong `docs/experiments/experiment_log.md`
+- [x] `model.build_model(seed)` và `model.load_tokenizer()` chạy được (nạp thật, forward 1 batch)
+- [x] `pytest labs/lab3/tests` đạt cho các module của Member A (24 passed)
+- [ ] Code của Member A đã push lên `feat/lab3-redo`; Thư gửi tin bàn giao — code đang ở nhánh `lab3/member-a` (chưa push), chờ Thư duyệt
 
-## Audit: what actually runs
-- pytest labs/lab3/tests/test_features.py -v -> PASS: 3 tests passed.
-- pytest labs/lab3/tests/test_features.py labs/lab3/tests/test_smoke.py -v -> 11 tests passed in 0.46s.
-- `pytest labs/lab3/tests` -> 24 passed (16 Member A tests + 8 `test_smoke.py`)
-- `python -c "from labs.lab3.preprocessing.preprocessing import load_text_dataset, label_counts; tr, va, te = load_text_dataset(); print(len(tr), label_counts(tr), len(va), label_counts(va), len(te), label_counts(te), '<br' in ' '.join(tr['text']))"` -> 2000 {0: 1000, 1: 1000} 500 {0: 243, 1: 257} 500 {0: 254, 1: 246} False
-- `python -c "from labs.lab3.sentiment_demo.sentiment_demo import show_tokens, analyze_sentences; s = ['I love this movie', 'The plot was boring', 'Not bad at all']; [print(show_tokens(x)) for x in s]; print(analyze_sentences(s))"` -> tokens start with `[CLS]` (101) and end with `[SEP]` (102); POSITIVE 0.9999 / NEGATIVE 0.9998 / POSITIVE 0.9991 (positive, negative, sentence with negation).
-- Environment: Python 3.12.6, transformers 5.20.2, torch 2.14.1+cpu, matplotlib 3.11.2, datasets 5.1.0, pytest 9.1.1
-- Member B (2026-10-30): `pytest labs/lab3/tests` -> 56 passed (8 model + 8 train + 16 evaluate + 24 from Member A and `test_smoke.py`); with `tests/` of the repo root: 60 passed.
-- Member B: `compute_metrics` accuracy and F1 compared with scikit-learn on 300 random cases (random sizes 1 to 599) -> maximum absolute difference 0.
-- Member B: the code of the notebook cells of sections 5.2, 6.2, 7, 8, 9, 10 was executed against fake objects only (both branches: train and load the saved model). The real model run (tiny fine-tune and full small run) is recorded in the `evaluate` row above.
-## Log (dated, one line per step)
-- 2026-11-18 Member B: rewrote the lab3 docs in the Lab 1 format (Vietnamese): docs/phases/*_v1.md, model card, lab description, 00_README; every relative link and file:line reference checked against the code by script; tests not re-run for this change.
-- 2026-11-12 Member B: rewrote the 7 lab3 docs (purpose, input/output, model save location); verified with grep of main.py, notebook and `git check-ignore`.
-- 2026-10-31 Member B: ran the tiny fine-tune and the full small run (notebook top to bottom); results recorded in the `evaluate` row, README and notebook outputs.
-- 2026-10-29 Member B: `model` (PR #38) and `train` (PR #39) merged into main; fake-`transformers` tests pass (8 + 8).
-- 2026-10-30 Member B: implemented `evaluate` (`compute_metrics`, `evaluate_on_test`, `predict_texts`, helpers `classification_metrics`, `zero_shot_labels`); 16 tests; `pytest labs/lab3/tests` -> 56 passed.
-- 2026-10-30 Member B: wrote notebook sections 5.2, 6.2, 7, 8, 9 (optional, off by default), 10.1, 10.2; only Member B's cells were changed.
-- 2026-10-27 Muội: implemented sentiment_demo; verified 4 unit tests and 12 tests with smoke tests passed.
-- <date> <name>: scaffold created; interfaces agreed -> verified with `pytest labs/lab3/tests`
-- 2026-10-25 Muội: preprocessing implemented (load_text_dataset, clean_text), verified with real IMDB and 24 tests passing
-- 2026-10-26 Muội: implemented `features.tokenize_dataset`; verified with fake-tokenizer tests and the real tokenizer.
-- 2026-10-27 Muội: verified `features.tokenize_dataset` with 3 unit tests and 8 smoke tests; all 11 tests passed.
+**Cách B dùng phần A** (sau khi bàn giao):
+```python
+from labs.lab3 import config
+from labs.lab3.preprocessing.preprocessing import load_datasets
+from labs.lab3.features.features import tokenize_datasets, make_collator
+from labs.lab3.model.model import load_tokenizer, build_model
+ds = load_datasets()                     # train 22.499 / validation 2.501 / test 25.000 (lần đầu tự tải dữ liệu)
+tok = load_tokenizer()
+td = tokenize_datasets(ds, tok, config.MAX_LENGTH)
+collator = make_collator(tok)
+model = build_model(seed=42)             # đặt seed trước khi tạo model
+```
+Trên Kaggle: lần đầu `load_datasets()` tự tải `aclImdb_v1.tar.gz` (cần bật Internet); split đọc từ `data/splits/train_val_split.json` đã commit nên val giống hệt máy Thư.
 
-## Open issues
-- (issue): expected / actual / error / env / relevant code / recent changes (use docs/templates/bug_report.md)
-- None reported for the `features` module
-- None reported for the Member B modules (`model`, `train`, `evaluate`).
----
+Thư duyệt ở các cổng: smoke run, pilot (chốt trần epoch, patience), audit.
 
-**Tiáº¿ng Viá»‡t**
-
-## Tiáº¿ng Viá»‡t (cÃ¡ch dÃ¹ng)
-- **BÃ n giao A -> B (tuáº§n tá»±, khÃ´ng xen káº½):** Member B chá»‰ báº¯t Ä‘áº§u code khi Member A Ä‘Ã£ xong Háº¾T:
-  - dataset Ä‘Ã£ tokenize cÃ³ input_ids, attention_mask, label
-  - BÃ i 1 (sentiment_demo) in token vÃ  cáº£m xÃºc cá»§a 3 cÃ¢u máº«u
-  - má»i module cá»§a A á»Ÿ tráº¡ng thÃ¡i `done`, `pytest` qua, PR Ä‘Ã£ merge vÃ o `main`, A Ä‘Ã£ nháº¯n tin bÃ n giao. Sau Ä‘Ã³ A chá»‰ tráº£ lá»i cÃ¢u há»i vÃ  duyá»‡t PR, khÃ´ng sá»­a module cá»§a B.
-- Cáº­p nháº­t file nÃ y sau Má»–I bÆ°á»›c: Ä‘á»•i tráº¡ng thÃ¡i, ghi káº¿t quáº£ cháº¡y tháº­t (khÃ´ng ghi "cháº¡y Ä‘Æ°á»£c" náº¿u chÆ°a cháº¡y).
-- Má»—i dÃ²ng log gá»“m: ngÃ y, ngÆ°á»i lÃ m, module, Ä‘Ã£ thay Ä‘á»•i gÃ¬, kiá»ƒm chá»©ng báº±ng cÃ¡ch nÃ o.
-- Náº¿u má»™t module khÃ´ng cáº§n cho lab nÃ y, ghi `N/A` kÃ¨m lÃ½ do.
-- Lá»—i cáº§n ghi Ä‘á»§ 6 má»¥c: mong Ä‘á»£i, thá»±c táº¿, thÃ´ng bÃ¡o lá»—i, mÃ´i trÆ°á»ng, code liÃªn quan, thay Ä‘á»•i gáº§n Ä‘Ã¢y.
+## Nhật ký (mỗi bước một dòng, có ngày)
+- 2026-11-20 Thư (AI soạn, nhánh `lab3/member-a`): xong code + test + chạy thật 5 module của A; EDA full data; split train/val; notebook Stage 0–5; đề xuất `max_length` 512.
+- 2026-11-20 Thư: chốt `max_length` 512; giữ split 22.499 / 2.501. `pytest labs/lab3/tests` 24 passed.
+- 2026-11-20 Thư: chia việc Member A (Thư) / Member B (Phúc); `eda` chuyển về Member A.
+- 2026-11-20 Thư: xong tài liệu (plan, rules, folder structure, templates, desc lab, mục lục, 9 file `phases/`).
+- 2026-11-19 Thư: tạo nhánh `feat/lab3-redo` từ `main` (`a648057`), bỏ bài Lab 3 cũ trên nhánh này để làm lại độc lập.
