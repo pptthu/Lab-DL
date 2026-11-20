@@ -1,35 +1,35 @@
 # Lab 3 — Phân tích cảm xúc và fine-tuning với Hugging Face (v1)
-- Tác giả: Member B | Tạo: 2026-11-18T13:00:00+07:00 | Cập nhật: Member B, 2026-11-18T13:00:00+07:00
-- Trạng thái: In Progress (7 module đã `done` trong `../progress_status.md`; `main.py`, README và notebook mục 11, 12 của nhóm trưởng còn `todo`)
+- Tác giả: Thư | Tạo: 2026-11-19T17:02:59+07:00 | Cập nhật: Thư, 2026-11-20T02:41:59+07:00
+- Trạng thái: In Progress
 ## Background
-Đề Practice 3: Bài 1: chạy một model cảm xúc có sẵn và xem tokenization. Bài 2: fine-tune một transformer pre-trained cho phân loại văn bản nhị phân bằng Trainer API. Slide môn học không có chương Hugging Face, nên nhóm dựa vào các link trong slide Practice 3.
-Slide không nêu sản phẩm nộp. Nhóm trưởng chốt ngày 2026-11-04: toàn bộ source code của ba lab và một báo cáo PDF viết sau.
+Đề Practice 3. Bài 1: dùng model cảm xúc pre-trained từ Hugging Face Hub, tokenize và phân tích cảm xúc câu mẫu. Bài 2: fine-tune model pre-trained cho phân loại văn bản nhị phân bằng `transformers`, `datasets`, `evaluate` và Trainer (7 bước). Bài làm lại độc lập, không dùng code hay số liệu Lab 3 cũ.
 ## Purpose
 - Làm:
-  - Bài 1: `show_tokens` và `analyze_sentences` với model `distilbert-base-uncased-finetuned-sst-2-english`, chạy trên 3 câu mẫu
-  - Bài 2: fine-tune `distilbert-base-uncased` trên IMDB, tập con 2000 / 500 / 500 (train / validation / test), seed 42, chọn epoch theo F1 validation, đánh giá test đúng một lần
-  - So sánh model fine-tune với baseline zero-shot của Bài 1 trên cùng 500 review test
-- Không làm: LoRA, cleanlab, ensemble (ngoài phạm vi, notebook mục 12); họ model khác ngoài DistilBERT.
+  - Bài 1: pipeline `distilbert-base-uncased-finetuned-sst-2-english` — in token và nhãn + điểm cho câu mẫu; đo zero-shot trên 25k test IMDB làm baseline
+  - Bài 2: fine-tune `distilbert-base-uncased` trên IMDB full (train 22.499 / val 2.501 tách theo phim — không ép tròn 2.500 vì chia nguyên phim, Thư chốt 2026-11-20 / test 25.000), metric bằng thư viện `evaluate`, 3 seed
+  - Mở rộng: đường loss/acc, thí nghiệm `max_length` 128/256/512, confusion matrix zero-shot vs fine-tuned, ví dụ dự đoán sai theo nhóm
+- Không làm: ROC/PR, head+tail, model khác (BERT-base, RoBERTa), LoRA, cleanlab, Optuna, 50k review không nhãn
 ## Input / Output
-- Input: IMDB (`stanfordnlp/imdb`) tải tự động vào `labs/lab3/raw_data/` (không commit, lần đầu cần mạng); 3 câu mẫu cho Bài 1.
-- Output: `labs/lab3/artifacts/{figures,models,logs}/` (hình EDA, model fine-tune, metric test; không commit); model card ở `docs/models/`.
-- Code: `labs/lab3/main.py` gọi 7 module `labs/lab3/<module>/<module>.py`; notebook `labs/lab3/notebook/lab3_presentation.ipynb`.
+- Input: `data/raw/aclImdb/` (bản gốc Stanford `aclImdb_v1.tar.gz`, 25k train + 25k test, cân bằng nhãn; không commit)
+- Output: `data/splits/train_val_split.json`; `outputs/{logs,figures,results,demo}/` (commit); `outputs/models/` (không commit)
+- Code: `labs/lab3/main.py` gọi 9 module `labs/lab3/<module>/<module>.py`; chạy chính trên Kaggle (`labs/lab3/kaggle/`); trình bày ở `notebook/lab3_presentation.ipynb` (chỉ đọc `outputs/`)
 ## Success criteria
-- `python -m pytest labs/lab3/tests -q` đạt.
-- Bài 1: in token (đầu `[CLS]`, cuối `[SEP]`) và nhãn của 3 câu mẫu.
-- Bài 2: fine-tune nhỏ chạy hết không lỗi; model lưu vào `artifacts/models/` và nạp lại được; accuracy và F1 trên validation và trên test; tập test chỉ dùng một lần.
-- Có đủ: hình EDA, bảng so sánh zero-shot và fine-tuned trên cùng 500 review test, model card, báo cáo ngắn trong `../README.md`.
-- Chưa đặt ngưỡng accuracy cho lab này [cần chốt: hỏi cô xem có mức đạt không].
+- `python -m pytest labs/lab3/tests -q` đạt; smoke run chạy hết không lỗi
+- Bài 1: token bắt đầu `[CLS]`, kết thúc `[SEP]`; nhãn + điểm cho mỗi câu mẫu (`outputs/demo/`)
+- Bài 2: test accuracy trung bình 3 seed ≥ 91% trên 25k test — DistilBERT paper (Sanh et al. 2019, Table 2) báo 92,82; model card cộng đồng 91,2–93,1
+- Test 25k dùng đúng một lần cho mỗi model; checkpoint nạp lại dự đoán được
+- Có đủ: hình EDA, đường huấn luyện, bảng zero-shot vs fine-tuned (mean ± std), bảng `max_length`, confusion matrix, ví dụ sai, model card
 ## How-to-do
-1. Bài 1: chạy model cảm xúc có sẵn và xem token (`sentiment_demo`).
-2. Nạp IMDB, cắt tập con, làm sạch; xem phân bố nhãn và độ dài (`preprocessing`, `eda`).
-3. Nạp `distilbert-base-uncased` và tokenizer; tokenize ba tập (`model`, `features`).
-4. Fine-tune rất ngắn để kiểm tra, rồi fine-tune nhỏ đầy đủ; đo metric trên validation (`train`, `evaluate`).
-5. Đánh giá test một lần; so với zero-shot; viết báo cáo ngắn (`evaluate`, `main.py`, notebook).
-6. Điền model card; audit code và tài liệu so với desc này.
+1. Bài 1 (`sentiment_demo`)
+2. Tải + chia dữ liệu theo phim (`preprocessing`), EDA độ dài token (`eda`) → chốt `max_length`
+3. Model + tokenizer (`model`), tokenize (`features`)
+4. Smoke run trên máy Thư
+5. Pilot trên Kaggle (`train`) → chốt trần epoch, patience
+6. Lần chạy chính 3 seed (`train`, `experiment`) → std theo seed
+7. Thí nghiệm `max_length` theo std (`experiment`)
+8. Test một lần + zero-shot (`evaluate`); hình (`visualize`); model card, README, notebook
 ## Quyết định (người ghi)
-- 2026-11-04 (nhóm trưởng): bài nộp là toàn bộ source code của ba lab và một báo cáo PDF viết sau.
-- 2026-10-31: lần fine-tune đã ghi dùng cấu hình nhỏ — `max_length` 128, 1 epoch, batch 8 — vì RAM 7,8 GB và 2 nhân CPU (`../README.md`); mặc định của `main.py` là 256, 2 và 16.
-- [cần chốt] Hỏi cô: IMDB, `distilbert-base-uncased`, tập con 2000 / 500 / 500, và việc có làm EDA hay không (slide không nêu). Danh sách link dataset do một nhóm khác tổng hợp, không phải của cô.
-- [cần chốt] Nhóm trưởng chọn một tên thư mục lưu model: `distilbert_imdb` (notebook) hay `distilbert_sentiment` (`main.py`).
-- [cần chốt] Nhóm trưởng xác nhận tài liệu trong `labs/lab3/docs/` viết tiếng Việt, ngoại lệ so với `AGENTS.md` dòng 6, như Lab 1 đã làm (`../../lab1/docs/rules/RULES_v1.md` mục 2).
+- 2026-11-19 (Thư): toàn bộ L1–L17 trong `plans/detail_plan_lab3_md_v1.md` §2 — căn cứ ghi ở cột "Căn cứ" của plan
+- 2026-11-20 (Thư): `max_length` lần chạy chính = 512 — 512 cắt 13% review, 256 cắt 41%; zero-shot cũng cắt ở 512 (`experiments/experiment_log.md` S1)
+- [cần chốt sau pilot] trần epoch, patience, threshold
+- [cần chốt sau 3 seed] số seed của thí nghiệm `max_length`

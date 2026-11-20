@@ -1,0 +1,24 @@
+=== RUN START 2026-11-20T11:56:17+07:00 ===
+run: maxlen128_seed42 | stage: maxlen | seed: 42 | device: cuda | gpu: Tesla T4 | where: kaggle | code: b2c21f7+tree:56668a2ce8ed
+versions: python=3.13.16 torch=2.11.0+cu130 transformers=5.22.1 datasets=5.1.0 evaluate=0.4.6
+model: distilbert-base-uncased + classification head (2 lớp) | params: 66955010 (trainable 66955010)
+config: max_length=128 lr=2e-05 warmup_ratio=0.1 scheduler=linear batch_size=16 fp16=True weight_decay=0.01 max_epochs=6 max_steps=None
+eval: every 352 steps (~1/4 epoch) | select: val accuracy (cao nhất) | monitor thêm: val_loss
+early_stopping: patience=8 threshold=0.0
+data: train=22499 val=2501 test=25000 | split: labs/lab3/data/splits/train_val_split.json
+step,epoch,train_loss,val_loss,val_acc,val_f1,lr,time_s
+352,0.2502,0.597839,0.40971,0.818872,0.838733,8.3077e-06,24.8
+704,0.5004,0.378932,0.330318,0.854858,0.856238,1.66391e-05,47.3
+1056,0.7505,0.353653,0.308772,0.872851,0.87391,1.94472e-05,70.2
+1408,1.0007,0.320428,0.320952,0.868053,0.865745,1.85205e-05,93.5
+1760,1.2509,0.267913,0.338228,0.872051,0.871279,1.75938e-05,117.5
+2112,1.5011,0.242723,0.357886,0.862855,0.866485,1.66671e-05,142.2
+2464,1.7512,0.238483,0.336693,0.871251,0.874708,1.57404e-05,167.3
+2816,2.0014,0.247439,0.342929,0.859656,0.86849,1.48137e-05,191.8
+3168,2.2516,0.1503,0.503292,0.863655,0.865906,1.38871e-05,216.2
+3520,2.5018,0.153666,0.468972,0.860456,0.867552,1.29604e-05,240.9
+3872,2.752,0.163599,0.448336,0.870052,0.867725,1.20337e-05,265.6
+=== RUN END 2026-11-20T12:00:44+07:00 ===
+best_step: 1056 (epoch 0.7505) | best_val_acc: 0.872851 | stopped_step: 3872 | stop_reason: early_stopping
+best_is_last_eval: no
+best_ckpt: None | train_time_s: 266.6

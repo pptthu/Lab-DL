@@ -1,0 +1,76 @@
+{
+ "run": "main_seed43",
+ "ts": "20261120_105200",
+ "start": "2026-11-20T10:52:00+07:00",
+ "cfg": {
+  "run": "main_seed43",
+  "stage": "main",
+  "seed": 43,
+  "max_length": 512,
+  "lr": 2e-05,
+  "batch_size": 16,
+  "eval_batch_size": 64,
+  "warmup_ratio": 0.1,
+  "weight_decay": 0.01,
+  "lr_scheduler": "linear",
+  "max_epochs": 6,
+  "max_steps": null,
+  "evals_per_epoch": 4,
+  "early_stopping": true,
+  "patience": 8,
+  "threshold": 0.0,
+  "save_best": true
+ },
+ "env": {
+  "device": "cuda",
+  "gpu": "Tesla T4",
+  "where": "kaggle",
+  "code_commit": "b2c21f7+tree:821781a67490",
+  "versions": {
+   "python": "3.13.16",
+   "torch": "2.11.0+cu130",
+   "transformers": "5.22.1",
+   "datasets": "5.1.0",
+   "evaluate": "0.4.6"
+  }
+ },
+ "fp16": true,
+ "eval_steps": 352,
+ "model": {
+  "checkpoint": "distilbert-base-uncased",
+  "params_total": 66955010,
+  "params_trainable": 66955010
+ },
+ "data": {
+  "train": 22499,
+  "val": 2501,
+  "test": 25000,
+  "split_file": "labs/lab3/data/splits/train_val_split.json"
+ },
+ "selection": {
+  "metric": "val accuracy",
+  "rule": "LOG_TEMPLATE_v1 §3"
+ },
+ "test_evaluated": true,
+ "end": "2026-11-20T11:26:04+07:00",
+ "result": {
+  "best_step": 7744,
+  "best_epoch": 5.5039,
+  "best_val_acc": 0.930828,
+  "best_val_f1": 0.931648,
+  "best_val_loss": 0.399783,
+  "stopped_step": 8442,
+  "stop_reason": "max_epochs",
+  "best_is_last_eval": false,
+  "n_evals": 24,
+  "run": "main_seed43",
+  "ts": "20261120_105200",
+  "max_steps_planned": 8442,
+  "best_ckpt": "labs/lab3/outputs/models/20261120_105200_main_seed43_best",
+  "train_time_s": 2043.3,
+  "log": "labs/lab3/outputs/logs/20261120_105200_main_seed43.log",
+  "history": "labs/lab3/outputs/logs/20261120_105200_main_seed43_history.csv",
+  "config": "labs/lab3/outputs/logs/20261120_105200_main_seed43_config.json"
+ },
+ "test_predictions": "main_seed43_test_predictions.csv"
+}

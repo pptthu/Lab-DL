@@ -1,160 +1,228 @@
-"""Module `evaluate` (Evaluation) of Lab 3: Hugging Face sentiment analysis and fine-tuning.
+"""Exercise 2.7: evaluate the fine-tuned model (accuracy / F1 with the `evaluate` library).
 
-Owner: Member B (see progress_status.md). Do not rename functions or change signatures
-without telling the team leader: other modules depend on them.
-
-Metrics are computed with NumPy only (no `evaluate` library, no network), so the code is easy to test
-and the file name `evaluate` cannot clash with the Hugging Face package of the same name.
-Binary task: label 1 = POSITIVE is the positive class for F1. `torch` is imported inside `predict_texts`.
-
-VI: Module `evaluate` (Đánh giá). Người phụ trách: Member B. Không đổi tên hàm hoặc chữ ký
-khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
-Metric chỉ dùng NumPy (không dùng thư viện `evaluate`, không cần mạng) nên dễ test và tên file `evaluate`
-không trùng với package Hugging Face cùng tên. Bài toán nhị phân: nhãn 1 = POSITIVE là lớp dương khi tính F1.
-`torch` được import bên trong `predict_texts`.
+VI: Bài 2.7 — metric bằng thư viện `evaluate`; test 25k chỉ một lần mỗi model; baseline zero-shot
+(pipeline SST-2 của Bài 1) trên cùng 25k test; bảng tổng hợp mean ± std 3 seed; 6 câu kiểm soát.
+Desc: labs/lab3/docs/phases/evaluate_v1.md
+Owner: Phúc (Member B).
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 
-# Pipeline label (Member A's `analyze_sentences`) -> integer label of the dataset. / Nhãn pipeline -> nhãn số.
-LABEL_TO_ID = {"NEGATIVE": 0, "POSITIVE": 1}
+from labs.lab3 import config
+from shared.paths import output_dir
+
+PRED_COLUMNS = ("uid", "label", "pred", "prob_pos")
+_METRICS: dict = {}
 
 
-def classification_metrics(labels, predictions) -> dict:
-    """Accuracy and binary F1 (positive class = 1) from integer labels and integer predictions.
+# ---------------------------------------------------------------- metric
+def _metric(name: str):
+    """evaluate.load once per process (lần đầu tải script metric từ Hub → Kaggle bật Internet)."""
+    if name not in _METRICS:
+        import evaluate as hf_evaluate
 
-    F1 is 0.0 when the model never predicts class 1 correctly (no division by zero).
+        _METRICS[name] = hf_evaluate.load(name)
+    return _METRICS[name]
 
-    Input : labels (n,), predictions (n,) with values 0/1
-    Output: dict: accuracy, f1 (python floats)
 
-    VI: Accuracy và F1 nhị phân (lớp dương = 1) từ nhãn thật và nhãn dự đoán (số nguyên).
-    F1 bằng 0.0 khi model không đoán đúng lớp 1 lần nào (không chia cho 0).
-    Vào : labels (n,), predictions (n,) giá trị 0/1
-    Ra  : dict: accuracy, f1 (số float)
-    """
-    y = np.asarray(labels).astype(int).reshape(-1)
-    p = np.asarray(predictions).astype(int).reshape(-1)
-    if y.shape != p.shape:
-        raise ValueError(f"labels {y.shape} and predictions {p.shape} differ / nhãn và dự đoán khác kích thước")
-    if y.size == 0:
-        raise ValueError("empty input / đầu vào rỗng")
-    tp = int(np.sum((p == 1) & (y == 1)))
-    fp = int(np.sum((p == 1) & (y == 0)))
-    fn = int(np.sum((p == 0) & (y == 1)))
-    denom = 2 * tp + fp + fn
-    return {"accuracy": float(np.mean(p == y)), "f1": float(2 * tp / denom) if denom else 0.0}
+def accuracy_f1(labels, preds) -> dict:
+    """Accuracy and binary F1 (positive class = 1) with the `evaluate` library. / Accuracy, F1 nhị phân."""
+    labels, preds = np.asarray(labels).astype(int), np.asarray(preds).astype(int)
+    return {
+        "accuracy": float(_metric("accuracy").compute(predictions=preds, references=labels)["accuracy"]),
+        "f1": float(_metric("f1").compute(predictions=preds, references=labels, pos_label=1)["f1"]),
+    }
 
 
 def compute_metrics(eval_pred) -> dict:
-    """Metrics callback for the Trainer.
+    """Trainer hook: logits -> argmax -> accuracy, f1 (keys become eval_accuracy, eval_f1).
 
-    `eval_pred` is a tuple (logits, labels) or a transformers `EvalPrediction` (both can be indexed 0 and 1).
-    The predicted class is the argmax of the logits. The key `f1` is the one used to keep the best epoch.
-
-    Input : eval_pred: (logits, labels)
-    Output: dict: accuracy, f1
-
-    VI: Hàm tính metric cho Trainer.
-    `eval_pred` là tuple (logits, labels) hoặc `EvalPrediction` của transformers (đều lấy được phần tử 0 và 1).
-    Lớp dự đoán là argmax của logits. Khóa `f1` được dùng để giữ epoch tốt nhất.
-    Vào : eval_pred: (logits, labels)
-    Ra  : dict: accuracy, f1
+    VI: Dùng trong Trainer khi đánh giá val.
     """
-    logits, labels = eval_pred[0], eval_pred[1]
-    if isinstance(logits, (tuple, list)):  # some models return (logits, extra...) / một số model trả (logits, ...)
+    logits, labels = eval_pred
+    if isinstance(logits, tuple):
         logits = logits[0]
-    logits = np.asarray(logits)
-    if logits.ndim != 2:
-        raise ValueError(f"logits must be 2-D (n, num_labels), got shape {logits.shape} / logits phải có dạng (n, num_labels)")
-    return classification_metrics(labels, np.argmax(logits, axis=-1))
+    return accuracy_f1(labels, np.argmax(logits, axis=-1))
 
 
-def evaluate_on_test(trainer, tokenized_test) -> dict:
-    """Final evaluation on the test split (use once, at the end, never to choose the model).
+def softmax_pos(logits) -> np.ndarray:
+    """Probability of class 1 (POSITIVE) from 2-class logits. / Xác suất lớp dương."""
+    z = np.asarray(logits, dtype=np.float64)
+    z = z - z.max(axis=1, keepdims=True)
+    e = np.exp(z)
+    return e[:, 1] / e.sum(axis=1)
 
-    Calls `trainer.evaluate` with the prefix `test` and returns the keys without the prefix.
-    The trainer holds the best epoch chosen on VALIDATION (`load_best_model_at_end`).
 
-    Input : trainer, tokenized_test
-    Output: dict of metrics (accuracy, f1, loss, ...)
+# ---------------------------------------------------------------- test một lần
+def _check_and_mark_test(run_config_path: Path | None, pred_path: Path) -> None:
+    """Refuse a second test evaluation of the same model (plan L2: test used once per model).
 
-    VI: Đánh giá cuối cùng trên tập test (chỉ dùng một lần ở cuối, không dùng để chọn model).
-    Gọi `trainer.evaluate` với tiền tố `test` và trả về khóa đã bỏ tiền tố.
-    Trainer đang giữ epoch tốt nhất chọn trên VALIDATION (`load_best_model_at_end`).
-    Vào : trainer, tokenized_test
-    Ra  : dict các metric (accuracy, f1, loss, ...)
+    VI: Cờ test_evaluated trong _config.json của lần chạy; file dự đoán đã có cũng coi là đã test.
     """
-    if len(tokenized_test) == 0:
-        raise ValueError("test set is empty / tập test rỗng")
-    raw = trainer.evaluate(eval_dataset=tokenized_test, metric_key_prefix="test")
-    out = {}
-    for key, value in raw.items():
-        name = key[len("test_"):] if key.startswith("test_") else key
-        out[name] = float(value) if isinstance(value, (int, float, np.floating, np.integer)) else value
-    return out
+    if pred_path.exists():
+        raise RuntimeError(f"test already evaluated for this model: {pred_path} exists (test is used once)")
+    if run_config_path is not None:
+        info = json.loads(Path(run_config_path).read_text(encoding="utf-8"))
+        if info.get("test_evaluated"):
+            raise RuntimeError(f"test already evaluated for run {info.get('run')} ({run_config_path})")
 
 
-def predict_texts(model, tokenizer, texts: list, *, max_length: int = 256, batch_size: int = 16) -> list:
-    """Predict labels for new texts (raw strings, no tokenization needed by the caller).
+def _mark_tested(run_config_path: Path | None, pred_path: Path) -> None:
+    if run_config_path is None:
+        return
+    path = Path(run_config_path)
+    info = json.loads(path.read_text(encoding="utf-8"))
+    info["test_evaluated"] = True
+    info["test_predictions"] = pred_path.name
+    path.write_text(json.dumps(info, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    `label` is the integer class (0 = NEGATIVE, 1 = POSITIVE) and `score` is the softmax probability of that class.
-    The model is put in eval mode for the call and its previous mode is restored. Texts are tokenized with the
-    SAME tokenizer as the model, truncated to `max_length` (same as training) and padded per batch.
 
-    Input : model, tokenizer, texts (+ optional max_length, batch_size)
-    Output: list of dicts: text, label, score
+def predict_logits(model, tokenized_split, collator, batch_size: int = config.EVAL_BATCH_SIZE):
+    """Logits of a tokenized split with Trainer.predict (fp16 on GPU). / Logits bằng Trainer.predict."""
+    import tempfile
 
-    VI: Dự đoán nhãn cho văn bản mới (chuỗi thô, người gọi không cần tự tokenize).
-    `label` là lớp số nguyên (0 = NEGATIVE, 1 = POSITIVE), `score` là xác suất softmax của lớp đó.
-    Model được đặt ở chế độ eval khi gọi và trả về chế độ cũ sau đó. Văn bản được tokenize bằng CÙNG tokenizer
-    của model, cắt tới `max_length` (giống lúc train) và padding theo batch.
-    Vào : model, tokenizer, texts (+ tùy chọn max_length, batch_size)
-    Ra  : danh sách dict: text, label, score
-    """
-    if isinstance(texts, str) or not all(isinstance(t, str) for t in texts):
-        raise TypeError("texts must be a list of str / texts phải là danh sách chuỗi")
-    if batch_size <= 0 or max_length <= 0:
-        raise ValueError("batch_size and max_length must be > 0 / batch_size và max_length phải > 0")
-    texts = list(texts)
-    if not texts:
-        return []
     import torch
+    from transformers import Trainer, TrainingArguments
 
-    was_training = model.training
-    model.eval()
-    device = next(model.parameters()).device
-    results = []
-    try:
-        with torch.no_grad():
-            for start in range(0, len(texts), batch_size):
-                chunk = texts[start:start + batch_size]
-                enc = tokenizer(chunk, truncation=True, max_length=max_length, padding=True, return_tensors="pt")
-                enc = {k: v.to(device) for k, v in enc.items() if k != "token_type_ids"}  # DistilBERT takes no token_type_ids
-                probs = torch.softmax(model(**enc).logits, dim=-1)
-                scores, labels = probs.max(dim=-1)
-                for text, label, score in zip(chunk, labels.tolist(), scores.tolist()):
-                    results.append({"text": text, "label": int(label), "score": float(score)})
-    finally:
-        model.train(was_training)
-    return results
+    cols = [c for c in tokenized_split.column_names if c in ("input_ids", "attention_mask", "label")]
+    args = TrainingArguments(output_dir=tempfile.mkdtemp(prefix="lab3_pred_"), per_device_eval_batch_size=batch_size,
+                             fp16=torch.cuda.is_available(), report_to="none", disable_tqdm=True)
+    trainer = Trainer(model=model, args=args, data_collator=collator)
+    return trainer.predict(tokenized_split.select_columns(cols)).predictions
 
 
-def zero_shot_labels(results: list) -> list:
-    """Map the output of Member A's `analyze_sentences` to integer labels (POSITIVE -> 1, NEGATIVE -> 0).
+def evaluate_on_test(model_dir, tokenized_test, run: str, collator=None, run_config_path=None,
+                     results_dir: Path | None = None, model=None) -> dict:
+    """Predict the test set once with the best checkpoint; write <run>_test_predictions.csv.
 
-    Input : results: list of dicts with key `label` ("POSITIVE" / "NEGATIVE")
-    Output: list of int (0 or 1), same order
-
-    VI: Đổi kết quả hàm `analyze_sentences` của Member A sang nhãn số (POSITIVE -> 1, NEGATIVE -> 0).
-    Vào : results: danh sách dict có khóa `label` ("POSITIVE" / "NEGATIVE")
-    Ra  : danh sách int (0 hoặc 1), cùng thứ tự
+    VI: Đánh giá test đúng một lần cho mỗi model (gọi lần hai → RuntimeError). model: chỉ dùng trong test.
+    Cột CSV: uid, label, pred, prob_pos.
     """
-    out = []
-    for r in results:
-        name = str(r["label"]).upper()
-        if name not in LABEL_TO_ID:
-            raise ValueError(f"unexpected label {r['label']!r}, expected POSITIVE or NEGATIVE / nhãn không hợp lệ")
-        out.append(LABEL_TO_ID[name])
-    return out
+    results_dir = Path(results_dir) if results_dir is not None else output_dir(config.LAB, "results")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    pred_path = results_dir / f"{run}_test_predictions.csv"
+    _check_and_mark_test(run_config_path, pred_path)
+    if model is None:
+        from transformers import AutoModelForSequenceClassification
+
+        model = AutoModelForSequenceClassification.from_pretrained(str(model_dir))
+    if collator is None:
+        from labs.lab3.features.features import make_collator
+        from labs.lab3.model.model import load_tokenizer
+
+        collator = make_collator(load_tokenizer())
+    logits = predict_logits(model, tokenized_test, collator)
+    prob = softmax_pos(logits)
+    preds = (prob >= 0.5).astype(int)
+    df = pd.DataFrame({"uid": tokenized_test["uid"], "label": tokenized_test["label"], "pred": preds,
+                       "prob_pos": np.round(prob, 6)})
+    df.to_csv(pred_path, index=False)
+    _mark_tested(run_config_path, pred_path)
+    return {"run": run, "n": len(df), **accuracy_f1(df["label"], df["pred"]), "predictions": pred_path}
+
+
+def evaluate_zero_shot(test_ds, pipe=None, results_dir: Path | None = None, batch_size: int = 64) -> dict:
+    """Exercise 1 pipeline (SST-2) on the same test set: POSITIVE -> 1, NEGATIVE -> 0; truncation at 512.
+
+    VI: Baseline zero-shot (plan L6). Ghi zero_shot_test_predictions.csv cùng định dạng; chỉ chạy một lần.
+    """
+    from labs.lab3.sentiment_demo.sentiment_demo import load_sentiment_pipeline, predict_sentiment
+
+    results_dir = Path(results_dir) if results_dir is not None else output_dir(config.LAB, "results")
+    results_dir.mkdir(parents=True, exist_ok=True)
+    pred_path = results_dir / "zero_shot_test_predictions.csv"
+    _check_and_mark_test(None, pred_path)
+    pipe = pipe or load_sentiment_pipeline()
+    out = predict_sentiment(list(test_ds["text"]), pipe, batch_size=batch_size)
+    labels = {"POSITIVE": 1, "NEGATIVE": 0}
+    pred = np.array([labels[o["label"]] for o in out])
+    prob = np.array([o["score"] if o["label"] == "POSITIVE" else 1.0 - o["score"] for o in out])
+    df = pd.DataFrame({"uid": test_ds["uid"], "label": test_ds["label"], "pred": pred, "prob_pos": np.round(prob, 6)})
+    df.to_csv(pred_path, index=False)
+    return {"run": "zero_shot", "n": len(df), **accuracy_f1(df["label"], df["pred"]), "predictions": pred_path}
+
+
+# ---------------------------------------------------------------- tổng hợp
+def duplicate_test_uids(train_df: pd.DataFrame, test_df: pd.DataFrame) -> set:
+    """uids of test reviews whose cleaned text also appears in train (EDA: 123 reviews).
+
+    VI: Review test trùng nội dung một review train (cùng cách băm với preprocessing/eda).
+    """
+    from labs.lab3.preprocessing.preprocessing import text_hash
+
+    train_hashes = set(train_df["text"].map(text_hash))
+    return set(test_df.loc[test_df["text"].map(text_hash).isin(train_hashes), "uid"])
+
+
+def summarize(pred_files: dict, zero_shot_file=None, seeds: dict | None = None, duplicate_uids=None,
+              out_path: Path | None = None, pass_accuracy: float = config.PASS_ACCURACY) -> pd.DataFrame:
+    """test_summary.csv: one row per seed, mean and std (sample, n-1), zero-shot; pass = mean acc >= 0.91.
+
+    VI: pred_files {run: csv}; seeds {run: seed}; duplicate_uids: thêm cột acc/F1 trên test bỏ review trùng
+    (chỉ báo thêm, chỉ số chính vẫn là test chính thức — Thư duyệt 2026-11-20).
+    """
+    dup = set(duplicate_uids or ())
+    rows = []
+
+    def _row(model, run, seed, path):
+        df = pd.read_csv(path)
+        r = {"model": model, "run": run, "seed": seed, "n": len(df), **accuracy_f1(df["label"], df["pred"])}
+        if dup:
+            keep = ~df["uid"].isin(dup)
+            m = accuracy_f1(df.loc[keep, "label"], df.loc[keep, "pred"])
+            r.update({"n_no_dup": int(keep.sum()), "accuracy_no_dup": m["accuracy"], "f1_no_dup": m["f1"]})
+        return r
+
+    for run, path in pred_files.items():
+        rows.append(_row("fine-tuned", run, (seeds or {}).get(run), path))
+    ft = pd.DataFrame(rows)
+    metric_cols = [c for c in ("accuracy", "f1", "accuracy_no_dup", "f1_no_dup") if c in ft]
+    if len(ft) > 0:
+        mean = {"model": "fine-tuned", "run": "mean", "n": int(ft["n"].iloc[0])}
+        std = {"model": "fine-tuned", "run": "std", "n": int(ft["n"].iloc[0])}
+        for c in metric_cols:
+            mean[c] = float(ft[c].mean())
+            std[c] = float(ft[c].std(ddof=1)) if len(ft) > 1 else float("nan")
+        mean["pass"] = bool(mean["accuracy"] >= pass_accuracy)
+        rows += [mean, std]
+    if zero_shot_file is not None:
+        rows.append(_row("zero-shot (SST-2)", "zero_shot", None, zero_shot_file))
+    table = pd.DataFrame(rows)
+    for c in metric_cols:
+        table[c] = table[c].round(4)
+    if out_path is not None:
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+        table.to_csv(out_path, index=False)
+    return table
+
+
+def evaluate_control_sentences(model_dir, label: str, pipe_zero_shot=None, pipe_finetuned=None,
+                               out_path: Path | None = None) -> pd.DataFrame:
+    """The 6 CheckList sentences of Exercise 1 through the zero-shot and the fine-tuned model.
+
+    VI: Cùng 6 câu kiểm soát (sentiment_demo.CONTROL_SENTENCES) cho model trước và sau fine-tune
+    → outputs/demo/control_sentences.csv (12 dòng). label: tên model fine-tune (vd main_seed42).
+    """
+    from labs.lab3.sentiment_demo.sentiment_demo import (
+        CONTROL_SENTENCES, load_sentiment_pipeline, predict_sentiment,
+    )
+
+    pipe_zero_shot = pipe_zero_shot or load_sentiment_pipeline()
+    pipe_finetuned = pipe_finetuned or load_sentiment_pipeline(str(model_dir))
+    texts = [s["text"] for s in CONTROL_SENTENCES]
+    rows = []
+    for name, pipe in (("zero-shot (SST-2)", pipe_zero_shot), (f"fine-tuned ({label})", pipe_finetuned)):
+        for s, p in zip(CONTROL_SENTENCES, predict_sentiment(texts, pipe)):
+            rows.append({"model": name, "capability": s["capability"], "text": s["text"],
+                         "expected": s["expected"], "predicted": p["label"], "score": round(p["score"], 4),
+                         "correct": None if s["expected"] is None else p["label"] == s["expected"]})
+    table = pd.DataFrame(rows)
+    out_path = Path(out_path) if out_path is not None else output_dir(config.LAB, "demo") / "control_sentences.csv"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    table.to_csv(out_path, index=False)
+    return table
