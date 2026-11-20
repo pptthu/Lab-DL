@@ -1,9 +1,9 @@
 # sentiment_demo — Bài 1: phân tích cảm xúc bằng model pre-trained (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
+- **Last Updated**: 2026-11-20T14:29:08+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -62,6 +62,12 @@ câu mẫu → tokenize_sentence → tokens / ids
 - **Test:** `pytest labs/lab3/tests/test_sentiment_demo.py` đạt: token đầu/cuối, đủ cột CSV, nhãn thuộc {POSITIVE, NEGATIVE}, điểm trong [0, 1]
 - **Smoke run:** `outputs/_smoke/demo/sentiment_demo.csv` có đủ số câu mẫu
 - **Normal run:** `outputs/demo/sentiment_demo.csv` (6 dòng) và `sentiment_demo_tokens.csv`; câu (1), (2) ra đúng nhãn; kết quả câu (3)–(5) ghi đúng/sai như đo được, không sửa câu cho đẹp
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_sentiment_demo.py` → 4 passed ✔
+- **Smoke run** (`run_member_a(smoke=True)`, 38 giây, máy Thư, 40 review mỗi split): `outputs/_smoke/demo/sentiment_demo.csv` đủ 6 câu ✔
+- **Normal run:** `outputs/demo/sentiment_demo.csv` 6 dòng, câu (1), (2) đúng nhãn, câu (3)–(5) ghi đúng như đo (đúng cả 3), câu trung tính NEGATIVE 0,9955; `sentiment_demo_tokens.csv` 15 token, đầu `[CLS]`, cuối `[SEP]`; model commit `714eb0fa…` ✔
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)

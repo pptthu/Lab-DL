@@ -1,0 +1,13 @@
+model,capability,text,expected,predicted,score,correct
+zero-shot (SST-2),rõ tích cực,"This movie was absolutely wonderful, I loved every minute of it.",POSITIVE,POSITIVE,0.9999,True
+zero-shot (SST-2),rõ tiêu cực,The film was a complete waste of time and the acting was terrible.,NEGATIVE,NEGATIVE,0.9998,True
+zero-shot (SST-2),phủ định câu tiêu cực,The movie was not bad at all.,POSITIVE,POSITIVE,0.998,True
+zero-shot (SST-2),phủ định câu tích cực,I would not say this film is good.,NEGATIVE,NEGATIVE,0.9997,True
+zero-shot (SST-2),tương phản (but),"The cinematography was beautiful, but the plot was dull and the ending made no sense.",NEGATIVE,NEGATIVE,0.9997,True
+zero-shot (SST-2),trung tính,The movie was released in 2009 and runs for about two hours.,,NEGATIVE,0.9955,
+fine-tuned (main_seed44),rõ tích cực,"This movie was absolutely wonderful, I loved every minute of it.",POSITIVE,POSITIVE,0.9968,True
+fine-tuned (main_seed44),rõ tiêu cực,The film was a complete waste of time and the acting was terrible.,NEGATIVE,NEGATIVE,0.9988,True
+fine-tuned (main_seed44),phủ định câu tiêu cực,The movie was not bad at all.,POSITIVE,NEGATIVE,0.8339,False
+fine-tuned (main_seed44),phủ định câu tích cực,I would not say this film is good.,NEGATIVE,POSITIVE,0.7411,False
+fine-tuned (main_seed44),tương phản (but),"The cinematography was beautiful, but the plot was dull and the ending made no sense.",NEGATIVE,NEGATIVE,0.9987,True
+fine-tuned (main_seed44),trung tính,The movie was released in 2009 and runs for about two hours.,,NEGATIVE,0.6695,

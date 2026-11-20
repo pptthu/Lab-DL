@@ -1,0 +1,3 @@
+run,stage,seed,max_length,ts,best_step,best_epoch,best_val_acc,best_val_f1,best_val_loss,stopped_step,max_steps_planned,stop_reason,best_is_last_eval,n_evals,train_time_s,sec_per_step,est_epoch_min,best_ckpt,log
+maxlen128_seed42,maxlen,42,128,20261120_115617,1056,0.7505,0.872851,0.87391,0.308772,3872,8442,early_stopping,False,11,266.6,0.0689,1.61,nan,labs/lab3/outputs/logs/20261120_115617_maxlen128_seed42.log
+maxlen256_seed42,maxlen,42,256,20261120_115638,3872,2.752,0.915234,0.915268,0.346195,6688,8442,early_stopping,False,19,822.3,0.123,2.88,nan,labs/lab3/outputs/logs/20261120_115638_maxlen256_seed42.log

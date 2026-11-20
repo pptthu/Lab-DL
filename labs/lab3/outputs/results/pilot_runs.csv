@@ -1,0 +1,2 @@
+run,stage,seed,max_length,ts,best_step,best_epoch,best_val_acc,best_val_f1,best_val_loss,stopped_step,max_steps_planned,stop_reason,best_is_last_eval,n_evals,train_time_s,sec_per_step,est_epoch_min,best_ckpt,log
+pilot_seed42,pilot,42,512,20261120_100723,5632,4.0028,0.930828,0.929243,0.312777,8442,8442,max_epochs,False,24,1872.4,0.2218,5.2,labs/lab3/outputs/models/20261120_100723_pilot_seed42_best,labs/lab3/outputs/logs/20261120_100723_pilot_seed42.log
