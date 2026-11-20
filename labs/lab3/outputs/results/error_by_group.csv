@@ -1,0 +1,12 @@
+group_type,group,n,n_errors,error_rate
+all,all,25000,1656,0.0662
+truncation,bị cắt (> 512 token),3086,310,0.1005
+truncation,không bị cắt (≤ 512 token),21914,1346,0.0614
+rating,1,5022,177,0.0352
+rating,2,2302,117,0.0508
+rating,3,2541,223,0.0878
+rating,4,2635,454,0.1723
+rating,7,2307,270,0.117
+rating,8,2850,160,0.0561
+rating,9,2344,74,0.0316
+rating,10,4999,181,0.0362
