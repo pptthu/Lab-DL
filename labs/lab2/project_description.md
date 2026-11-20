@@ -1,141 +1,88 @@
-# Lab 2: Pre-trained CNNs and fine-tuning on CIFAR-10 (PyTorch): project description (Define + Design)
+# Lab 2 — CNN tiền huấn luyện và fine-tuning trên CIFAR-10  (v1)
+- Tác giả: Thư | Tạo: 2026-10-17T00:00:00+07:00 | Cập nhật: Đại, 2026-11-19T13:50:00+07:00
+- Trạng thái: Done (normal run 2026-11-04, audit trong `docs/*.md`; kết quả ở `README.md` và `REPORT.md`)
 
-## Define
-- **Problem:** Reuse pre-trained torchvision networks (VGG, DenseNet, ResNet...) for a new 10-class image task by replacing the final layer, freezing or unfreezing layers, and tuning hyperparameters.
-- **Target users:** the lecturer (grading) and the group (learning).
-- **Input / Output:** Input: CIFAR-10 images. Output: fine-tuned model(s), accuracy per model/setting, TensorBoard logs, comparison table.
-- **Data:** ASSUMPTION (confirm with the lecturer): CIFAR-10 via `torchvision.datasets` (the slide uses it as the example).
-- **Core features:**
-  1. Load pre-trained models from torchvision.models and print their architecture
-  2. Replace the final layer; freeze (transfer learning) or unfreeze last layers (fine-tuning)
-  3. Prepare data with torchvision.transforms and DataLoader
-  4. Train with a loss function, optimizer and training loop
-  5. Evaluate on a test set
-  6. Experiment with different models and hyperparameters
-  7. Monitor training with TensorBoard
-- **Technology constraints:** PyTorch + torchvision + TensorBoard. Pre-trained models at 224x224 are slow on CPU: use a smaller image size or a data subset and document it.
-- **Evaluation criteria:** Deliverables are not stated on the Practice 2 slide: confirm with the lecturer (assumed: code, short report, TensorBoard screenshots). Oral Q&A.
+## Background
+Đề P2: tái sử dụng mạng CNN tiền huấn luyện (VGG, DenseNet, ResNet...) của torchvision cho bài toán phân loại ảnh 10 lớp bằng cách thay lớp cuối, đóng băng hoặc mở khóa lớp, chỉnh siêu tham số. Dữ liệu: CIFAR-10 qua `torchvision.datasets`.
 
-## Design
-- **Data flow:** eda -> preprocessing -> features -> model (backbone + header) -> train (+TensorBoard) -> evaluate ; experiment wraps model + train
-- **Modules and owners** (each module = one sub-folder with one script):
-- Member A: `eda`, `preprocessing`, `features`, `model`
-- Member B: `train`, `evaluate`, `experiment`
-- The team leader owns `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` and PR review.
-- **Module applicability rule:** if a module is not needed in this lab, mark it `N/A` in `progress_status.md` with a one-line reason. Do not delete it silently.
-- **Interfaces** (names and signatures are a contract; the test in `tests/test_smoke.py` checks the names):
+## Purpose
+- Làm: so sánh ResNet-18 và DenseNet-121 ở 2 chế độ (feature extraction — đóng băng backbone; fine-tuning — mở khóa khối cuối), dùng batch 64, seed 42, TensorBoard theo dõi:
+  1. **Feature extraction:** `freeze_backbone=True`, chỉ huấn luyện classifier head mới
+  2. **Fine-tuning:** mở thêm `n_blocks=1` khối sâu cuối bằng `unfreeze_last_blocks`
+  3. So sánh 2 model × 2 chế độ bằng `run_comparison`, lưu kết quả ra CSV
+- Không làm: huấn luyện từ đầu (random init), Vision Transformer, đa seed, kiểm định thống kê, test trên ảnh ngoài CIFAR-10, đo tốc độ inference.
 
-| Module | Owner | Function / class | Input | Output |
-|---|---|---|---|---|
-| `eda` | Member A | `run_eda(data_root: str, out_dir: str)` | data_root: dataset folder (downloaded by torchvision); out_dir | dict: n_train, n_test, class_counts, image_size, channel_mean, channel_std; PNG files in out_dir |
-| `preprocessing` | Member A | `load_raw_dataset(data_root: str, download: bool = True)` | data_root, download | (train_set, test_set) |
-| `preprocessing` | Member A | `make_split(n_samples: int, val_ratio: float = 0.1, seed: int = 42)` | n_samples, val_ratio, seed | (train_idx, val_idx) |
-| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | indices + path / path | JSON file / (train_idx, val_idx) |
-| `features` | Member A | `build_transforms(image_size: int = 224, augment: bool = False)` | image_size, augment | (train_transform, eval_transform) |
-| `features` | Member A | `make_loaders(train_set, test_set, train_idx, val_idx, train_tf, eval_tf, batch_size: int = 64)` | datasets, split indices, transforms, batch_size | (train_loader, val_loader, test_loader) |
-| `model` | Member A | `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True)` | name, num_classes, freeze_backbone, pretrained | nn.Module that outputs logits [B,num_classes]; backbone frozen if requested |
-| `model` | Member A | `describe_model(model)` | model | dict: total_params, trainable_params, layer names |
-| `model` | Member A | `unfreeze_last_blocks(model, n_blocks: int)` | model, n_blocks | model updated in place |
-| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, writer=None, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay | history dict: train_loss, val_loss, val_acc; checkpoint at ckpt_path; TensorBoard logs |
-| `train` | Member B | `save_checkpoint(model, path: str)` | model, path (, device) | file / model in eval mode |
-| `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss, accuracy) |
-| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device | array [C,C] (rows = true, columns = predicted) |
-| `evaluate` | Member B | `top_confusions(cm, class_names, k: int = 5)` | cm, class_names, k | list of (true_class, predicted_class, count) |
-| `experiment` | Member B | `run_comparison(model_names: list, hparam_grid: list, loaders: tuple, device, log_root: str)` | model_names (e.g. ['resnet18','vgg16']), hparam_grid (list of dicts: lr, batch_size, freeze...), loaders, device, log_root | list of result dicts: model, hparams, best_val_acc, train_seconds; TensorBoard runs under log_root |
-| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | CSV file |
+## Input / Output
+- Input: CIFAR-10 từ `torchvision.datasets.CIFAR10` (tải về `raw_data/`); split: `artifacts/splits/train_val_split.json` (45.000 train / 5.000 val, seed 42).
+- Output: checkpoint `.pt` trong `artifacts/models/`; log TensorBoard trong `artifacts/logs/`; bảng so sánh CSV trong `artifacts/runs/`; 2 PNG EDA trong `artifacts/figures/`.
+- Code: `labs/lab2/main.py` gọi 7 module `labs/lab2/<module>/<module>.py`.
 
-- **Folder structure:**
-```text
-labs/lab2/
-├── README.md                # brief report (EN + VI) / báo cáo ngắn
-├── project_description.md   # Define + Design (feed this to the AI agent)
-├── progress_status.md       # progress, audit, dated log / tiến độ
-├── main.py                  # runs the whole pipeline (leader)
-├── requirements.txt
-├── eda/eda.py                  # module: eda
-├── preprocessing/preprocessing.py# module: preprocessing
-├── features/features.py        # module: features
-├── model/model.py              # module: model
-├── train/train.py              # module: train
-├── evaluate/evaluate.py        # module: evaluate
-├── experiment/experiment.py    # module: experiment
-├── raw_data/                # dataset files (NOT committed)
-├── artifacts/               # splits/ (committed) | models, figures, logs, runs (NOT committed)
-├── logbook/                 # bug reports and experiment notes (docs/templates)
-└── tests/test_smoke.py      # interface contract + smoke tests
-```
-- **Milestones:**
-  - M1: loaders return a batch [B,3,H,W] with labels 0-9
-  - M2: build_model returns logits [B,10]; describe_model prints parameter counts
-  - M3: train_model runs 1 epoch and writes TensorBoard logs
-  - M4: evaluate gives accuracy and confusion matrix
-  - M5: comparison of 2 or more models/settings + short report
-- **Technical risks:**
-  - Slow training on CPU: smaller image_size / subset / fewer epochs
-  - Deprecated API: use weights=..., not pretrained=True, in recent torchvision
-  - Forgetting to replace the final layer: output size must be 10
-  - Wrong normalization: use ImageNet mean/std for ImageNet-pretrained models
-  - Dataset download time and disk space: download once, keep raw_data/ ignored
-
----
-
-**Tiếng Việt**
-
-# Lab 2: CNN pre-trained và fine-tuning trên CIFAR-10 (PyTorch): mô tả dự án (Define + Design)
-
-## Define
-- **Bài toán:** Tái sử dụng mạng pre-trained của torchvision (VGG, DenseNet, ResNet...) cho bài toán ảnh 10 lớp bằng cách thay lớp cuối, đóng băng/mở khóa lớp và chỉnh siêu tham số.
-- **Người dùng:** cô (chấm bài) và nhóm (học).
-- **Đầu vào / Đầu ra:** Đầu vào: ảnh CIFAR-10. Đầu ra: model đã fine-tune, accuracy theo từng model/cấu hình, log TensorBoard, bảng so sánh.
-- **Dữ liệu:** GIẢ ĐỊNH (cần hỏi lại cô): CIFAR-10 qua `torchvision.datasets` (slide dùng làm ví dụ).
-- **Tính năng chính:**
-  1. Nạp model pre-trained từ torchvision.models và in cấu trúc
-  2. Thay lớp cuối; đóng băng (transfer learning) hoặc mở khóa các lớp cuối (fine-tuning)
-  3. Chuẩn bị dữ liệu bằng torchvision.transforms và DataLoader
-  4. Huấn luyện với hàm loss, optimizer và vòng lặp huấn luyện
-  5. Đánh giá trên tập test
-  6. Thử nhiều model và siêu tham số
-  7. Theo dõi huấn luyện bằng TensorBoard
-- **Ràng buộc công nghệ:** PyTorch + torchvision + TensorBoard. Model pre-trained ở 224x224 chạy chậm trên CPU: dùng kích thước ảnh nhỏ hơn hoặc tập con dữ liệu và ghi rõ.
-- **Tiêu chí đánh giá:** Slide Practice 2 không nêu sản phẩm nộp: hỏi lại cô (giả định: code, báo cáo ngắn, ảnh chụp TensorBoard). Vấn đáp.
-
-## Design
-- **Luồng dữ liệu:** eda -> preprocessing -> features -> model (backbone + header) -> train (+TensorBoard) -> evaluate ; experiment wraps model + train
-- **Module và người phụ trách** (mỗi module = một sub-folder + một script):
-- Member A: `eda`, `preprocessing`, `features`, `model`
-- Member B: `train`, `evaluate`, `experiment`
-- Nhóm trưởng phụ trách `main.py`, `README.md`, `progress_status.md`, `AI_usage.md` và duyệt PR.
-- **Quy tắc linh hoạt module:** nếu lab này không cần một module, ghi `N/A` trong `progress_status.md` kèm lý do một dòng. Không xóa im lặng.
-- **Interface** (tên hàm và chữ ký là hợp đồng; `tests/test_smoke.py` kiểm tra tên hàm):
+## Interfaces (hợp đồng — `tests/test_smoke.py` kiểm tên hàm)
 
 | Module | Phụ trách | Hàm / lớp | Đầu vào | Đầu ra |
 |---|---|---|---|---|
-| `eda` | Member A | `run_eda(data_root: str, out_dir: str)` | data_root: thư mục dữ liệu (torchvision tải về); out_dir | dict: n_train, n_test, class_counts, image_size, channel_mean, channel_std; file PNG trong out_dir |
+| `eda` | Member A | `run_eda(data_root: str, out_dir: str)` | data_root, out_dir | dict: n_train, n_test, class_counts, image_size, channel_mean, channel_std; PNG trong out_dir |
 | `preprocessing` | Member A | `load_raw_dataset(data_root: str, download: bool = True)` | data_root, download | (train_set, test_set) |
 | `preprocessing` | Member A | `make_split(n_samples: int, val_ratio: float = 0.1, seed: int = 42)` | n_samples, val_ratio, seed | (train_idx, val_idx) |
-| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | chỉ số + path / path | file JSON / (train_idx, val_idx) |
+| `preprocessing` | Member A | `save_split(train_idx, val_idx, path: str)` | indices + path | JSON file |
+| `preprocessing` | Member A | `load_split(path: str)` | path | (train_idx, val_idx) |
 | `features` | Member A | `build_transforms(image_size: int = 224, augment: bool = False)` | image_size, augment | (train_transform, eval_transform) |
-| `features` | Member A | `make_loaders(train_set, test_set, train_idx, val_idx, train_tf, eval_tf, batch_size: int = 64)` | dataset, chỉ số split, transform, batch_size | (train_loader, val_loader, test_loader) |
-| `model` | Member A | `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True)` | name, num_classes, freeze_backbone, pretrained | nn.Module xuất logits [B,num_classes]; backbone bị đóng băng nếu được yêu cầu |
-| `model` | Member A | `describe_model(model)` | model | dict: total_params, trainable_params, tên các lớp |
-| `model` | Member A | `unfreeze_last_blocks(model, n_blocks: int)` | model, n_blocks | model được cập nhật tại chỗ |
-| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, writer=None, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay | dict history: train_loss, val_loss, val_acc; checkpoint tại ckpt_path; log TensorBoard |
-| `train` | Member B | `save_checkpoint(model, path: str)` | model, path (, device) | file / model ở chế độ eval |
+| `features` | Member A | `make_loaders(train_set, test_set, train_idx, val_idx, train_tf, eval_tf, batch_size: int = 64)` | datasets, split indices, transforms, batch_size | (train_loader, val_loader, test_loader) |
+| `model` | Member A | `build_model(name: str, num_classes: int = 10, freeze_backbone: bool = True, pretrained: bool = True)` | name, num_classes, freeze_backbone, pretrained | nn.Module xuất logits [B, num_classes] |
+| `model` | Member A | `describe_model(model)` | model | dict: total_params, trainable_params, layer_names |
+| `model` | Member A | `unfreeze_last_blocks(model, n_blocks: int)` | model, n_blocks | model cập nhật tại chỗ |
+| `train` | Member B | `train_model(model, train_loader, val_loader, epochs: int, lr: float, device, ckpt_path: str, writer=None, optimizer_name: str = 'adam', weight_decay: float = 0.0)` | model, loaders, epochs, lr, device, ckpt_path, writer, optimizer_name, weight_decay | dict history: train_loss, val_loss, val_acc; checkpoint; TensorBoard log |
+| `train` | Member B | `save_checkpoint(model, path: str)` | model, path | file checkpoint |
 | `evaluate` | Member B | `evaluate(model, loader, device)` | model, loader, device | (avg_loss, accuracy) |
-| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device | mảng [C,C] (hàng = thật, cột = dự đoán) |
-| `evaluate` | Member B | `top_confusions(cm, class_names, k: int = 5)` | cm, class_names, k | danh sách (lớp thật, lớp dự đoán, số lần) |
-| `experiment` | Member B | `run_comparison(model_names: list, hparam_grid: list, loaders: tuple, device, log_root: str)` | model_names (vd ['resnet18','vgg16']), hparam_grid (danh sách dict: lr, batch_size, freeze...), loaders, device, log_root | danh sách dict kết quả: model, hparams, best_val_acc, train_seconds; run TensorBoard trong log_root |
-| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | file CSV |
+| `evaluate` | Member B | `confusion_matrix(model, loader, device, num_classes: int = 10)` | model, loader, device | array [C, C] |
+| `evaluate` | Member B | `top_confusions(cm, class_names, k: int = 5)` | cm, class_names, k | list of (true_class, pred_class, count) |
+| `experiment` | Member B | `run_comparison(model_names: list, hparam_grid: list, loaders: tuple, device, log_root: str)` | model_names, hparam_grid, loaders, device, log_root | list of result dicts; TensorBoard runs dưới log_root |
+| `experiment` | Member B | `save_results(results: list, csv_path: str)` | results, csv_path | CSV file |
 
-- **Mốc (milestone):**
-  - M1: loader trả batch [B,3,H,W], nhãn 0-9
-  - M2: build_model trả logits [B,10]; describe_model in số tham số
-  - M3: train_model chạy 1 epoch và ghi log TensorBoard
-  - M4: evaluate cho accuracy và confusion matrix
-  - M5: so sánh từ 2 model/cấu hình + báo cáo ngắn
-- **Rủi ro kỹ thuật:**
-  - Huấn luyện chậm trên CPU: giảm image_size / dùng tập con / ít epoch
-  - API cũ: torchvision mới dùng weights=..., không dùng pretrained=True
-  - Quên thay lớp cuối: đầu ra phải là 10
-  - Chuẩn hóa sai: dùng mean/std ImageNet cho model pre-trained trên ImageNet
-  - Thời gian tải dataset và dung lượng ổ đĩa: tải một lần, giữ raw_data/ trong .gitignore
+## Success criteria
+- `pytest labs/lab2/tests/` đạt toàn bộ; `ruff check` sạch trên các file đã sửa.
+- Loader trả batch `[B, 3, H, W]` float32, nhãn int64 trong 0–9 (Milestone M1).
+- `build_model('resnet18')` trả logits `[B, 10]`; `describe_model` in đúng số tham số (M2).
+- `train_model` chạy 1 epoch và ghi log TensorBoard (M3).
+- `evaluate` trả accuracy và confusion matrix (M4).
+- So sánh ≥ 2 model/cấu hình, lưu bảng CSV, có báo cáo ngắn trong `README.md` (M5).
+- Kết quả thực tế (2026-11-04): ResNet-18 feature extraction 78,94%, fine-tuning 91,90%; DenseNet-121 feature extraction 83,22%, fine-tuning 92,00%; DenseNet-121 test acc 91,32%.
+
+## How-to-do
+1. Chạy `run_eda` kiểm tra CIFAR-10: 50.000 train / 10.000 test, 10 lớp cân bằng, kích thước `(32, 32, 3)` (`eda`).
+2. Nạp dataset thô, tạo split 90/10 cố định seed 42, lưu `train_val_split.json` (`preprocessing`).
+3. Build transforms ImageNet (resize + ToTensor + chuẩn hoá), tạo 3 DataLoader (`features`).
+4. Nạp backbone pre-trained, thay classifier head thành 10 lớp, đóng băng backbone (`model`).
+5. Chạy `train_model` 1 epoch smoke run; sau đó normal run với TensorBoard (`train`).
+6. `run_comparison` trên 2 model × 2 chế độ, lưu kết quả CSV; `evaluate` test trên model tốt nhất (`evaluate`, `experiment`).
+7. Điền báo cáo ngắn `README.md`, kiểm tra notebook `lab2_presentation.ipynb`, audit code so với desc này.
+
+## Cấu trúc thư mục
+```text
+labs/lab2/
+├── README.md                        # báo cáo ngắn (EN + VI)
+├── REPORT.md                        # báo cáo chi tiết
+├── project_description.md           # file này
+├── progress_status.md               # tiến độ, audit, nhật ký
+├── main.py                          # chạy toàn bộ pipeline
+├── requirements.txt
+├── eda/eda.py
+├── preprocessing/preprocessing.py
+├── features/features.py
+├── model/model.py
+├── train/train.py
+├── evaluate/evaluate.py
+├── experiment/experiment.py
+├── raw_data/                        # dữ liệu thô (không commit)
+├── artifacts/                       # splits/ (commit) | models, figures, logs, runs (không commit)
+├── docs/                            # hướng dẫn từng module
+├── notebook/lab2_presentation.ipynb
+└── tests/                           # test_smoke.py + test từng module
+```
+
+## Quyết định (người ghi)
+- 2026-10-17 Thư: chốt 7 module, interface và milestone; `test_smoke.py` kiểm tên hàm.
+- 2026-10-26 Bảo: Member B tự implement train, evaluate, experiment trên nhánh riêng sau khi nhận bàn giao từ Member A.
+- 2026-11-04 Thư: TensorBoard là tuỳ chọn (lazy import, không lỗi khi thiếu); `unfreeze_last_blocks` tách khối VGG-16 theo `MaxPool2d` thay vì lấy 2 module cuối; `train_model` ghi thêm `best_epoch`, `best_val_loss`, `best_val_acc`.
+- 2026-11-04 Thư: chọn DenseNet-121 fine-tuning là cấu hình tốt nhất (test 91,32%) — đúng quy tắc chọn trên val; không chạy test nhiều lần.
+- 2026-11-04 Thư: `image_size=128` mặc định trong `main.py` thay vì 224 — chạy được trên CPU trong thời gian hợp lý; ghi rõ trong README.

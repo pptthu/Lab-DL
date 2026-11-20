@@ -1,5 +1,5 @@
 # Lab 2: Pre-trained CNNs and fine-tuning on CIFAR-10 (PyTorch): progress status
-_Last updated: 2026-11-04 by Team Leader (Thư)_
+_Last updated: 2026-11-19 by Member A (Đại)_
 
 | Module | Owner | Status (todo / doing / done / N/A) | Smoke run | Normal run | Notes |
 |---|---|---|---|---|---|
@@ -44,6 +44,10 @@ After the handoff Member A only answers questions and reviews PRs; Member A does
 - 2026-10-31 Thư (Leader): verified all 23 tests passing (Member A + Member B modules merged on main); audited baseline ResNet-18 training run and evaluation metrics; authored comprehensive bilingual README.md -> verified with `pytest labs/lab2/tests/` (23 passed).
 - 2026-11-04 Thư (Leader): fixed four integration issues: (1) TensorBoard import is now lazy/optional in `experiment`; (2) `unfreeze_last_blocks` detects VGG-16's five MaxPool-terminated conv blocks instead of taking the last two modules; (3) `train_model` records `best_epoch`/`best_val_loss`/`best_val_acc` and `run_comparison` reports the checkpoint epoch instead of `max(val_acc)`; (4) `main.py` wired end-to-end with stage validation and a JSON/CSV summary -> verified with `pytest labs/lab2/tests/` (52 passed) and `ruff check` on changed files.
 - 2026-11-04 Thư (Leader): added per-module guides `labs/lab2/docs/` (eda, preprocessing, features, model, train, evaluate, experiment, demo); README: `main.py` no longer described as a stub, docs folder added -> docs only, no code change; signatures checked against the code with `inspect`
+- 2026-11-18 Thư (Leader): refactored and streamlined presentation notebook (`lab2_presentation.ipynb`) into a clean 12-stage presentation flow, eliminating duplicate experiment comparison cells and empty/fragmented environment shells while preserving all pre-rendered training curves, confusion heatmaps, error analyses, and test evaluation metrics -> verified with notebook JSON parser and `pytest labs/lab2/tests/test_smoke.py` (8 passed).
+- 2026-11-18 Thư (Leader): authored comprehensive bilingual laboratory report (`REPORT.md`) matching the real notebook execution outputs: ResNet-18 vs DenseNet-121 (Feature Extraction: 78.94% vs 83.22%, Fine-Tuning: 91.90% vs 92.00%, Test Winner: DenseNet-121 at 91.32%) with statistical significance (SE=0.42%) and oral defense questions -> verified against `lab2_presentation.ipynb` and `finetune_comparison_summary.csv`.
+- 2026-11-18 Member A (Đại): rewrote `docs/eda.md`, `docs/preprocessing.md`, `docs/features.md`, `docs/model.md` to match the comprehensive 10-section Demo Guide structure of `docs/train.md` (metadata header, table of contents, math formulas, line-by-line code explanation, mermaid architecture/dataflow diagrams, and oral defense Q&A preparation) -> verified with line-number audits and `pytest labs/lab2/tests/` (53 passed in 30.00s).
+- 2026-11-19 Member A (Đại): standardized `docs/eda.md`, `docs/preprocessing.md`, `docs/features.md`, `docs/model.md` to the concise Phase Doc structure (v3 template, matching Lab 1) with exact function signatures, line numbers, I/O paths, pipeline diagrams, gotchas, and success criteria -> verified with `pytest` on Member A tests (22 passed in 19.89s).
 
 ## Open issues
 - Full pipeline run on the complete CIFAR-10 dataset (default `python -m labs.lab2.main`) has not been executed yet: it is slow on CPU. Unit/integration tests mock the stages; run the real pipeline (or the documented `--epochs 1 --image-size 64 --no-experiments` quick run) before submission.
