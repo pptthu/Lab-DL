@@ -1,7 +1,7 @@
 # Tiến độ Lab 3
 
 - **Created**: 2026-11-20T01:25:13+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T13:26:21+07:00 (Phúc, AI soạn)
+- **Last Updated**: 2026-11-20T14:29:08+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì. Bài làm lại độc lập trên nhánh `feat/lab3-redo` (plan: `docs/plans/detail_plan_lab3_md_v1.md`).
@@ -13,17 +13,17 @@ Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm
 
 | Module | Phụ trách | Trạng thái (chưa làm / đang làm / xong) | Test (đạt / lỗi / chưa chạy) | Chạy trên dữ liệu thật (đạt / lỗi / chưa chạy) | Ghi chú |
 |---|---|---|---|---|---|
-| `sentiment_demo` | Member A (Thư) | xong, chờ audit | đạt (4 test) | đạt (2026-11-20) | Bài 1: 5/5 câu kiểm soát có nhãn đúng (kể cả phủ định, "but"); câu trung tính → NEGATIVE 0,9955; `outputs/demo/sentiment_demo*.csv` |
-| `preprocessing` | Member A (Thư) | xong, chờ audit | đạt (9 test) | đạt (2026-11-20) | aclImdb gốc 25k/25k; split train 22.499 / val 2.501 theo phim + review trùng, 0 nhóm ở cả hai phía; `data/splits/train_val_split.json` |
-| `eda` | Member A (Thư) | xong, chờ audit | đạt (5 test) | đạt (2026-11-20, 51 s) | > 256 token: 41%, > 512: 13%; `<br />` 58% review; 123 review test trùng train; `max_length` 512 (Thư chốt, `docs/experiments/experiment_log.md` S1) |
-| `features` | Member A (Thư) | xong, chờ audit | đạt (3 test) | đạt (tokenize full data ở 512) | Bỏ `token_type_ids` (tokenizer thật vẫn trả); 1 batch qua model thật: logits [4, 2], loss 0,7101 |
-| `model` | Member A (Thư) | xong, chờ audit | đạt (3 test) | đạt (nạp thật) | 66.955.010 param (đầu phân loại 592.130); `outputs/results/model_summary.json`; model card phần Initial |
+| `sentiment_demo` | Member A (Thư) | xong, đã audit (2026-11-20) | đạt (4 test) | đạt (2026-11-20) | Bài 1: 5/5 câu kiểm soát có nhãn đúng (kể cả phủ định, "but"); câu trung tính → NEGATIVE 0,9955; `outputs/demo/sentiment_demo*.csv` |
+| `preprocessing` | Member A (Thư) | xong, đã audit (2026-11-20) | đạt (9 test) | đạt (2026-11-20) | aclImdb gốc 25k/25k; split train 22.499 / val 2.501 theo phim + review trùng, 0 nhóm ở cả hai phía; `data/splits/train_val_split.json` |
+| `eda` | Member A (Thư) | xong, đã audit (2026-11-20) | đạt (5 test) | đạt (2026-11-20, 51 s) | > 256 token: 41%, > 512: 13%; `<br />` 58% review; 123 review test trùng train; `max_length` 512 (Thư chốt, `docs/experiments/experiment_log.md` S1) |
+| `features` | Member A (Thư) | xong, đã audit (2026-11-20) | đạt (3 test) | đạt (tokenize full data ở 512) | Bỏ `token_type_ids` (tokenizer thật vẫn trả); 1 batch qua model thật: logits [4, 2], loss 0,7101 |
+| `model` | Member A (Thư) | xong, đã audit (2026-11-20) | đạt (3 test) | đạt (nạp thật) | 66.955.010 param (đầu phân loại 592.130); `outputs/results/model_summary.json`; model card phần Initial |
 | `train` | Member B (Phúc) | xong, chờ audit | đạt (7 test) | đạt (Kaggle T4, 2026-11-20) | Pilot best val acc 0,9308 (epoch 4,0); 3 seed val acc 0,9303 ± 0,0013; 5,2 phút/epoch; trần 6, patience 8, threshold 0 (AI chốt theo uỷ quyền, Thư duyệt 2026-11-20) |
 | `evaluate` | Member B (Phúc) | xong, chờ audit | đạt (7 test) | đạt (Kaggle T4, 2026-11-20) | **Test acc 0,9315 ± 0,0020** (≥ 91%: đạt), F1 0,9323 ± 0,0021; zero-shot 0,8922; test dùng 1 lần/model (`test_evaluated: true`); fine-tuned sai 2/2 câu phủ định kiểm soát |
 | `experiment` | Member B (Phúc) | xong, chờ audit | đạt (6 test) | đạt (Kaggle T4, 2026-11-20) | timing → pilot → 3 seed → `max_length` (seed 42): val acc 128: 0,8729; 256: 0,9152; 512: 0,9288 (1 seed/giá trị vì std ≤ 0,3 điểm; Thư duyệt) |
 | `visualize` | Member B (Phúc) | xong, chờ audit | đạt (4 test) | đạt (máy, đọc `outputs/`) | Đường huấn luyện 6 run, `maxlen_val_acc.png`, confusion matrix; lỗi: bị cắt 10,05% vs 6,14%, rating 4: 17,2%, rating 7: 11,7% |
 | Notebook Kaggle, các lần chạy Kaggle | Member B (Phúc) | xong, chờ audit | – | đạt: 8 kernel (`pptt1103/lab3-*`) | `labs/lab3/kaggle/` (CLI, dataset code private, 1 GPU); chạy trên tài khoản Kaggle của Thư (`pptt1103`) |
-| `main.py`, README, notebook trình bày | Member A (Thư) | đang làm | – | notebook chạy 0 lỗi (2026-11-20; Stage 6–10 có kết quả + nhận xét của Phúc) | Notebook: Stage 0–5 (phần A) có kết quả; Stage 6–10 đọc file của B, chưa có thì in "chưa có kết quả". `main.py`, README làm sau khi B có kết quả |
+| `main.py`, README, notebook trình bày | Member A (Thư) | xong, chờ Thư duyệt | – | notebook chạy 0 lỗi (2026-11-20) | Notebook viết lại theo khuôn Lab 1 (mỗi Stage một ô markdown, 28 ô); `README.md`, `project_description.md` viết sau khi có kết quả của B |
 
 ## Handoff A → B (làm tuần tự)
 Phúc bắt đầu code khi TẤT CẢ các mục sau đúng:
@@ -50,6 +50,7 @@ Trên Kaggle: lần đầu `load_datasets()` tự tải `aclImdb_v1.tar.gz` (c�
 Thư duyệt ở các cổng: smoke run, pilot (chốt trần epoch, patience), audit.
 
 ## Nhật ký (mỗi bước một dòng, có ngày)
+- 2026-11-20 Thư (AI soạn): audit phần A (24 test, smoke phần A 38 s, số liệu khớp `outputs/`; sửa số review bị cắt trong `features_v1.md`: 2.996 / 323 / 3.086); notebook theo khuôn Lab 1; viết `README.md`, `project_description.md`.
 - 2026-11-20 Phúc (AI soạn, theo phản hồi của Thư): S4 so cùng seed 42 (512: 0,9288; 512 hơn 256 1,36 điểm, trung bình 3 seed để tham khảo); S3 ghi chú seed 43 sát trần 6 epoch (không chạy lại); ghi đúng tài khoản Kaggle của Thư (`pptt1103`); notebook Stage 6–10 thêm ô "Nhận xét" + cập nhật Tóm tắt, chạy lại toàn bộ bằng kernel python313: 0 lỗi; Thư duyệt quy tắc dừng.
 - 2026-11-20 Phúc (AI chạy): S5 test 25k một lần trên Kaggle: fine-tuned 0,9315 ± 0,0020, zero-shot 0,8922 → đạt ngưỡng 91%; confusion matrix, phân tích lỗi, câu kiểm soát. Tài liệu: `experiment_log.md` S2–S5, mục "Triển khai" của 4 phase, model card phần Trained model. Commit đứng tên Phúc theo quyết định của Thư.
 - 2026-11-20 Phúc (AI chạy): S4 `max_length` 128 / 256 (1 seed/giá trị) — val acc 0,8729 / 0,9152 so với 0,9303 ở 512.

@@ -1,9 +1,9 @@
 # eda — khám phá dữ liệu IMDB, đo độ dài token (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:41:59+07:00 (Thư)
+- **Last Updated**: 2026-11-20T14:29:08+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -62,6 +62,12 @@ preprocessing.load_split (thô) → clean_text → đếm nhãn, tokenize không
 - **Test:** `pytest labs/lab3/tests/test_eda.py` đạt: phân vị và % vượt ngưỡng tính đúng trên dữ liệu giả
 - **Smoke run:** CSV và 3 hình có trong `outputs/_smoke/`
 - **Normal run:** `eda_summary.csv` có đủ 2 split chính thức (train, test), tổng 50.000 review; 3 hình trong `outputs/figures/`
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_eda.py` → 5 passed ✔
+- **Smoke run** (`run_member_a(smoke=True)`, 38 giây, máy Thư, 40 review mỗi split): 4 CSV và 3 hình trong `outputs/_smoke/` ✔
+- **Normal run:** `outputs/results/eda_summary.csv` có train và test, tổng 50.000 review; số liệu ở mục Triển khai khớp file (median 222 / 219; > 512: 13,28 / 12,34%; `<br />` 58,66%; phủ định 89,44%; 123 review test trùng train); 3 hình trong `outputs/figures/` ✔
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)

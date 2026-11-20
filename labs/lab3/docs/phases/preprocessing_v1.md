@@ -1,9 +1,9 @@
 # preprocessing — tải IMDB gốc, làm sạch, chia train/val theo phim (v1)
 
 - **Created**: 2026-11-20T01:00:14+07:00
-- **Last Updated**: 2026-11-20T02:32:51+07:00 (Thư)
+- **Last Updated**: 2026-11-20T14:29:08+07:00 (Thư)
 - **Người phụ trách**: Thư
-- **Status**: In Progress — code, test, smoke và normal run xong (2026-11-20); chờ Thư audit
+- **Status**: Done — audit 2026-11-20
 
 ---
 
@@ -66,6 +66,12 @@ aclImdb_v1.tar.gz → download_imdb → data/raw/aclImdb/
 - **Test:** `pytest labs/lab3/tests/test_preprocessing.py` đạt: đọc đúng id/rating/nhãn, bỏ hết `<br />`, không phim nào và không review trùng nào ở cả train và val, val gần 10%, số dòng URL sai thì báo lỗi
 - **Smoke run:** `DatasetDict` có 3 split, đủ cột
 - **Normal run:** train + val = 25.000, test = 25.000; val ≈ 2.500 (cân bằng nhãn ± 1%); giao giữa `movie_id` train và val = rỗng; split JSON tồn tại
+
+## Kết quả audit (2026-11-20)
+- **Test:** `pytest labs/lab3/tests/test_preprocessing.py` → 9 passed ✔
+- **Smoke run** (`run_member_a(smoke=True)`, 38 giây, máy Thư, 40 review mỗi split): `DatasetDict` 3 split (train / validation / test), đủ cột ✔
+- **Normal run:** `data/splits/train_val_split.json`: train 22.499 + val 2.501 = 25.000, test 25.000; tỉ lệ dương ở val 0,5002; 3.438 nhóm, `groups_in_both` = 0 ✔
+- Số dòng code ghi ở mục Triển khai khớp code hiện tại ✔
 
 ## Links
 - Desc lab: [../lab3_description_v1.md](../lab3_description_v1.md) | Plan: [../plans/detail_plan_lab3_md_v1.md](../plans/detail_plan_lab3_md_v1.md)
