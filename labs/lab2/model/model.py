@@ -50,9 +50,11 @@ def build_model(
     # 3. Replace final classification layer (the new layer automatically has requires_grad=True)
     if name_lower == "resnet18":
         in_features = model.fc.in_features
+        model.fc = nn.Dropout(0.3)
         model.fc = nn.Linear(in_features, num_classes)
     elif name_lower == "densenet121":
         in_features = model.classifier.in_features
+        model.classifier = nn.Dropout(0.3)
         model.classifier = nn.Linear(in_features, num_classes)
     elif name_lower == "vgg16":
         in_features = model.classifier[6].in_features

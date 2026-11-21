@@ -57,7 +57,7 @@ def train_model(
     model.to(device)
 
     # 1. Setup loss and trainable parameters
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.05)  # Label smoothing for better generalization
     trainable_params = [p for p in model.parameters() if p.requires_grad]
     if not trainable_params:
         raise ValueError("Model has no trainable parameters. Check if all layers are frozen.")
