@@ -69,7 +69,11 @@ def test_history_lengths_and_finite_metrics(tmp_path):
         optimizer_name="adam",
     )
 
-    assert set(history.keys()) == {"train_loss", "val_loss", "val_acc"}
+    # history giữ 3 khoá cũ và có thêm các cột của _history.csv cùng tóm tắt lần chạy.
+    assert {"train_loss", "train_acc", "val_loss", "val_acc", "lr", "time_s"} <= set(history.keys())
+    assert history["stop_reason"] == "max_epochs"
+    assert history["stopped_epoch"] == epochs
+    assert 1 <= history["best_epoch"] <= epochs
     assert len(history["train_loss"]) == epochs
     assert len(history["val_loss"]) == epochs
     assert len(history["val_acc"]) == epochs
@@ -124,3 +128,69 @@ def test_train_overfits_tiny_set(tmp_path):
 
     assert history["train_loss"][-1] < history["train_loss"][0] * 0.1
     assert history["val_acc"][-1] == 1.0
+
+
+class ConstantNet(nn.Module):
+    """Model không học được gì (lr = 0) để val_loss đứng yên, kiểm quy tắc dừng."""
+
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Linear(28 * 28, 10)
+
+    def forward(self, x):
+        return self.fc(x.flatten(1))
+
+
+def test_early_stopping_after_patience_epochs(tmp_path):
+    # lr = 0 nên val_loss không đổi: epoch 1 là best, dừng sau 5 epoch không giảm, tức ở epoch 6.
+    train_loader, val_loader = _make_dummy_loaders()
+    history = train_model(
+        model=ConstantNet(), train_loader=train_loader, val_loader=val_loader,
+        epochs=30, lr=0.0, device="cpu", ckpt_path=str(tmp_path / "r_best.pt"),
+        patience=5, min_delta=1e-4, last_ckpt_path=str(tmp_path / "r_last.pt"),
+    )
+    assert history["stop_reason"] == "early_stopping"
+    assert history["best_epoch"] == 1
+    assert history["stopped_epoch"] == 6
+    assert len(history["val_loss"]) == 6
+    assert (tmp_path / "r_best.pt").is_file()
+    assert (tmp_path / "r_last.pt").is_file()
+
+
+def test_writes_three_log_files(tmp_path):
+    train_loader, val_loader = _make_dummy_loaders()
+    run_info = {"seed": 42, "config": {"hidden_sizes": [16], "lr": 1e-3, "optimizer_name": "adam",
+                                       "dropout": 0.0, "weight_decay": 0.0},
+                "batch_size": 4, "architecture": "TinyNet", "params": 12730, "data": "fake", "split": "-"}
+    history = train_model(
+        model=TinyNet(), train_loader=train_loader, val_loader=val_loader,
+        epochs=2, lr=1e-3, device="cpu", ckpt_path=str(tmp_path / "m" / "x_best.pt"),
+        patience=5, min_delta=1e-4, last_ckpt_path=str(tmp_path / "m" / "x_last.pt"),
+        log_dir=str(tmp_path / "logs"), run_name="x", run_info=run_info,
+    )
+    log = (tmp_path / "logs" / "x.log").read_text(encoding="utf-8")
+    assert log.startswith("=== RUN START")
+    assert "=== RUN END" in log and "stop_reason: max_epochs" in log
+    lines = (tmp_path / "logs" / "x_history.csv").read_text(encoding="utf-8").strip().splitlines()
+    assert lines[0] == "epoch,train_loss,train_acc,val_loss,val_acc,lr,time_s"
+    assert len(lines) == 1 + history["stopped_epoch"]
+    import json
+    cfg = json.loads((tmp_path / "logs" / "x_config.json").read_text(encoding="utf-8"))
+    assert cfg["seed"] == 42 and cfg["early_stopping"]["patience"] == 5
+
+
+def test_max_batches_limits_each_epoch(tmp_path):
+    # Smoke run: 2 batch mỗi epoch, batch_size 4 nên chỉ đi qua 8 ảnh.
+    train_loader, val_loader = _make_dummy_loaders()
+    model = TinyNet()
+    calls = {"n": 0}
+    orig = model.forward
+
+    def counting_forward(x):
+        calls["n"] += 1
+        return orig(x)
+
+    model.forward = counting_forward
+    train_model(model=model, train_loader=train_loader, val_loader=val_loader, epochs=1, lr=1e-3,
+                device="cpu", ckpt_path=str(tmp_path / "s.pt"), max_batches=2)
+    assert calls["n"] == 4  # 2 batch train + 2 batch val

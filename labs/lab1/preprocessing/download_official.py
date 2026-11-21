@@ -20,7 +20,7 @@ from torchvision.datasets import FashionMNIST
 from labs.lab1.preprocessing.preprocessing import (
     LABEL_COL, N_PIXELS, TEST_CSV_NAME, TRAIN_CSV_NAME, load_csv,
 )
-from shared.paths import raw_data_dir
+from shared.paths import data_dir
 
 # Official sizes: 60,000 train / 10,000 test, 10 balanced classes.
 # VI: Kích thước chính thức: 60.000 train / 10.000 test, 10 lớp cân bằng.
@@ -28,7 +28,7 @@ EXPECTED = {True: (TRAIN_CSV_NAME, 60_000), False: (TEST_CSV_NAME, 10_000)}
 
 
 def main() -> None:
-    root = raw_data_dir("lab1")
+    root = data_dir("lab1", "raw")
     for train, (csv_name, n_rows) in EXPECTED.items():
         ds = FashionMNIST(root=str(root), train=train, download=True)
         pixels = ds.data.numpy().reshape(-1, N_PIXELS)

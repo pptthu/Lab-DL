@@ -9,11 +9,14 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Sequence, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 import numpy as np
 import pandas as pd
 import torch
 from torch import nn
+
+# Mức test của baseline theo desc lab: MLP tốt nhất trong bài báo gốc Fashion-MNIST (Xiao et al. 2017, Bảng 3: 0,871).
+TEST_ACC_THRESHOLD = 0.87
 
 
 def evaluate(model: nn.Module, loader, device: str | torch.device) -> Tuple[float, float]:
@@ -149,6 +152,25 @@ def save_classification_report(cm: np.ndarray, class_names: Sequence[str], csv_p
         })
 
     df = pd.DataFrame(rows)
+    p = Path(csv_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(p, index=False)
+    return df
+
+
+def save_test_results(rows: List[Dict[str, Any]], csv_path: str, threshold: float = TEST_ACC_THRESHOLD) -> pd.DataFrame:
+    """Ghi kết quả val và test của các model đã chọn (mỗi model chạy test đúng một lần).
+
+    Vào : rows: list dict có name, role ('baseline' / 'selected' / 'baseline+selected'), run_name, ckpt_path,
+          val_loss, val_acc, test_loss, test_acc; csv_path; threshold: mức test của baseline
+    Ra  : DataFrame (thêm cột meets_threshold, chỉ tính cho dòng có baseline); file CSV tại csv_path
+    """
+    df = pd.DataFrame(rows)
+    df["threshold"] = threshold
+    df["meets_threshold"] = [
+        bool(acc >= threshold) if "baseline" in str(role) else None
+        for acc, role in zip(df["test_acc"], df["role"])
+    ]
     p = Path(csv_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(p, index=False)

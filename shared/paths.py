@@ -6,6 +6,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_KINDS = ("splits", "models", "figures", "logs", "runs")
+DATA_KINDS = ("raw", "splits")
+OUTPUT_KINDS = ("models", "logs", "figures", "results", "demo", "_smoke")
 
 
 def lab_dir(lab_slug: str) -> Path:
@@ -26,5 +28,29 @@ def artifact_dir(lab_slug: str, kind: str) -> Path:
     if kind not in ARTIFACT_KINDS:
         raise ValueError(f"kind must be one of {ARTIFACT_KINDS}, got {kind!r}")
     path = lab_dir(lab_slug) / "artifacts" / kind
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def data_dir(lab_slug: str, kind: str) -> Path:
+    """Return (and create) a data folder: raw or splits.
+
+    VI: Trả về (và tạo) thư mục dữ liệu: raw hoặc splits (labs/<lab>/data/<kind>).
+    """
+    if kind not in DATA_KINDS:
+        raise ValueError(f"kind must be one of {DATA_KINDS}, got {kind!r}")
+    path = lab_dir(lab_slug) / "data" / kind
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def output_dir(lab_slug: str, kind: str) -> Path:
+    """Return (and create) an output folder: models, logs, figures, results, demo or _smoke.
+
+    VI: Trả về (và tạo) thư mục đầu ra (labs/<lab>/outputs/<kind>).
+    """
+    if kind not in OUTPUT_KINDS:
+        raise ValueError(f"kind must be one of {OUTPUT_KINDS}, got {kind!r}")
+    path = lab_dir(lab_slug) / "outputs" / kind
     path.mkdir(parents=True, exist_ok=True)
     return path
