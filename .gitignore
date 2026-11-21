@@ -17,6 +17,14 @@ labs/*/artifacts/logs/*
 !labs/*/artifacts/logs/.gitkeep
 labs/*/artifacts/runs/*
 !labs/*/artifacts/runs/.gitkeep
+labs/*/checkpoint/*/*
+!labs/*/checkpoint/*/.gitkeep
+labs/*/checkpoint/*
+!labs/*/checkpoint/.gitkeep
+labs/*/log/*/*
+!labs/*/log/*/.gitkeep
+labs/*/log/*
+!labs/*/log/.gitkeep
 # Lab 1 data/ and outputs/ (O5) / Lab 1: thư mục data/ và outputs/
 labs/lab1/data/raw/*
 !labs/lab1/data/raw/.gitkeep

@@ -9,9 +9,10 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any
+
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.utils.data import DataLoader
 
 
@@ -23,11 +24,12 @@ def train_model(
     lr: float,
     device: Any,
     ckpt_path: str,
-    writer: Optional[Any] = None,
+    writer: Any | None = None,
     optimizer_name: str = "adam",
     weight_decay: float = 0.0,
-    patience: Optional[int] = None,
-) -> Dict[str, Any]:
+    patience: int | None = None,
+    scheduler_name: str | None = None,
+) -> dict[str, Any]:
     """Training loop with validation each epoch; log scalars to TensorBoard when writer is given; keep the best checkpoint.
 
     Checkpoint selection criterion: LOWEST validation loss. The returned history
@@ -35,17 +37,17 @@ def train_model(
     callers report the metrics of the epoch that was actually saved, instead of
     recomputing ``max(val_acc)`` (which may belong to a different epoch).
 
-    Input : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay, patience
-    Output: history dict: train_loss, val_loss, val_acc (per epoch) plus best_epoch,
+    Input : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter or None), optimizer_name, weight_decay, patience, scheduler_name
+    Output: history dict: train_loss, val_loss, val_acc, lr (per epoch) plus best_epoch,
             best_val_loss, best_val_acc (metrics of the saved checkpoint), stopped_epoch;
             checkpoint at ckpt_path; TensorBoard logs
 
     VI: Vòng lặp huấn luyện có validation mỗi epoch; ghi scalar lên TensorBoard nếu có writer; lưu checkpoint tốt nhất.
-    Hỗ trợ early stopping qua tham số patience (dừng nếu val_loss không giảm qua patience epoch liên tiếp).
+    Hỗ trợ early stopping qua tham số patience và điều chỉnh tốc độ học qua scheduler_name ('cosine' | 'step' | 'plateau' | None).
     Tiêu chí chọn checkpoint: validation loss NHỎ NHẤT. History trả thêm best_epoch,
     best_val_loss, best_val_acc để báo cáo đúng epoch đã lưu.
-    Vào : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay, patience
-    Ra  : dict history: train_loss, val_loss, val_acc (từng epoch) và best_epoch,
+    Vào : model, loaders, epochs, lr, device, ckpt_path, writer (SummaryWriter hoặc None), optimizer_name, weight_decay, patience, scheduler_name
+    Ra  : dict history: train_loss, val_loss, val_acc, lr (từng epoch) và best_epoch,
           best_val_loss, best_val_acc, stopped_epoch; checkpoint tại ckpt_path; log TensorBoard
     """
     if epochs <= 0:
@@ -70,11 +72,28 @@ def train_model(
     else:
         raise ValueError(f"Unsupported optimizer_name: {optimizer_name}. Expected 'adam' or 'sgd'.")
 
-    history: Dict[str, Any] = {
+    scheduler = None
+    if scheduler_name is not None:
+        sched_name_lower = scheduler_name.lower()
+        if sched_name_lower == "cosine":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
+        elif sched_name_lower == "step":
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=max(1, epochs // 3), gamma=0.1)
+        elif sched_name_lower == "plateau":
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode="min", factor=0.5, patience=max(1, (patience or 3) // 2)
+            )
+        else:
+            raise ValueError(
+                f"Unsupported scheduler_name: {scheduler_name}. Expected 'cosine', 'step', 'plateau', or None."
+            )
+
+    history: dict[str, Any] = {
         "train_loss": [],
         "train_acc": [],
         "val_loss": [],
         "val_acc": [],
+        "lr": [],
         # Metrics of the epoch whose weights were saved as the checkpoint.
         "best_epoch": None,
         "best_val_loss": None,
@@ -146,12 +165,23 @@ def train_model(
         history["val_loss"].append(float(val_epoch_loss))
         history["val_acc"].append(float(val_epoch_acc))
 
+        current_lr = float(optimizer.param_groups[0]["lr"])
+        history["lr"].append(current_lr)
+
         # Log scalars to TensorBoard
         if writer is not None:
             writer.add_scalar("Loss/train", train_epoch_loss, epoch)
             writer.add_scalar("Accuracy/train", train_epoch_acc, epoch)
             writer.add_scalar("Loss/val", val_epoch_loss, epoch)
             writer.add_scalar("Accuracy/val", val_epoch_acc, epoch)
+            writer.add_scalar("Learning_Rate", current_lr, epoch)
+
+        # Step learning rate scheduler if configured
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(val_epoch_loss)
+            else:
+                scheduler.step()
 
         # Checkpoint selection: based on best validation loss (single documented criterion).
         # Keep the accuracy of this same epoch so reporting and checkpoint agree.
