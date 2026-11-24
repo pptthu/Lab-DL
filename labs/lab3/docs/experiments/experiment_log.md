@@ -1,7 +1,7 @@
 # Sổ ghi thí nghiệm Lab 3
 
 - **Created**: 2026-11-20T02:27:41+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T12:33:55+07:00 (Phúc, AI soạn)
+- **Last Updated**: 2026-11-24T17:09:48+07:00 (pptthu, AI soạn)
 - Mọi lần chạy Kaggle (S2–S5) chạy trên tài khoản Kaggle của Thư (`pptt1103`).
 - Mỗi giai đoạn của plan §4 (S1–S5) một mục: chạy gì, số liệu (kèm file), quyết định, người chốt. Số liệu lấy từ file trong `outputs/`, không chép tay từ màn hình.
 
@@ -215,6 +215,15 @@ Zero-shot nghiêng về NEGATIVE: bỏ sót 13,5% review tích cực. Fine-tune 
 
 - Giả thuyết trong `visualize_v1.md` ("lỗi tập trung ở rating 4 và 7, sát ranh giới"): **đúng** trên số liệu này. Rating 4 và 7 có tỉ lệ lỗi cao gấp 3–5 lần rating 1 và 10.
 - Review bị cắt sai nhiều hơn (10,05% so với 6,14%). Cùng hướng với S4 (cắt nhiều hơn thì acc thấp hơn). Lưu ý: review dài cũng có thể khó hơn vì lý do khác (nhiều ý trái chiều), nên đây chỉ là tương quan, chưa phải nguyên nhân.
+- **Bổ sung 2026-11-24 (Thư, AI soạn): tách "bị cắt" với "review dài".** Chia review test theo số token (`eda_token_lengths.csv`, tính cả `[CLS]`/`[SEP]`) và ghép với `main_seed44_test_predictions.csv`; không chạy lại test. Code: notebook Stage 10.
+
+  | Số token | ≤128 | 129–256 | 257–384 | 385–512 | 513–700 | 701–1000 | >1000 |
+  |---|---:|---:|---:|---:|---:|---:|---:|
+  | n | 3.146 | 11.827 | 4.674 | 2.267 | 1.628 | 1.000 | 458 |
+  | Sai | 209 | 706 | 276 | 155 | 160 | 102 | 48 |
+  | Tỉ lệ sai | 6,6% | 6,0% | 5,9% | 6,8% | **9,8%** | 10,2% | 10,5% |
+
+  Từ 0 tới 512 token, review dài hơn không sai nhiều hơn (5,9–6,8%). Tỉ lệ sai nhảy lên 9,8% ngay sau mốc 512, đúng chỗ bắt đầu bị cắt, rồi gần như đứng yên (10,2%, 10,5%). Nếu lỗi do độ dài thì tỉ lệ sai phải tăng dần theo độ dài; ở đây nó nhảy bậc tại mốc cắt. Vì vậy phần lớn lỗi tăng thêm là do **bị cắt**. Đây vẫn là phân tích quan sát (1 seed, không thí nghiệm can thiệp); cách kiểm chứng trực tiếp là cắt head + tail (Sun et al. 2019), bài không làm (plan §7).
 - Ví dụ sai tự tin nhất mỗi nhóm: `outputs/demo/error_examples.csv` (300 ký tự đầu, giữ `uid` để tra bản đầy đủ). Lý do sai chỉ là giả thuyết.
 
 ### 6 câu kiểm soát (`control_sentences.csv`)
