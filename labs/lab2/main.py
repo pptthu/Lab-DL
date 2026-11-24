@@ -19,8 +19,9 @@ import argparse
 import csv
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
 
 import torch
 
@@ -32,25 +33,32 @@ if __package__ in (None, ""):
     if str(_REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(_REPO_ROOT))
 
-from shared.paths import artifact_dir, raw_data_dir  # noqa: E402
-from shared.seed import set_seed  # noqa: E402
-
-from labs.lab2.eda.eda import CIFAR10_CLASSES, run_eda  # noqa: E402
-from labs.lab2.evaluate.evaluate import confusion_matrix, evaluate, top_confusions  # noqa: E402
-from labs.lab2.experiment.experiment import (  # noqa: E402
+from labs.lab2.eda.eda import CIFAR10_CLASSES, run_eda
+from labs.lab2.evaluate.evaluate import (
+    confusion_matrix,
+    evaluate,
+    top_confusions,
+)
+from labs.lab2.experiment.experiment import (
     make_summary_writer,
     run_comparison,
     save_results,
 )
-from labs.lab2.features.features import build_transforms, make_loaders  # noqa: E402
-from labs.lab2.model.model import build_model, describe_model, unfreeze_last_blocks  # noqa: E402
-from labs.lab2.preprocessing.preprocessing import (  # noqa: E402
+from labs.lab2.features.features import build_transforms, make_loaders
+from labs.lab2.model.model import (
+    build_model,
+    describe_model,
+    unfreeze_last_blocks,
+)
+from labs.lab2.preprocessing.preprocessing import (
     load_raw_dataset,
     load_split,
     make_split,
     save_split,
 )
-from labs.lab2.train.train import load_checkpoint, train_model  # noqa: E402
+from labs.lab2.train.train import load_checkpoint, train_model
+from shared.paths import artifact_dir, lab_dir, raw_data_dir
+from shared.seed import set_seed
 
 STAGES = [
     "eda",
@@ -64,7 +72,7 @@ STAGES = [
 ]
 
 
-def _save_history_csv(history: Dict[str, Any], path: Any) -> None:
+def _save_history_csv(history: dict[str, Any], path: Any) -> None:
     """Write the per-epoch training history to a CSV file.
 
     VI: Ghi lịch sử huấn luyện từng epoch ra file CSV.
@@ -83,7 +91,7 @@ def default_comparison_grid(
     lr: float = 1e-3,
     epochs: int = 3,
     weight_decay: float = 1e-4,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Default experiment grid: frozen backbone vs. fine-tuning the last block.
 
     VI: Lưới thí nghiệm mặc định: đóng băng backbone so với fine-tune khối cuối.
@@ -120,11 +128,14 @@ def main(
     freeze_backbone: bool = True,
     unfreeze_blocks: int = 0,
     pretrained: bool = True,
+    dropout: float = 0.0,
+    patience: int | None = None,
+    scheduler_name: str | None = None,
     download: bool = True,
     run_experiments: bool = True,
-    comparison_models: Optional[Sequence[str]] = None,
-    comparison_grid: Optional[List[Dict[str, Any]]] = None,
-) -> Dict[str, Any]:
+    comparison_models: Sequence[str] | None = None,
+    comparison_grid: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Run the full Lab 2 pipeline and return a summary dictionary.
 
     Stages and data flow:
@@ -173,9 +184,12 @@ def main(
     raw_dir = raw_data_dir("lab2")
     figures_dir = artifact_dir("lab2", "figures")
     splits_dir = artifact_dir("lab2", "splits")
-    models_dir = artifact_dir("lab2", "models")
-    logs_dir = artifact_dir("lab2", "logs")
     runs_dir = artifact_dir("lab2", "runs")
+    # Checkpoints & Logs are kept in checkpoint/ and log/ (outside artifacts)
+    models_dir = lab_dir("lab2") / "checkpoint"
+    logs_dir = lab_dir("lab2") / "log"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     # 2. EDA
     print("\n--- 1. Exploratory Data Analysis (EDA) ---")
@@ -228,6 +242,7 @@ def main(
         num_classes=10,
         freeze_backbone=freeze_backbone,
         pretrained=pretrained,
+        dropout=dropout,
     )
     if unfreeze_blocks > 0:
         unfreeze_last_blocks(model, unfreeze_blocks)
@@ -240,7 +255,10 @@ def main(
 
     # 6. Train (TensorBoard is optional; writer is None when it is not installed)
     print("\n--- 5. Training ---")
-    ckpt_path = str(models_dir / f"{model_name}_baseline_best.pt")
+    model_folder = "renet18" if model_name == "resnet18" and (models_dir / "renet18").exists() else model_name
+    model_ckpt_dir = models_dir / model_folder
+    model_ckpt_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = str(model_ckpt_dir / f"{model_name}_baseline_best.pt")
     history_path = runs_dir / f"{model_name}_baseline_history.csv"
     writer = make_summary_writer(str(logs_dir / f"{model_name}_baseline"))
     try:
@@ -255,6 +273,8 @@ def main(
             writer=writer,
             optimizer_name="adam",
             weight_decay=weight_decay,
+            patience=patience,
+            scheduler_name=scheduler_name,
         )
     finally:
         if writer is not None:
@@ -274,6 +294,7 @@ def main(
         num_classes=10,
         freeze_backbone=freeze_backbone,
         pretrained=False,
+        dropout=dropout,
     )
     best_model = load_checkpoint(eval_model, ckpt_path, device=device)
 
@@ -289,7 +310,7 @@ def main(
 
     # 8. Experiment (multi-model / multi-hyperparameter comparison)
     print("\n--- 7. Experiments (model / hyperparameter comparison) ---")
-    experiment_results: List[Dict[str, Any]] = []
+    experiment_results: list[dict[str, Any]] = []
     if run_experiments:
         model_names = (
             list(comparison_models)
@@ -318,7 +339,7 @@ def main(
     # 9. Results summary
     print("\n--- 8. Results ---")
     summary_path = runs_dir / "pipeline_summary.json"
-    summary: Dict[str, Any] = {
+    summary: dict[str, Any] = {
         "seed": seed,
         "device": device,
         "model": model_name,
@@ -332,6 +353,9 @@ def main(
             "freeze_backbone": freeze_backbone,
             "unfreeze_blocks": unfreeze_blocks,
             "pretrained": pretrained,
+            "dropout": dropout,
+            "patience": patience,
+            "scheduler_name": scheduler_name,
         },
         "dataset": {
             "n_train": eda_stats.get("n_train"),
@@ -360,6 +384,7 @@ def main(
             "figures": str(figures_dir),
             "split": str(split_path),
             "checkpoint": ckpt_path,
+            "log": str(logs_dir),
             "history_csv": str(history_path),
             "summary_json": str(summary_path),
         },
@@ -400,6 +425,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--no-download", dest="download", action="store_false",
         help="do not download CIFAR-10",
     )
+    parser.add_argument("--dropout", type=float, default=0.0, help="dropout probability for classifier head")
+    parser.add_argument("--patience", type=int, default=None, help="early stopping patience (epochs)")
+    parser.add_argument("--scheduler", dest="scheduler_name", default=None, help="learning rate scheduler: cosine | step | plateau")
     parser.add_argument("--no-experiments", dest="run_experiments", action="store_false")
     parser.add_argument(
         "--comparison-models", nargs="+", default=None,
@@ -408,7 +436,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def cli(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
+def cli(argv: Sequence[str] | None = None) -> dict[str, Any]:
     """Parse command-line arguments and run main(). / Đọc tham số dòng lệnh rồi chạy main()."""
     args = _build_parser().parse_args(argv)
     return main(
@@ -423,6 +451,9 @@ def cli(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         freeze_backbone=args.freeze_backbone,
         unfreeze_blocks=args.unfreeze_blocks,
         pretrained=args.pretrained,
+        dropout=args.dropout,
+        patience=args.patience,
+        scheduler_name=args.scheduler_name,
         download=args.download,
         run_experiments=args.run_experiments,
         comparison_models=args.comparison_models,

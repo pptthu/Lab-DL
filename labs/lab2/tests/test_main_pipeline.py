@@ -15,14 +15,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 import torch
-import torch.nn as nn
+from torch import nn
 
 # Allow running this file directly: python labs/lab2/tests/test_main_pipeline.py
 REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-import labs.lab2.main as lab2_main  # noqa: E402
+import labs.lab2.main as lab2_main
 
 
 class FakeModel(nn.Module):
@@ -49,11 +49,14 @@ def artifact_root(monkeypatch, tmp_path):
     artifacts = tmp_path / "artifacts"
     raw = tmp_path / "raw"
     raw.mkdir()
+    lab_folder = tmp_path / "lab2"
+    lab_folder.mkdir()
     for kind in ("figures", "splits", "models", "logs", "runs"):
         (artifacts / kind).mkdir(parents=True, exist_ok=True)
 
     monkeypatch.setattr(lab2_main, "artifact_dir", lambda lab, kind: artifacts / kind)
     monkeypatch.setattr(lab2_main, "raw_data_dir", lambda lab: raw)
+    monkeypatch.setattr(lab2_main, "lab_dir", lambda lab: lab_folder)
     return artifacts
 
 
@@ -115,7 +118,14 @@ def _install_fakes(monkeypatch, recorder: Recorder, *, history, experiment_resul
         assert kwargs["batch_size"] == 4
         return train_loader, val_loader, test_loader
 
-    def fake_build_model(name, num_classes=10, freeze_backbone=True, pretrained=True):
+    def fake_build_model(
+        name,
+        num_classes=10,
+        freeze_backbone=True,
+        pretrained=True,
+        dropout=0.0,
+        **kwargs,
+    ):
         recorder.add("model")
         return model
 
@@ -290,6 +300,26 @@ def test_pipeline_validates_configuration_before_any_stage(monkeypatch, artifact
         lab2_main.main(epochs=0)
 
     assert recorder.calls == []
+
+
+def test_pipeline_accepts_overfitting_mitigation_flags(monkeypatch, artifact_root, history):
+    recorder = Recorder()
+    _install_fakes(monkeypatch, recorder, history=history, experiment_results=[])
+
+    summary = lab2_main.cli([
+        "--epochs", "2",
+        "--image-size", "32",
+        "--batch-size", "4",
+        "--no-pretrained",
+        "--no-experiments",
+        "--dropout", "0.3",
+        "--scheduler", "cosine",
+        "--patience", "3",
+    ])
+
+    assert summary["config"]["dropout"] == pytest.approx(0.3)
+    assert summary["config"]["scheduler_name"] == "cosine"
+    assert summary["config"]["patience"] == 3
 
 
 if __name__ == "__main__":

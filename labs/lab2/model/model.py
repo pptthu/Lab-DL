@@ -8,25 +8,29 @@ khi chưa báo nhóm trưởng vì các module khác phụ thuộc vào chúng.
 """
 from __future__ import annotations
 
-import torch.nn as nn
-import torchvision.models as models
+from torch import nn
+from torchvision import models
 
 
 def build_model(
     name: str,
     num_classes: int = 10,
     freeze_backbone: bool = True,
-    pretrained: bool = True
+    pretrained: bool = True,
+    dropout: float = 0.0,
 ) -> nn.Module:
     """Load a torchvision pre-trained model (e.g. resnet18, vgg16, densenet121) and replace the final classification layer. Note: modern torchvision uses weights=..., pretrained=True is deprecated.
 
-    Input : name, num_classes, freeze_backbone, pretrained
+    Input : name, num_classes, freeze_backbone, pretrained, dropout
     Output: nn.Module that outputs logits [B,num_classes]; backbone frozen if requested
 
-    VI: Nạp model pre-trained của torchvision (resnet18, vgg16, densenet121...) và thay lớp phân loại cuối. Lưu ý: torchvision mới dùng weights=..., pretrained=True đã cũ.
-    Vào : name, num_classes, freeze_backbone, pretrained
+    VI: Nạp model pre-trained của torchvision (resnet18, vgg16, densenet121...) và thay lớp phân loại cuối. Hỗ trợ thêm dropout tùy chọn trước lớp Linear.
+    Vào : name, num_classes, freeze_backbone, pretrained, dropout
     Ra  : nn.Module xuất logits [B,num_classes]; backbone bị đóng băng nếu được yêu cầu
     """
+    if not (0.0 <= dropout < 1.0):
+        raise ValueError(f"dropout must be in [0.0, 1.0), got {dropout}")
+
     name_lower = name.lower()
 
     # 1. Map to modern weights argument instead of deprecated pretrained=True
@@ -50,13 +54,31 @@ def build_model(
     # 3. Replace final classification layer (the new layer automatically has requires_grad=True)
     if name_lower == "resnet18":
         in_features = model.fc.in_features
-        model.fc = nn.Linear(in_features, num_classes)
+        if dropout > 0.0:
+            model.fc = nn.Sequential(
+                nn.Dropout(p=dropout),
+                nn.Linear(in_features, num_classes),
+            )
+        else:
+            model.fc = nn.Linear(in_features, num_classes)
     elif name_lower == "densenet121":
         in_features = model.classifier.in_features
-        model.classifier = nn.Linear(in_features, num_classes)
+        if dropout > 0.0:
+            model.classifier = nn.Sequential(
+                nn.Dropout(p=dropout),
+                nn.Linear(in_features, num_classes),
+            )
+        else:
+            model.classifier = nn.Linear(in_features, num_classes)
     elif name_lower == "vgg16":
         in_features = model.classifier[6].in_features
-        model.classifier[6] = nn.Linear(in_features, num_classes)
+        if dropout > 0.0:
+            model.classifier[6] = nn.Sequential(
+                nn.Dropout(p=dropout),
+                nn.Linear(in_features, num_classes),
+            )
+        else:
+            model.classifier[6] = nn.Linear(in_features, num_classes)
 
     return model
 
