@@ -1,6 +1,6 @@
 # Tài liệu Lab 3 — đọc file này trước (v1)
 
-- Tác giả: Thư | Tạo: 2026-11-19T17:14:08+07:00 | Cập nhật: Thư, 2026-11-19T17:14:08+07:00
+- Tác giả: Thư | Tạo: 2026-11-19T17:14:08+07:00 | Cập nhật: Thư, 2026-11-24T17:01:03+07:00
 
 ## Quy tắc version
 - Tên file có hậu tố `_vN`. Luôn dùng bản có **số lớn nhất**; bản cũ giữ nguyên.
@@ -24,7 +24,7 @@
 | `templates/LOG_TEMPLATE_v1.md` | Khuôn log mỗi lần chạy, quy tắc chọn checkpoint và dừng |
 | `templates/MODEL_CARD_TEMPLATE_v1.md` | Khuôn model card (Initial / Trained model) |
 | `phases/` | Desc 9 module: `sentiment_demo`, `eda`, `preprocessing`, `features`, `model`, `train`, `evaluate`, `experiment`, `visualize` (`<module>_v1.md`) |
-| `experiments/` | Sổ ghi thí nghiệm `experiment_log.md`: pilot, 3 seed, `max_length` (tạo khi chạy pilot) |
+| `experiments/` | Sổ ghi thí nghiệm `experiment_log.md`: pilot, 3 seed, `max_length` (tạo khi chạy pilot); `overfit_calibration_v1.md`: overfit theo loss, bằng chứng chọn checkpoint theo val acc, độ tự tin (ECE), các cách chặn overfit |
 | `models/` | Model card DistilBERT fine-tune (tạo khi viết xong code `model/`) |
 | `bugs/` | Chưa có; tạo khi có lỗi đầu tiên |
 

@@ -1,7 +1,7 @@
 # Tiến độ Lab 3
 
 - **Created**: 2026-11-20T01:25:13+07:00 (pptthu)
-- **Last Updated**: 2026-11-20T15:17:23+07:00 (pptthu)
+- **Last Updated**: 2026-11-24T16:51:29+07:00 (pptthu)
 
 Cập nhật file này sau MỖI bước.
 Bảng dưới đây là nguồn thông tin duy nhất về việc ai đang làm gì. Bài làm lại độc lập trên nhánh `feat/lab3-redo` (plan: `docs/plans/detail_plan_lab3_md_v1.md`).
@@ -50,6 +50,7 @@ Trên Kaggle: lần đầu `load_datasets()` tự tải `aclImdb_v1.tar.gz` (c�
 Thư duyệt ở các cổng: smoke run, pilot (chốt trần epoch, patience), audit.
 
 ## Nhật ký (mỗi bước một dòng, có ngày)
+- 2026-11-24 Thư (AI soạn, nhánh `docs/lab3-overfit-report`): thêm `docs/experiments/overfit_calibration_v1.md` (overfit theo loss, bằng chứng chọn checkpoint theo val acc trên pilot + 3 seed chỉ dùng val, ECE tính từ file dự đoán có sẵn để báo cáo, các cách chặn overfit, số regularization của nhóm M); README sắp lại theo 5 mục cô yêu cầu (tổng quan, bài toán, tính năng chính, cấu trúc hệ thống, cách chạy) + kết quả, thêm nhận xét overfit và 2 dòng giới hạn. Bảng tỉ lệ sai theo độ dài token (seed 44: 5,9–6,8% tới 512 token, 9,8–10,5% sau mốc cắt) thêm vào `experiment_log.md` S5, notebook Stage 10 (ô 26–27; notebook chạy lại bằng kernel python313: 28 ô, 0 lỗi) và README. `00_README_v1.md` sửa đè (Thư chọn) để thêm file mới vào mục lục. Không train lại, không chạy lại test.
 - 2026-11-20 Thư: chọn bài làm lại làm bài nộp; PR #84 đưa Lab 3 làm lại vào `main` (revert commit revert `febf3fa`, rồi merge). Notebook bỏ thông tin phân công; cập nhật trạng thái tài liệu.
 - 2026-11-20 Thư (AI soạn): audit phần B (24 test; 4 file dự đoán 25.000 dòng; accuracy, FN/FP, std tính lại khớp; chỉ 3 run chính có `test_evaluated: true`); smoke phần B trên CPU chỉ chạy tới bước train.
 - 2026-11-20 Thư (AI soạn): audit phần A (24 test, smoke phần A 38 s, số liệu khớp `outputs/`; sửa số review bị cắt trong `features_v1.md`: 2.996 / 323 / 3.086); notebook theo khuôn Lab 1; viết `README.md`, `project_description.md`.
