@@ -50,3 +50,6 @@ labs/lab3/outputs/_smoke/*
 
 # Course slides, local only (copyrighted) / Slide môn học, chỉ để trên máy (có bản quyền)
 tailieu/
+
+# Local agent tool databases, not part of the repo / DB của tool agent cục bộ, không thuộc repo
+.headroom/
