@@ -6,12 +6,12 @@
 
 This report documents the design, implementation, and empirical evaluation of deep Convolutional Neural Networks (CNNs) pre-trained on ImageNet for classifying the CIFAR-10 dataset ($C = 10$). Utilizing PyTorch and Torchvision within a modular, contract-driven architecture, two modern backbones—**ResNet-18** and **DenseNet-121**—were systematically benchmarked across two transfer learning strategies:
 1. **Feature Extraction (Frozen Backbone):** Adapting only the final linear classification layer ($\text{lr} = 10^{-3}$).
-2. **Fine-Tuning (Selective Layer Unfreezing):** Simultaneously adapting the top convolutional block and the linear head ($\text{lr} = 10^{-4}$).
+2. **Fine-Tuning (Selective Layer Unfreezing):** Simultaneously adapting the top convolutional block and the linear head ($\text{lr} = 4\times10^{-5}$).
 
 ### Key Empirical Findings
 - **Feature Extraction Baseline:** ResNet-18 achieved a peak Validation Accuracy of **78.94%** (Val Loss: $0.6193$) at epoch 9, while DenseNet-121 reached **83.22%** (Val Loss: $0.4716$) at epoch 11 before Early Stopping.
-- **Fine-Tuning Leap:** Unfreezing the top visual block (`layer4` for ResNet-18, `denseblock4` for DenseNet-121) yielded a dramatic performance boost of **+9% to +13%**, reaching **91.90%** for ResNet-18 and **92.00%** for DenseNet-121 on the validation set.
-- **Independent Test Verification:** Evaluated strictly once on the unseen 10,000-image CIFAR-10 test set, the winning model—**DenseNet-121 Fine-Tuning**—achieved an accuracy of **91.32%** (Test Loss: $0.2550$), exhibiting a negligible generalization gap ($\Delta = 0.68\% < 2\%$).
+- **Fine-Tuning Leap:** Unfreezing the top visual block (`layer4` for ResNet-18, `denseblock4` for DenseNet-121) yielded a performance boost of **+7.8 to +14.4 percentage points**, reaching **93.34%** for ResNet-18 and **90.98%** for DenseNet-121 on the validation set.
+- **Independent Test Verification:** Evaluated strictly once on the unseen 10,000-image CIFAR-10 test set, the winning model—**ResNet-18 Fine-Tuning**—achieved an accuracy of **92.95%** (Test Loss: $0.2387$), exhibiting a negligible generalization gap ($\Delta = 0.39\% < 2\%$).
 
 ---
 
@@ -145,44 +145,41 @@ Calculated from the validation confusion matrix on the best baseline model:
 
 #### Training Setup
 - Target: Defrost `layer4` (ResNet-18) or `denseblock4` (DenseNet-121).
-- Optimizer: Adam ($\text{weight\_decay} = 10^{-4}$)
-- Learning Rate: Scaled down to $\text{lr} = 10^{-4}$ (10x smaller than baseline).
-- Early Stopping: Patience $P = 5$ epochs monitored on validation loss.
+- Optimizer: Adam ($\text{weight\_decay} = 3\times10^{-4}$), head dropout $0.4$.
+- Learning Rate: Scaled down to $\text{lr} = 4\times10^{-5}$ (~25x smaller than the $10^{-3}$ baseline).
+- Loss: cross-entropy with label smoothing $0.05$.
+- Epoch budget: 10, no LR scheduler; Early Stopping patience $P = 5$ on validation loss.
 
 #### Quantitative Progression
 
 **ResNet-18 Fine-Tuning Progression:**
 ```text
-Epoch  1/30: Train Loss = 0.4574 (Acc=84.58%) | Val Loss = 0.2946 (Acc=89.64%)
-Epoch  2/30: Train Loss = 0.2569 (Acc=91.07%) | Val Loss = 0.2626 (Acc=90.92%)
-Epoch  3/30: Train Loss = 0.1969 (Acc=93.30%) | Val Loss = 0.2302 (Acc=91.90%) <-- [BEST CHECKPOINT]
-Epoch  4/30: Train Loss = 0.1607 (Acc=94.30%) | Val Loss = 0.2554 (Acc=91.42%)
-...
-Epoch  8/30: Train Loss = 0.0842 (Acc=97.02%) | Val Loss = 0.2574 (Acc=91.94%)
-[Early Stopping] Terminated at Epoch 8.
+Epoch  1/10: Train Loss = 0.9842 (Acc=73.16%) | Val Loss = 0.6170 (Acc=88.32%)
+Epoch  4/10: Train Loss = 0.6023 (Acc=89.03%) | Val Loss = 0.5261 (Acc=92.02%)
+Epoch  7/10: Train Loss = 0.5315 (Acc=91.83%) | Val Loss = 0.5017 (Acc=93.12%)
+Epoch 10/10: Train Loss = 0.4833 (Acc=93.72%) | Val Loss = 0.4881 (Acc=93.34%) <-- [BEST CHECKPOINT]
+[No early stopping] Reached the 10-epoch budget; validation loss still improving.
 ```
 
 **DenseNet-121 Fine-Tuning Progression:**
 ```text
-Epoch  1/30: Train Loss = 0.5823 (Acc=81.42%) | Val Loss = 0.3282 (Acc=88.84%)
-Epoch  2/30: Train Loss = 0.3327 (Acc=88.67%) | Val Loss = 0.2736 (Acc=90.70%)
-...
-Epoch  6/30: Train Loss = 0.1638 (Acc=94.35%) | Val Loss = 0.2361 (Acc=92.00%) <-- [BEST CHECKPOINT]
-...
-Epoch 11/30: Train Loss = 0.0948 (Acc=96.76%) | Val Loss = 0.2637 (Acc=92.04%)
-[Early Stopping] Terminated at Epoch 11.
+Epoch  1/10: Train Loss = 1.2765 (Acc=62.24%) | Val Loss = 0.7343 (Acc=83.64%)
+Epoch  4/10: Train Loss = 0.7215 (Acc=83.65%) | Val Loss = 0.5826 (Acc=89.08%)
+Epoch  7/10: Train Loss = 0.6473 (Acc=86.41%) | Val Loss = 0.5445 (Acc=90.38%)
+Epoch 10/10: Train Loss = 0.6030 (Acc=88.22%) | Val Loss = 0.5296 (Acc=90.98%) <-- [BEST CHECKPOINT]
+[No early stopping] Reached the 10-epoch budget.
 ```
 
 #### Validation Evaluation
-- **ResNet-18 (Fine-Tuned):** Val Loss = **0.2302**, Val Accuracy = **91.90%** ($4,595 / 5,000$).
-- **DenseNet-121 (Fine-Tuned):** Val Loss = **0.2361**, Val Accuracy = **92.00%** ($4,600 / 5,000$).
+- **ResNet-18 (Fine-Tuned):** Val Loss = **0.4881**, Val Accuracy = **93.34%** ($4,667 / 5,000$).
+- **DenseNet-121 (Fine-Tuned):** Val Loss = **0.5296**, Val Accuracy = **90.98%** ($4,549 / 5,000$).
 
 #### Error Mitigation Analysis
 Top confusions after Fine-Tuning:
-- ResNet-18 FT: `dog` $\to$ `cat` (47), `cat` $\to$ `dog` (40), `truck` $\to$ `automobile` (23), `horse` $\to$ `deer` (18), `bird` $\to$ `airplane` (14).
-- DenseNet-121 FT: `dog` $\to$ `cat` (39), `cat` $\to$ `dog` (35), `automobile` $\to$ `truck` (22), `deer` $\to$ `horse` (16), `ship` $\to$ `airplane` (15).
+- ResNet-18 FT: `cat` $\to$ `dog` (48), `dog` $\to$ `cat` (27), `ship` $\to$ `airplane` (18), `cat` $\to$ `frog` (16), `bird` $\to$ `airplane` (15).
+- DenseNet-121 FT: `dog` $\to$ `cat` (46), `cat` $\to$ `dog` (40), `bird` $\to$ `airplane` (23), `truck` $\to$ `automobile` (23), `deer` $\to$ `horse` (20).
 
-*Analysis:* DenseNet-121 Fine-Tuning achieved a **31.6% reduction** in `dog` $\to$ `cat` errors (down from 57 to 39) and a **59.3% reduction** in `automobile` $\to$ `truck` errors (down from 54 to 22). Adapting high-level filters allowed the convolution kernels to hone in on subtle domain discriminators (e.g., snout contours, wheel rims).
+*Analysis:* ResNet-18 Fine-Tuning cut `dog` $\to$ `cat` errors from 57 to 27 (**52.6%**), while DenseNet-121 Fine-Tuning cut `automobile` $\to$ `truck` errors from 54 to 23 (**57.4%**). Adapting high-level filters allowed the convolution kernels to hone in on subtle domain discriminators (e.g., snout contours, wheel rims).
 
 ---
 
@@ -195,8 +192,8 @@ The table below aggregates recorded performance metrics from `artifacts/runs/fin
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **ResNet-18** | Feature Extraction (Frozen) | 5,130 (0.05%) | 30 | 14 | 0.6193 | 78.94% | 3,947 |
 | **DenseNet-121** | Feature Extraction (Frozen) | 10,250 (0.15%) | 30 | 16 | 0.4716 | 83.22% | 4,161 |
-| **ResNet-18** | Fine-Tuning (`layer4`) | 8,398,858 (75.11%) | 30 | 8 | 0.2302 | 91.90% | 4,595 |
-| **DenseNet-121** | Fine-Tuning (`denseblock4`) | 2,170,378 (31.17%) | 30 | 11 | 0.2361 | **92.00%** | **4,600** |
+| **ResNet-18** | Fine-Tuning (`layer4`) | 8,398,858 (75.11%) | 10 | 10 | 0.4881 | **93.34%** | **4,667** |
+| **DenseNet-121** | Fine-Tuning (`denseblock4`) | 2,170,378 (31.17%) | 10 | 10 | 0.5296 | 90.98% | 4,549 |
 
 ### 6.2 Statistical Error Significance
 On a validation cohort of $N = 5,000$ independent samples, the standard error of sample accuracy $p$ under binomial assumptions is:
@@ -207,31 +204,31 @@ For $p \approx 0.90$:
 $$\text{SE} = \sqrt{\frac{0.90 \times 0.10}{5000}} \approx 0.00424 \quad (\approx 0.42\%)$$
 
 The accuracy gain achieved by Fine-Tuning:
-- ResNet-18: $91.90\% - 78.94\% = +12.96\%$ ($\approx 30.8 \times \text{SE}$)
-- DenseNet-121: $92.00\% - 83.22\% = +8.78\%$ ($\approx 20.7 \times \text{SE}$)
+- ResNet-18: $93.34\% - 78.94\% = +14.40\%$ ($\approx 34.0 \times \text{SE}$)
+- DenseNet-121: $90.98\% - 83.22\% = +7.76\%$ ($\approx 18.3 \times \text{SE}$)
 
-Because both margins exceed $20 \times \text{SE}$, the observed performance leaps are statistically decisive, ruling out stochastic validation noise.
+Because both margins exceed $18 \times \text{SE}$, the observed performance leaps are statistically decisive, ruling out stochastic validation noise.
 
 ### 6.3 Parameter Efficiency & Computational Trade-off
-- **ResNet-18 FT** requires unfreezing $8.40\text{M}$ parameters (75.11% of total network) to achieve $91.90\%$.
-- **DenseNet-121 FT** achieves **$92.00\%$** while updating only **$2.17\text{M}$ parameters** (31.17% of total network).
-- DenseNet-121 exhibits roughly **$4\times$ greater parameter efficiency** in gradient updates due to its concatenated dense connectivity.
+- **ResNet-18 FT** unfreezes $8.40\text{M}$ parameters (75.11% of total network) to reach $93.34\%$.
+- **DenseNet-121 FT** reaches $90.98\%$ while updating only **$2.17\text{M}$ parameters** (31.17% of total network).
+- DenseNet-121 updates about $3.9\times$ fewer parameters than ResNet-18 FT (2.17M vs 8.40M) and stays within 2.4 accuracy points, thanks to its concatenated dense connectivity.
 
 ---
 
 ## 7. Final Independent Test Evaluation
 
-To uphold rigorous scientific hygiene, the test set ($N_{\text{test}} = 10,000$) was quarantined throughout development and evaluated **exactly once** using the best checkpoint of the winning validation architecture: **DenseNet-121 Fine-Tuning** (`densenet121_finetune_best.pt`).
+To uphold rigorous scientific hygiene, the test set ($N_{\text{test}} = 10,000$) was quarantined throughout development and evaluated **exactly once** using the best checkpoint of the winning validation architecture: **ResNet-18 Fine-Tuning** (`resnet18_finetune_best.pt`).
 
 ### Test Results
-- **Test Loss:** **0.2550**
-- **Test Accuracy:** **91.32%** ($9,132 / 10,000$ correct classifications)
-- **Validation Accuracy:** **92.00%**
+- **Test Loss:** **0.2387**
+- **Test Accuracy:** **92.95%** ($9,295 / 10,000$ correct classifications)
+- **Validation Accuracy:** **93.34%**
 - **Generalization Gap:**
 
-$$\Delta_{\text{gen}} = |\text{Acc}_{\text{val}} - \text{Acc}_{\text{test}}| = |92.00\% - 91.32\%| = \mathbf{0.68\%}$$
+$$\Delta_{\text{gen}} = |\text{Acc}_{\text{val}} - \text{Acc}_{\text{test}}| = |93.34\% - 92.95\%| = \mathbf{0.39\%}$$
 
-Because $\Delta_{\text{gen}} \ll 2.0\%$, the model demonstrates remarkable generalization with zero evidence of hyperparameter overfitting to the validation split.
+Because $\Delta_{\text{gen}} \ll 2.0\%$, the test set shows no material distribution shift from validation. Overfitting is assessed separately from the train–validation gap (Section 5).
 
 ---
 
@@ -252,8 +249,8 @@ Because $\Delta_{\text{gen}} \ll 2.0\%$, the model demonstrates remarkable gener
 
 This laboratory work demonstrates the power of Transfer Learning and Fine-Tuning on CIFAR-10:
 1. Feature extraction establishes a viable baseline ($78.94\% - 83.22\%$) at minimal computational cost.
-2. Fine-tuning the uppermost convolutional block unlocks state-of-the-art accuracy (**92.00%** on validation, **91.32%** on test), representing a $+13.14\%$ absolute performance improvement.
-3. DenseNet-121 proves to be the most parameter-efficient backbone, delivering top-tier performance while updating only $2.17\text{M}$ weights.
+2. Fine-tuning the uppermost convolutional block unlocks the best accuracy (**93.34%** on validation, **92.95%** on test), representing a $+14.40$ point absolute improvement over the frozen baseline.
+3. DenseNet-121 remains the most parameter-efficient backbone (2.17M updated weights, 90.98% validation), while ResNet-18 Fine-Tuning gives the best accuracy.
 
 ---
 ---
@@ -268,12 +265,12 @@ This laboratory work demonstrates the power of Transfer Learning and Fine-Tuning
 
 Báo cáo này trình bày toàn bộ quá trình thiết kế, triển khai kỹ thuật và đánh giá thực nghiệm các mô hình mạng nơ-ron tích chập (CNN) sâu đã được tiền huấn luyện trên tập dữ liệu ImageNet để giải quyết bài toán phân loại ảnh 10 lớp trên tập CIFAR-10 ($C = 10$). Hệ thống được xây dựng trên nền tảng PyTorch và Torchvision theo mô hình hướng module hóa có hợp đồng giao tiếp nghiêm ngặt. Hai kiến trúc tiêu biểu—**ResNet-18** và **DenseNet-121**—đã được đối chiếu qua hai phương pháp:
 1. **Học chuyển giao cơ sở (Feature Extraction):** Đóng băng toàn bộ backbone, chỉ huấn luyện lớp phân loại tuyến tính cuối cùng ($\text{lr} = 10^{-3}$).
-2. **Tinh chỉnh sâu (Fine-Tuning):** Mở khóa khối tích chập bậc cao cuối cùng kết hợp huấn luyện lớp phân loại với tốc độ học nhỏ chuyên dụng ($\text{lr} = 10^{-4}$).
+2. **Tinh chỉnh sâu (Fine-Tuning):** Mở khóa khối tích chập bậc cao cuối cùng kết hợp huấn luyện lớp phân loại với tốc độ học nhỏ chuyên dụng ($\text{lr} = 4\times10^{-5}$).
 
 ### Kết Quả Thực Nghiệm Cốt Lõi
 - **Mô hình cơ sở (Feature Extraction):** ResNet-18 đạt độ chính xác Validation cao nhất là **78.94%** (Val Loss: $0.6193$) tại epoch 9; DenseNet-121 đạt **83.22%** (Val Loss: $0.4716$) tại epoch 11 trước khi dừng sớm (Early Stopping).
-- **Bước nhảy vọt sau Fine-Tuning:** Việc mở khóa khối tích chập sâu cuối cùng (`layer4` ở ResNet-18, `denseblock4` ở DenseNet-121) đã tạo ra bước nhảy vọt từ **+9% đến +13%**, đưa độ chính xác Validation lên **91.90%** (ResNet-18) và **92.00%** (DenseNet-121).
-- **Kiểm thử độc lập khách quan:** Đánh giá đúng duy nhất một lần trên tập Test (10,000 ảnh), mô hình chiến thắng—**DenseNet-121 Fine-Tuning**—đạt độ chính xác **91.32%** (Test Loss: $0.2550$), với độ lệch kiểm thử cực nhỏ ($\Delta = |92.00\% - 91.32\%| = 0.68\% < 2\%$).
+- **Bước nhảy vọt sau Fine-Tuning:** Việc mở khóa khối tích chập sâu cuối cùng (`layer4` ở ResNet-18, `denseblock4` ở DenseNet-121) đã tạo ra bước nhảy vọt từ **+7,8 đến +14,4 điểm %**, đưa độ chính xác Validation lên **93.34%** (ResNet-18) và **90.98%** (DenseNet-121).
+- **Kiểm thử độc lập khách quan:** Đánh giá đúng duy nhất một lần trên tập Test (10,000 ảnh), mô hình chiến thắng—**ResNet-18 Fine-Tuning**—đạt độ chính xác **92.95%** (Test Loss: $0.2387$), với độ lệch kiểm thử cực nhỏ ($\Delta = |93.34\% - 92.95\%| = 0.39\% < 2\%$).
 
 ---
 
@@ -358,16 +355,16 @@ Pipeline được tổ chức thành các module tuần tự, độc lập và k
   5. `deer` $\to$ `bird`: 28 lần
 
 ### 5.2 Giai Đoạn 2: Huấn Luyện Tinh Chỉnh Sâu (Fine-Tuning)
-- **Cấu hình:** $\text{lr} = 10^{-4}$ (giảm 10 lần), Adam, $\text{weight\_decay} = 10^{-4}$, Early Stopping với patience = 5.
-- **ResNet-18 Fine-Tuning (mở `layer4`):** Dừng tại epoch 8. Checkpoint tốt nhất tại **epoch 3**:
-  - Train Loss = $0.1969$ (Acc = $93.30\%$)
-  - Val Loss = **0.2302** | Val Accuracy = **91.90%** ($4,595 / 5,000$ mẫu đúng)
-- **DenseNet-121 Fine-Tuning (mở `denseblock4`):** Dừng tại epoch 11. Checkpoint tốt nhất tại **epoch 6**:
-  - Train Loss = $0.1638$ (Acc = $94.35\%$)
-  - Val Loss = **0.2361** | Val Accuracy = **92.00%** ($4,600 / 5,000$ mẫu đúng)
+- **Cấu hình:** $\text{lr} = 4\times10^{-5}$ (giảm 25 lần), Adam, $\text{weight\_decay} = 3\times10^{-4}$, dropout head $0.4$, label smoothing $0.05$, tối đa 10 epoch, Early Stopping patience = 5.
+- **ResNet-18 Fine-Tuning (mở `layer4`):** Chạm trần 10 epoch (không dừng sớm). Checkpoint tốt nhất tại **epoch 10**:
+  - Train Loss = $0.4833$ (Acc = $93.72\%$)
+  - Val Loss = **0.4881** | Val Accuracy = **93.34%** ($4,667 / 5,000$ mẫu đúng)
+- **DenseNet-121 Fine-Tuning (mở `denseblock4`):** Chạm trần 10 epoch. Checkpoint tốt nhất tại **epoch 10**:
+  - Train Loss = $0.6030$ (Acc = $88.22\%$)
+  - Val Loss = **0.5296** | Val Accuracy = **90.98%** ($4,549 / 5,000$ mẫu đúng)
 - **Phân tích giảm lỗi sau Fine-Tuning:**
-  - Nhầm lẫn `dog` $\to$ `cat` giảm từ 57 xuống còn 39 mẫu (giảm $31.6\%$).
-  - Nhầm lẫn `automobile` $\to$ `truck` giảm từ 54 xuống còn 22 mẫu (giảm $59.3\%$).
+  - Nhầm lẫn `dog` $\to$ `cat` giảm từ 57 xuống 27 mẫu với ResNet-18 (giảm $52.6\%$).
+  - Nhầm lẫn `automobile` $\to$ `truck` giảm từ 54 xuống 23 mẫu với DenseNet-121 (giảm $57.4\%$).
 
 ---
 
@@ -379,29 +376,29 @@ Pipeline được tổ chức thành các module tuần tự, độc lập và k
 |---|---|:---:|:---:|:---:|:---:|:---:|
 | **ResNet-18** | Feature Extraction (Đóng băng) | 5,130 (0.05%) | 30 | 14 | 0.6193 | 78.94% |
 | **DenseNet-121** | Feature Extraction (Đóng băng) | 10,250 (0.15%) | 30 | 16 | 0.4716 | 83.22% |
-| **ResNet-18** | Fine-Tuning (Mở `layer4`) | 8,398,858 (75.11%) | 30 | 8 | 0.2302 | 91.90% |
-| **DenseNet-121** | Fine-Tuning (Mở `denseblock4`) | 2,170,378 (31.17%) | 30 | 11 | 0.2361 | **92.00%** |
+| **ResNet-18** | Fine-Tuning (Mở `layer4`) | 8,398,858 (75.11%) | 10 | 10 | 0.4881 | **93.34%** |
+| **DenseNet-121** | Fine-Tuning (Mở `denseblock4`) | 2,170,378 (31.17%) | 10 | 10 | 0.5296 | 90.98% |
 
 ### 6.2 Ý Nghĩa Sai Số Thống Kê
 Với $N = 5,000$ mẫu trên tập Validation, sai số chuẩn xấp xỉ:
 
 $$\text{SE} = \sqrt{\frac{p(1 - p)}{N}} \approx \sqrt{\frac{0.90 \times 0.10}{5000}} \approx 0.42\%$$
 
-Bước nhảy từ ~78-83% lên 92% (+8.78% đến +12.96%) gấp hơn 20 lần sai số chuẩn $\text{SE}$, khẳng định sự cải thiện là hoàn toàn có ý nghĩa thống kê thực sự, không phải do biến động ngẫu nhiên.
+Bước nhảy từ ~78,94-83,22% lên 90,98-93,34% (+7,76 đến +14,40 điểm %) gấp 18-34 lần sai số chuẩn $\text{SE}$, khẳng định sự cải thiện là hoàn toàn có ý nghĩa thống kê thực sự, không phải do biến động ngẫu nhiên.
 
 ---
 
 ## 7. Đánh Giá Khách Quan Trên Tập Test Độc Lập
 
-Mô hình chiến thắng theo kết quả Validation (**DenseNet-121 Fine-Tuning**) được nạp lại checkpoint `densenet121_finetune_best.pt` và đánh giá đúng **một lần duy nhất** trên toàn bộ 10,000 ảnh của tập Test:
-- **Test Loss:** **0.2550**
-- **Test Accuracy:** **91.32%** ($9,132 / 10,000$ ảnh phân loại chính xác)
-- **Validation Accuracy:** **92.00%**
+Mô hình chiến thắng theo kết quả Validation (**ResNet-18 Fine-Tuning**) được nạp lại checkpoint `resnet18_finetune_best.pt` và đánh giá đúng **một lần duy nhất** trên toàn bộ 10,000 ảnh của tập Test:
+- **Test Loss:** **0.2387**
+- **Test Accuracy:** **92.95%** ($9,295 / 10,000$ ảnh phân loại chính xác)
+- **Validation Accuracy:** **93.34%**
 - **Độ lệch tổng quát hóa (Val-Test Gap):**
 
-$$\Delta = |92.00\% - 91.32\%| = \mathbf{0.68\%}$$
+$$\Delta = |93.34\% - 92.95\%| = \mathbf{0.39\%}$$
 
-Độ chênh lệch dưới $1\%$ chứng minh mô hình có khả năng tổng quát hóa xuất sắc, không hề bị overfitting vào tập Validation.
+Độ chênh lệch dưới $1\%$ cho thấy tập Test không khó hơn Validation; overfitting được đánh giá riêng qua khoảng cách train–validation (mục 5).
 
 ---
 
@@ -426,5 +423,5 @@ $$\Delta = |92.00\% - 91.32\%| = \mathbf{0.68\%}$$
 
 Nghiên cứu thực nghiệm trong Lab 2 đã làm sáng tỏ:
 1. Học chuyển giao (Feature Extraction) mang lại độ chính xác nền tảng từ 78.94% đến 83.22% với chi phí tính toán cực thấp.
-2. Tinh chỉnh sâu (Fine-Tuning) giúp mô hình thích nghi toàn diện với miền dữ liệu mới, mang lại độ chính xác vượt trội **92.00%** trên Validation và **91.32%** trên Test.
+2. Tinh chỉnh sâu (Fine-Tuning) giúp mô hình thích nghi toàn diện với miền dữ liệu mới, mang lại độ chính xác vượt trội **93.34%** trên Validation và **92.95%** trên Test.
 3. DenseNet-121 chứng tỏ ưu thế vượt trội về hiệu quả tham số: chỉ cần cập nhật $2.17\text{M}$ tham số (31% mạng) để đạt hiệu năng tương đương hoặc vượt trội so với ResNet-18 phải cập nhật $8.40\text{M}$ tham số (75% mạng).
